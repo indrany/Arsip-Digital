@@ -1,0 +1,217 @@
+/* Pastikan HTML dan BODY memiliki tinggi dan lebar penuh untuk pemusatan yang efektif */
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
+/* Reset dan Global Styles */
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+}
+
+body {
+font-family: 'Inter', sans-serif;
+background: #FFFFFF;
+min-height: 100vh;
+display: flex; /* Menggunakan flexbox untuk memposisikan konten di tengah */
+justify-content: center; /* Menengahkan isian body secara horizontal */
+align-items: center; /* Menengahkan isian body secara vertikal */
+}
+
+/* ---------------------------------- */
+/* Struktur Utama (Container) - PERBAIKAN DI SINI */
+/* ---------------------------------- */
+.login-container {
+display: flex;
+width: 100%;
+max-width: 1280px; /* Lebar maksimum untuk desktop */
+/* Hapus min-height: 982px; agar tinggi container mengikuti konten, bukan dipaksakan */
+/* min-height: 982px; */ 
+/* Gunakan align-items: center; untuk menengahkan form dan logo secara vertikal */
+align-items: center; 
+margin: 0 auto; /* PENTING: Menengahkan container di layar lebar */
+}
+
+/* ---------------------------------- */
+/* Bagian Kiri (Informasi Sistem) */
+/* ---------------------------------- */
+.system-info {
+flex: 1; 
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding-right: 80px; /* Memberi jarak ke form login */
+text-align: center;
+}
+
+.system-logo {
+width: 260px; 
+height: 260px;
+margin-bottom: 30px;
+}
+
+.system-title {
+color: rgba(0, 71, 97, 1);
+font-weight: 600; /* Semi Bold */
+font-size: 32px;
+line-height: 1.2;
+}
+
+/* ---------------------------------- */
+/* Bagian Kanan (Form Login) */
+/* ---------------------------------- */
+.login-box {
+width: 360px; /* Lebar tetap sesuai Figma */
+display: flex;
+flex-direction: column;
+align-items: center; 
+position: relative; 
+padding-top: 60px; /* Ruang untuk logo kecil */
+}
+
+.login-logo-small {
+width: 60px;
+height: 60px;
+position: absolute;
+top: 0;
+left: 50%;
+transform: translateX(-50%);
+}
+
+.login-header {
+margin-bottom: 30px;
+text-align: center;
+width: 100%; 
+}
+
+.login-title {
+color: rgba(43, 47, 56, 1);
+font-weight: 600; /* Semi Bold */
+font-size: 30px;
+margin-bottom: 10px;
+}
+
+.login-subtitle {
+color: rgba(102, 112, 132, 1);
+font-weight: 400; /* Regular */
+font-size: 16px;
+}
+
+/* ---------------------------------- */
+/* Form dan Input */
+/* ---------------------------------- */
+.login-form {
+width: 100%;
+}
+
+.form-group {
+margin-bottom: 20px;
+}
+
+.form-group label {
+display: block;
+color: rgba(72, 80, 94, 1);
+font-weight: 500; /* Medium */
+font-size: 14px;
+margin-bottom: 6px;
+}
+
+.form-group input {
+width: 100%;
+padding: 10px 14px;
+height: 44px;
+border: 1px solid rgba(208, 213, 221, 1); 
+border-radius: 8px;
+box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+font-size: 16px;
+color: rgba(102, 112, 133, 1); 
+}
+
+.form-group input:focus {
+border-color: rgba(19, 102, 217, 1); 
+outline: none;
+}
+
+/* Tombol Masuk */
+.btn-primary {
+width: 100%;
+height: 44px;
+background-color: rgba(19, 102, 217, 1);
+color: #FFFFFF;
+font-weight: 500; /* Medium */
+font-size: 16px;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+margin-top: 10px; 
+transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+background-color: rgba(19, 102, 217, 0.9);
+}
+
+/* ---------------------------------- */
+/* Responsif (Media Queries) */
+/* ---------------------------------- */
+
+@media (max-width: 900px) {
+.login-container {
+    flex-direction: column;
+    padding: 40px 20px;
+    min-height: auto;
+    margin: 0; 
+}
+
+.system-info {
+    padding-right: 0;
+    margin-bottom: 40px;
+    flex: none; 
+}
+
+.system-logo {
+    width: 180px;
+    height: 180px;
+}
+
+.system-title {
+    font-size: 24px;
+}
+
+.login-box {
+    width: 100%; 
+    max-width: 360px; 
+    padding-top: 30px; 
+}
+
+.login-logo-small {
+    width: 40px;
+    height: 40px;
+}
+}
+
+@media (max-width: 480px) {
+.system-info {
+    margin-bottom: 30px;
+}
+
+.system-logo {
+    width: 150px;
+    height: 150px;
+}
+
+.system-title {
+    font-size: 20px;
+}
+
+.login-title {
+    font-size: 24px;
+}
+
+.login-subtitle {
+    font-size: 14px;
+}
+}
