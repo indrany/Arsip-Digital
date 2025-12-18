@@ -28,41 +28,41 @@
 
         <nav class="sidebar-nav">
             <ul>
-                <li class="active"><a href="#">
-                    <div class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 13C4 12.4477 4.44772 12 5 12H11C11.5523 12 12 12.4477 12 13V19C12 19.5523 11.5523 20 11 20H5C4.44772 20 4 19.5523 4 19V13Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 4C14 3.44772 14.4477 3 15 3H19C19.5523 3 20 3.44772 20 4V8C20 8.55228 19.5523 9 19 9H15C14.4477 9 14 8.55228 14 8V4Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 15C14 14.4477 14.4477 14 15 14H19C19.5523 14 20 14.4477 20 15V20C20 20.5523 19.5523 21 19 21H15C14.4477 21 14 20.5523 14 20V15Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 4C4 3.44772 4.44772 3 5 3H9C9.55228 3 10 3.44772 10 4V10C10 10.5523 9.55228 11 9 11H5C4.44772 11 4 10.5523 4 10V4Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div> Dashboard
-                </a></li>
+                {{-- Dashboard: Menggunakan logika dinamis untuk 'active' --}}
+                <li class="{{ (isset($current_page) && $current_page == 'dashboard') ? 'active' : '' }}">
+                    <a href="{{ route('dashboard') }}">
+                        <div class="menu-icon dashboard-icon"></div> Dashboard
+                    </a>
+                </li>
+                
+                {{-- Pengiriman Berkas: Menggunakan logika dinamis untuk 'active' --}}
+                <li class="{{ (isset($current_page) && $current_page == 'pengiriman-berkas') ? 'active' : '' }}">
+                    <a href="{{ route('pengiriman-berkas.index') }}">
+                        <div class="menu-icon kirim-icon"></div> Pengiriman Berkas
+                    </a>
+                </li>
+                
+                {{-- Penerimaan Berkas --}}
                 <li><a href="#">
-                    <div class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V20M12 4L18 10M12 4L6 10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 17H20C21.1046 17 22 17.8954 22 19V20C22 21.1046 21.1046 22 20 22H4C2.89543 22 2 21.1046 2 20V19C2 17.8954 2.89543 17 4 17H6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div> Pengiriman Berkas
+                    <div class="menu-icon terima-icon"></div> Penerimaan Berkas
                 </a></li>
+                
+                {{-- Pencarian Berkas --}}
                 <li><a href="#">
-                    <div class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 20V4M12 20L18 14M12 20L6 14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 17H20C21.1046 17 22 17.8954 22 19V20C22 21.1046 21.1046 22 20 22H4C2.89543 22 2 21.1046 2 20V19C2 17.8954 2.89543 17 4 17H6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div> Penerimaan Berkas
+                    <div class="menu-icon cari-icon"></div> Pencarian Berkas
                 </a></li>
+                
+                {{-- Pinjam Berkas --}}
                 <li><a href="#">
-                    <div class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.9999 21L18.4999 18.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div> Pencarian Berkas
-                </a></li>
-                <li><a href="#">
-                    <div class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V8L14 2Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2V8H19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div> Pinjam Berkas
+                    <div class="menu-icon pinjam-icon"></div> Pinjam Berkas
                 </a></li>
             </ul>
         </nav>
-
         <div class="v1_353 logout-bottom"> 
             <form method="POST" action="{{ route('logout') }}">
                 @csrf 
                 <button type="submit" class="logout-button" style="background: none; border: none; padding: 0; color: inherit; cursor: pointer; display: flex; align-items: center; width: 100%;">
-                    <div class="menu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 17L15 12L10 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12H3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
+                    <div class="menu-icon logout-icon"></div>
                     Log Out
                 </button>
             </form>
@@ -71,7 +71,6 @@
     </div> 
     
     <div class="content-wrapper">
-
         <div class="header-top">
             <div class="v1_221 header-background"></div>
             
@@ -82,8 +81,7 @@
 
             <div class="header-right-tools">
                 <div class="imigrasi-logo-container">
-                    <div class="imigrasi-logo-placeholder"></div>
-                </div>
+                    </div>
                 <div class="admin-profile-container">
                     <span class="admin-role-text">Admin</span>
                 </div>
@@ -120,6 +118,7 @@
     </div>
 
 <script>
+    // Kode Chart.js tetap sama
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('monthlyActivityChart');
 
