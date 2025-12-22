@@ -18,6 +18,8 @@ class LoginController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+        // Tambahkan ini untuk tes:
+    // dd(Auth::attempt($credentials));
 
         // 2. Coba Otentikasi
         if (Auth::attempt($credentials)) {

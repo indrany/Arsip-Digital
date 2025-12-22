@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
 
     // --- MODUL NAVIGASI LAINNYA ---
     Route::get('/pencarian-berkas', [ArsipController::class, 'pencarianBerkas'])->name('pencarian-berkas.index');
+    Route::get('/pencarian-berkas/search', [ArsipController::class, 'searchAction'])->name('pencarian-berkas.search');
     Route::get('/pinjam-berkas', [ArsipController::class, 'pinjamBerkas'])->name('pinjam-berkas.index');
     
     // --- MANAJEMEN PENGGUNA ---

@@ -46,7 +46,6 @@ class ArsipController extends Controller
             return response()->json(['message' => 'Nomor Permohonan wajib diisi.'], 400);
         }
 
-        // Cari di database nyata menggunakan model Permohonan
         $data_permohonan = Permohonan::where('no_permohonan', $nomor_permohonan)->first();
 
         if ($data_permohonan) {
@@ -67,28 +66,20 @@ class ArsipController extends Controller
     // --- MODUL PENERIMAAN BERKAS ---
 
     public function penerimaanBerkas()
-{
-    // PERBAIKAN: Ambil data SIAP_DITERIMA (tabel kiri) 
-    // DAN data yang sedang di-scan HP/Tinker (tabel kanan)
-    $list_siap_diterima = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
-    
-    // Tambahkan ini agar data yang sudah di-scan HP tetap ada saat halaman di-refresh
-    $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA_SCAN')->get();
+    {
+        $list_siap_diterima = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
+        $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA_SCAN')->get();
 
-    $data['current_page'] = 'penerimaan-berkas';
-    $data['list_siap_diterima'] = $list_siap_diterima; 
-    $data['list_sudah_scan'] = $list_sudah_scan; // Kirim data ini ke View
+        $data['current_page'] = 'penerimaan-berkas';
+        $data['list_siap_diterima'] = $list_siap_diterima; 
+        $data['list_sudah_scan'] = $list_sudah_scan; 
 
-    return view('arsip.penerimaan_berkas', $data); 
-}
+        return view('arsip.penerimaan_berkas', $data); 
+    }
 
-    /**
-     * AJAX: Scan Berkas Individual (Scanner Kabel)
-     */
     public function scanPermohonan(Request $request)
     {
         $nomorPermohonan = $request->input('nomor_permohonan');
-        
         $permohonan = Permohonan::where('no_permohonan', $nomorPermohonan)->first();
 
         if ($permohonan) {
@@ -101,13 +92,8 @@ class ArsipController extends Controller
         return response()->json(['success' => false, 'message' => 'Berkas tidak ditemukan.'], 404);
     }
 
-    /**
-     * AJAX: POLLING HP (Mengecek data yang di-scan melalui HP)
-     * Aplikasi HP harus mengubah status_berkas menjadi 'DITERIMA_SCAN'
-     */
     public function checkNewScan()
     {
-        // Cari data yang baru saja di-scan oleh aplikasi HP
         $newData = Permohonan::where('status_berkas', 'DITERIMA_SCAN')->get();
 
         if ($newData->count() > 0) {
@@ -120,9 +106,6 @@ class ArsipController extends Controller
         return response()->json(['hasNewData' => false]);
     }
 
-    /**
-     * AJAX: Simpan Konfirmasi Akhir (Tombol Hijau)
-     */
     public function konfirmasiBulk(Request $request)
     {
         $nomorPermohonanList = $request->input('nomor_permohonan_list');
@@ -134,7 +117,6 @@ class ArsipController extends Controller
         try {
             DB::beginTransaction();
 
-            // Update status menjadi DITERIMA (Selesai)
             Permohonan::whereIn('no_permohonan', $nomorPermohonanList)
                       ->update([
                           'status_berkas' => 'DITERIMA',
@@ -150,17 +132,41 @@ class ArsipController extends Controller
         }
     }
     
-    // --- MODUL LAIN ---
+    // --- MODUL PENCARIAN BERKAS (PERBAIKAN LOKASI VIEW) ---
     
     public function pencarianBerkas()
     {
         $data['current_page'] = 'pencarian-berkas';
-        return view('auth.Dashboard.pencarian_berkas', $data); 
+        $data['results'] = null; 
+        
+        // Hapus 'auth.Dashboard.' cukup tulis nama filenya saja
+        return view('pencarian_berkas', $data); 
     }
+
+    public function searchAction(Request $request)
+{
+    $data['current_page'] = 'pencarian-berkas';
+    $query = $request->input('nomor_permohonan');
+
+    // Pastikan nama model 'Permohonan' sudah benar
+    $data['results'] = Permohonan::where('no_permohonan', 'LIKE', '%' . $query . '%')
+                                ->orWhere('nama_pemohon', 'LIKE', '%' . $query . '%')
+                                ->get();
     
+    $data['query_text'] = $query;
+
+    // AKTIFKAN INI JIKA NAMA MASIH KOSONG:
+    // dd($data['results']->toArray()); 
+
+    return view('pencarian_berkas', $data);
+}
+    
+    // --- MODUL PINJAM BERKAS ---
+
     public function pinjamBerkas()
     {
         $data['current_page'] = 'pinjam-berkas';
-        return view('auth.Dashboard.pinjam_berkas', $data); 
+        // Pastikan file ini juga ada di folder views
+        return view('pinjam_berkas', $data); 
     }
 }
