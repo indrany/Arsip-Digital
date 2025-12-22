@@ -8,25 +8,29 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('Permohonan', function (Blueprint $table) {
-            // no_permohonan sebagai Primary Key (String)
-            $table->string('no_permohonan')->primary(); 
+        Schema::create('permohonan', function (Blueprint $table) {
+            $table->id();
+            $table->string('no_permohonan')->unique();
             $table->date('tanggal_permohonan');
+            $table->date('tanggal_terbit')->nullable();
             $table->string('nama');
             $table->string('tempat_lahir')->nullable();
             $table->date('tanggal_lahir')->nullable();
-            
-            // Kolom status untuk alur Scan HP dan Penerimaan
-            // Default: SIAP_DITERIMA
-            $table->string('status_berkas')->default('SIAP_DITERIMA'); 
-            
-            $table->timestamp('tanggal_diterima')->nullable();
-            $table->timestamps(); // Opsional: untuk created_at & updated_at
+            $table->string('jenis_kelamin')->nullable();
+            $table->string('no_telp')->nullable();
+            $table->string('jenis_permohonan')->nullable();
+            $table->string('jenis_paspor')->nullable();
+            $table->string('tujuan_paspor')->nullable();
+            $table->string('no_paspor')->nullable();
+            $table->string('alur_terakhir')->nullable();
+            $table->string('lokasi_arsip')->nullable();
+            $table->string('status_berkas')->default('TERDAFTAR');
+            $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('Permohonan');
+        Schema::dropIfExists('permohonan');
     }
 };

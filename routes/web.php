@@ -4,14 +4,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ArsipController; 
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request; 
 
-// 1. Rute Default (Landing)
+// 1. Rute Default
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// 2. Rute Login (Akses oleh Tamu Saja)
+// 2. Rute Login
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
         return view('auth.login');
@@ -20,45 +19,44 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 });
 
-// 3. Rute Terproteksi (Hanya untuk Pengguna yang sudah Login)
+// 3. Rute Terproteksi (Aplikasi Utama)
 Route::middleware('auth')->group(function () {
 
-    // --- DASHBOARD ---
     Route::get('/dashboard', [ArsipController::class, 'dashboard'])->name('dashboard');
-
+    
     // --- MODUL PENGIRIMAN BERKAS ---
+    // Menampilkan Tabel Riwayat Pengiriman
     Route::get('/pengiriman-berkas', [ArsipController::class, 'pengirimanBerkas'])->name('pengiriman-berkas.index');
-    Route::get('/pengiriman-berkas/tambah', [ArsipController::class, 'create'])->name('pengiriman-berkas.create');
-
-    /**
-     * PERBAIKAN DI SINI:
-     * 1. Nama rute diubah menjadi 'cari-permohonan' agar sesuai dengan route() di Blade.
-     * 2. Metode diubah menjadi POST karena di Script AJAX Anda menggunakan type: "POST".
-     */
-    Route::post('/pengiriman-berkas/cari-permohonan', [ArsipController::class, 'cariPermohonan'])->name('cari-permohonan');
-
+    
+    // PERBAIKAN: Menampilkan Form Tambah Pengiriman (Menyelesaikan Error Route Not Defined)
+    Route::get('/pengiriman-berkas/tambah', [ArsipController::class, 'tambahPengiriman'])->name('pengiriman-berkas.create');
+    
+    // Menyimpan data pengiriman baru ke database
     Route::post('/pengiriman-berkas/store', [ArsipController::class, 'store'])->name('pengiriman-berkas.store');
-
-    // --- MODUL PENERIMAAN BERKAS (ALUR SCAN OTOMATIS) ---
+    
+    // Mencari nomor permohonan saat input
+    Route::post('/cari-permohonan', [ArsipController::class, 'cariPermohonan'])->name('cari-permohonan');
+    
+    
+    // --- MODUL PENERIMAAN BERKAS ---
     Route::get('/penerimaan-berkas', [ArsipController::class, 'penerimaanBerkas'])->name('penerimaan-berkas.index');
     
-    // Pencarian data saat komputer melakukan scan
-    Route::post('/penerimaan-berkas/scan-permohonan', [ArsipController::class, 'scanPermohonan'])->name('penerimaan-berkas.scan-permohonan');
+    // Route untuk Scan (Manual Laptop atau API HP)
+    Route::post('/penerimaan-berkas/scan', [ArsipController::class, 'scanPermohonan'])->name('penerimaan-berkas.scan-permohonan');
     
-    // Polling data baru dari HP
-    Route::get('/penerimaan-berkas/check-new', [ArsipController::class, 'checkNewScan'])->name('penerimaan-berkas.check-new');
+    // Cek otomatis scan dari HP (Polling)
+    Route::get('/penerimaan-berkas/check-new-scan', [ArsipController::class, 'checkNewScan'])->name('penerimaan-berkas.check-new-scan');
     
-    // Simpan data scan bulk
+    // Tombol Simpan & Konfirmasi Penerimaan
     Route::post('/penerimaan-berkas/konfirmasi-bulk', [ArsipController::class, 'konfirmasiBulk'])->name('penerimaan-berkas.konfirmasi-bulk');
 
-    // --- MODUL NAVIGASI LAINNYA ---
+
+    // --- MODUL LAINNYA ---
     Route::get('/pencarian-berkas', [ArsipController::class, 'pencarianBerkas'])->name('pencarian-berkas.index');
     Route::get('/pencarian-berkas/search', [ArsipController::class, 'searchAction'])->name('pencarian-berkas.search');
     Route::get('/pinjam-berkas', [ArsipController::class, 'pinjamBerkas'])->name('pinjam-berkas.index');
     
-    // --- MANAJEMEN PENGGUNA ---
+    // Pengaturan User & Logout
     Route::resource('users', UserController::class)->except(['show']); 
-
-    // --- LOGOUT ---
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

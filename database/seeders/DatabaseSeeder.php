@@ -2,31 +2,27 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
-// Tidak perlu use UserSeeder karena berada di namespace yang sama
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
 {
-    // Buat User agar bisa LOGIN kembali
+    // Akun Login
     \App\Models\User::create([
         'name' => 'Admin',
         'email' => 'admin@gmail.com',
-        'password' => bcrypt('password123'),
+        'password' => \Illuminate\Support\Facades\Hash::make('password'),
     ]);
 
-    // Buat Data Contoh agar bisa di-SCAN
+    // Data Permohonan untuk Dites
     \App\Models\Permohonan::create([
         'no_permohonan' => '02345677744',
-        'tanggal_permohonan' => '2025-12-10',
-        'nama' => 'Ahmad Budi Santoso',
-        'tempat_lahir' => 'Jakarta',
-        'tanggal_lahir' => '1990-01-01',
-        'status_berkas' => 'SIAP_DITERIMA'
+        'tanggal_permohonan' => now(),
+        'nama' => 'Contoh Pemohon Real',
+        'status_berkas' => 'TERDAFTAR'
     ]);
 }
 }

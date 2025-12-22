@@ -3,87 +3,69 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Permohonan; // Pastikan model Permohonan di-import
+use App\Models\Permohonan;
 use Carbon\Carbon;
 
 class PenerimaanBerkasController extends Controller
 {
-    /**
-     * Menampilkan halaman utama penerimaan berkas
-     */
-    public function index()
-    {
-        // Ambil data yang siap diterima (tabel kiri)
-        // Sesuaikan 'SIAP_DITERIMA' dengan status di database Anda
-        $list_siap_diterima = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
-
-        return view('arsip.penerimaan_berkas', compact('list_siap_diterima'));
+    public function index() {
+        // Mengambil data yang masih dalam proses pengiriman
+        $list_semua = Permohonan::where('status_berkas', 'DIKIRIM')->get();
+        
+        // Mengambil data yang sudah di-scan/diterima hari ini untuk kolom kanan
+        $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA')
+                            ->whereDate('updated_at', Carbon::today())
+                            ->get();
+    
+        return view('penerimaan.index', compact('list_semua', 'list_sudah_scan'));
     }
 
-    /**
-     * Memproses scan barcode dari komputer (Scanner kabel/manual)
-     */
     public function scanPermohonan(Request $request)
     {
-        $request->validate([
-            'nomor_permohonan' => 'required'
-        ]);
+        $nomor = $request->nomor_permohonan;
+        
+        // Cari data tanpa mengunci status secara ketat agar lebih fleksibel
+        $permohonan = Permohonan::where('no_permohonan', $nomor)->first();
 
-        $permohonan = Permohonan::where('no_permohonan', $request->nomor_permohonan)
-                                ->first();
+        if ($permohonan) {
+            // Ubah status menjadi DITERIMA agar masuk ke tabel sebelah kanan
+            $permohonan->update([
+                'status_berkas' => 'DITERIMA',
+                'updated_at' => Carbon::now()
+            ]);
 
-        if (!$permohonan) {
-            return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+            return response()->json([
+                'success' => true,
+                'data' => $permohonan
+            ]);
         }
 
-        // Jika ditemukan, kembalikan data untuk dipindah ke tabel kanan secara visual
         return response()->json([
-            'success' => true,
-            'data' => $permohonan
-        ]);
+            'success' => false,
+            'message' => 'Nomor permohonan tidak ditemukan.'
+        ], 404);
     }
 
-    /**
-     * KODE KRITIS: Mengecek apakah ada data baru yang masuk dari scan HP
-     * Fungsi ini dipanggil oleh JavaScript setInterval di View
-     */
     public function checkNewScan()
     {
-        // Cari berkas yang statusnya 'DITERIMA_SCAN'
-        // Asumsi: Aplikasi HP Anda mengubah status berkas menjadi 'DITERIMA_SCAN' saat sukses scan
-        $newData = Permohonan::where('status_berkas', 'DITERIMA_SCAN')->get();
-
-        if ($newData->count() > 0) {
-            return response()->json([
-                'hasNewData' => true,
-                'data_list' => $newData
-            ]);
-        }
-
-        return response()->json(['hasNewData' => false]);
-    }
-
-    /**
-     * Menyimpan dan mengonfirmasi semua berkas yang sudah di-scan (Simpan Massal)
-     */
-    public function konfirmasiBulk(Request $request)
-    {
-        $list_nomor = $request->nomor_permohonan_list;
-
-        if (!$list_nomor || count($list_nomor) == 0) {
-            return response()->json(['message' => 'Tidak ada berkas untuk dikonfirmasi.'], 400);
-        }
-
-        // Update status semua nomor yang dipilih menjadi 'DITERIMA'
-        Permohonan::whereIn('no_permohonan', $list_nomor)
-            ->update([
-                'status_berkas' => 'DITERIMA',
-                'tanggal_diterima' => Carbon::now()
-            ]);
+        // Mencari data yang baru saja diupdate menjadi DITERIMA (dari HP atau PC lain)
+        // Kita gunakan pengecekan updated_at dalam 10 detik terakhir
+        $hasNew = Permohonan::where('status_berkas', 'DITERIMA')
+                            ->where('updated_at', '>=', Carbon::now()->subSeconds(10))
+                            ->exists();
 
         return response()->json([
+            'has_new' => $hasNew // Key ini harus 'has_new' sesuai JavaScript di View
+        ]);
+    }
+
+    public function konfirmasiBulk(Request $request)
+    {
+        // Karena scan permohonan sudah mengubah status ke DITERIMA secara otomatis,
+        // Fungsi ini bisa digunakan untuk finalisasi atau pencetakan tanda terima massal.
+        return response()->json([
             'success' => true,
-            'message' => count($list_nomor) . ' Berkas berhasil dikonfirmasi dan disimpan.'
+            'message' => 'Semua berkas telah berhasil diperbarui.'
         ]);
     }
 }
