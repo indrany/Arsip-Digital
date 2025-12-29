@@ -267,56 +267,105 @@
 .btn-tutup-merah:hover {
     background: #D92D20;
 }
+/* Judul Utama (Sama seperti Dashboard/Pinjam Berkas) */
+.v1_230 { 
+    color: #383E49; /* Warna abu-abu gelap */
+    font-family: 'Inter', sans-serif;
+    font-weight: 500; /* Medium */
+    font-size: 15px;
+    display: block;
+    margin-bottom: 4px; /* Jarak antara judul dan subtitle */
+}
+
+/* Subtitle (Sama seperti Dashboard/Pinjam Berkas) */
+.v1_232 { 
+    color: #A2A2A2; /* Warna abu-abu muda */
+    font-family: 'Barlow', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    display: block;
+}
+
+/* Tambahkan ini agar konten tidak menempel ke atas layar */
+.content-wrapper {
+    padding-top: 25px; /* Jarak dari atas layar */
+    padding-left: 40px; /* Jarak dari sidebar */
+}
     </style>
+    <link href="{{ asset('css/main.css') }}" rel="stylesheet" />
 </head>
 <body>
 
 <div class="v1_203 main-container">
-    <div class="v1_204 sidebar">
-        <div class="v1_205 sidebar-header">
-            <span class="sidebar-system-title">Sistem Arsip Digital</span>
-        </div>
-        <nav class="sidebar-nav">
-    <ul>
-        <li class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <a href="{{ route('dashboard') }}">
-                <div class="menu-icon dashboard-icon"></div> Dashboard
-            </a>
-        </li>
-
-        <li class="{{ request()->routeIs('pengiriman-berkas.*') ? 'active' : '' }}">
-            <a href="{{ route('pengiriman-berkas.index') }}">
-                <div class="menu-icon kirim-icon"></div> Pengiriman Berkas
-            </a>
-        </li>
-
-        <li class="{{ request()->is('penerimaan-berkas*') ? 'active' : '' }}">
-            <a href="/penerimaan-berkas"> 
-                <div class="menu-icon terima-icon"></div> Penerimaan Berkas
-            </a>
-        </li>
-
-        <li class="{{ request()->routeIs('pencarian-berkas.*') ? 'active' : '' }}">
-            <a href="{{ route('pencarian-berkas.index') }}">
-                <div class="menu-icon cari-icon"></div> Pencarian Berkas
-            </a>
-        </li>
-
-        <li class="{{ request()->is('pinjam-berkas*') ? 'active' : '' }}">
-            <a href="/pinjam-berkas">
-                <div class="menu-icon pinjam-icon"></div> Pinjam Berkas
-            </a>
-        </li>
-    </ul>
-</nav>
-    </div> 
-
-    <div class="content-wrapper">
-        <div class="header-top">
-            <div class="title-area">
-                <h1 class="v1_230">Pencarian Berkas</h1>
-                <p class="v1_232">Silakan masukkan nomor permohonan untuk mencari berkas.</p>
+    
+    {{-- SIDEBAR --}}
+    <div class="v1_204 sidebar" id="main-sidebar">
+            <div class="v1_205 sidebar-header">
+                <div class="v1_207 sidebar-logo-area">
+                    <div class="v1_208"></div> {{-- Pastikan CSS v1_208 untuk logo sudah ada --}}
+                    <span class="sidebar-system-title">Sistem Arsip Digital</span>
+                </div>
             </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <a href="{{ route('dashboard') }}">
+                            <div class="menu-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                            </div> Dashboard
+                        </a>
+                    </li>
+                    <li class="{{ request()->routeIs('pengiriman-berkas.*') ? 'active' : '' }}">
+                        <a href="{{ route('pengiriman-berkas.index') }}">
+                            <div class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4V20M12 4L18 10M12 4L6 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 17H20C21.1046 17 22 17.8954 22 19V20C22 21.1046 21.1046 22 20 22H4C2.89543 22 2 21.1046 2 20V19C2 17.8954 2.89543 17 4 17H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div> Pengiriman Berkas
+                        </a>
+                    </li>
+                    <li class="{{ request()->is('penerimaan-berkas*') ? 'active' : '' }}">
+                        <a href="/penerimaan-berkas">
+                            <div class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 20V4M12 20L18 14M12 20L6 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 17H20C21.1046 17 22 17.8954 22 19V20C22 21.1046 21.1046 22 20 22H4C2.89543 22 2 21.1046 2 20V19C2 17.8954 2.89543 17 4 17H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div> Penerimaan Berkas
+                        </a>
+                    </li>
+                    <li class="{{ request()->routeIs('pencarian-berkas.*') || request()->is('pencarian-berkas*') ? 'active' : '' }}">
+                        <a href="{{ route('pencarian-berkas.index') }}">
+                            <div class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.9999 21L18.4999 18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div> Pencarian Berkas
+                        </a>
+                    </li>
+                    <li class="{{ request()->is('pinjam-berkas*') ? 'active' : '' }}">
+                        <a href="/pinjam-berkas">
+                            <div class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2V8H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div> Pinjam Berkas
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            {{-- Logout Button --}}
+            <div class="v1_353 logout-bottom"> 
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                    @csrf 
+                </form>
+                <button type="submit" form="logout-form" class="logout-button">
+                    <div class="menu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 17L15 12L10 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div> Log Out
+                </button>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+        <div class="header-top" style="margin-bottom: 24px;">
+        <div class="title-area">
+            <h1 class="v1_230">Pencarian Berkas</h1>
+            <p class="v1_232">Silakan masukkan nomor permohonan untuk mencari berkas.</p>
+        </div>
         </div>
 
         <div class="search-box-container">

@@ -1,5 +1,8 @@
 @extends('layouts.app')
 
+@section('page-title', 'Pengiriman Berkas')
+@section('page-subtitle', 'Silakan input data permohonan untuk pengiriman baru')
+
 @section('content')
 <div class="container-fluid">
     <div class="card shadow-sm border-0">
