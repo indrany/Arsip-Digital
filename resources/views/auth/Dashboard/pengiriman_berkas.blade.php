@@ -3,64 +3,91 @@
 @section('title', 'Tambah Pengiriman Berkas')
 
 @section('content')
-<div class="container-fluid">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+<div class="container-fluid px-4 py-4">
+    <div class="card shadow-sm border-0 rounded-3">
+        {{-- Header Kartu --}}
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
             <h5 class="mb-0 fw-bold text-primary">Tambah Pengiriman Berkas</h5>
-            <div>
-                <a href="{{ route('pengiriman-berkas.index') }}" class="btn btn-outline-secondary btn-sm me-2">
-                    <i class="fas fa-arrow-left"></i> Kembali ke Riwayat
+            <div class="d-flex gap-2">
+                <a href="{{ route('pengiriman-berkas.index') }}" class="btn btn-light btn-sm border">
+                    <i class="fas fa-arrow-left me-1"></i> Kembali ke Riwayat
                 </a>
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-cetak-semua" disabled>
-                    <i class="fas fa-print"></i> Cetak Semua Barcode
+                <button type="button" class="btn btn-light btn-sm border" id="btn-cetak-semua" disabled>
+                    <i class="fas fa-print me-1"></i> Cetak Semua Barcode
                 </button>
             </div>
         </div>
-        <div class="card-body">
+
+        <div class="card-body p-4">
             {{-- Input Area --}}
-            <div class="row g-2 mb-4">
+            <div class="row g-3 mb-4">
                 <div class="col-md-5">
-                    <label class="small text-muted">Nomor Permohonan</label>
+                    <label class="small text-muted mb-1">Nomor Permohonan</label>
                     <input type="text" id="input_no_permohonan" class="form-control" placeholder="Contoh: 0234822811" autofocus>
                 </div>
                 <div class="col-md-5">
-                    <label class="small text-muted">Nama Pemohon</label>
+                    <label class="small text-muted mb-1">Nama Pemohon</label>
                     <input type="text" id="input_nama" class="form-control" placeholder="Nama Pemohon">
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-primary w-100 fw-bold" id="btn-tambah-langsung">
-                        <i class="fas fa-plus"></i> Tambah
+                    <button type="button" class="btn btn-primary w-100 fw-bold" id="btn-tambah-langsung" style="height: 38px;">
+                        <i class="fas fa-plus me-1"></i> Tambah
                     </button>
                 </div>
             </div>
 
-            <hr>
-
-            {{-- Tabel Input Berkas --}}
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle" id="tabel-pengiriman">
-                    <thead class="table-light">
-                        <tr>
-                            <th>No. Permohonan</th>
-                            <th>Nama</th>
-                            <th style="width: 250px;" class="text-center">Barcode</th>
-                            <th class="text-center" style="width: 150px;">Aksi</th>
+            {{-- Tabel Pengiriman sesuai Gambar 2025-12-24 at 08.32.11 --}}
+            <div class="table-responsive border rounded">
+                <table class="table table-bordered align-middle mb-0" id="tabel-pengiriman">
+                    <thead class="bg-light">
+                        <tr class="text-dark">
+                            <th class="fw-bold" style="width: 25%;">No. Permohonan</th>
+                            <th class="fw-bold" style="width: 35%;">Nama</th>
+                            <th class="fw-bold text-center" style="width: 25%;">Barcode</th>
+                            <th class="fw-bold text-center" style="width: 15%;">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {{-- Data yang ditambah secara dinamis --}}
+                    <tbody class="bg-white">
+                        {{-- Data muncul di sini via JavaScript --}}
                     </tbody>
                 </table>
             </div>
 
+            {{-- Tombol Simpan --}}
             <div class="text-end mt-4">
-                <button type="button" class="btn btn-success px-5 fw-bold" id="btn-simpan-pengiriman">
+                <button type="button" class="btn btn-success px-4 py-2 fw-bold" id="btn-simpan-pengiriman" style="background-color: #10b981; border: none;">
                     <i class="fas fa-paper-plane me-2"></i> Simpan Pengiriman
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Styling agar identik dengan Gambar yang diinginkan */
+    .table thead th { border-bottom: 1px solid #dee2e6; font-size: 14px; padding: 12px; }
+    
+    /* Padding ditingkatkan agar teks barcode tidak menempel garis tabel */
+    .table td { font-size: 14px; padding: 15px 15px !important; }
+    
+    .btn-action-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; border: none; color: white; cursor: pointer; }
+    .btn-print-row { background-color: #3498db; }
+    .btn-delete-row { background-color: #e74c3c; }
+    
+    /* Container untuk memastikan barcode dan teks di bawahnya terpusat dan rapi */
+    .barcode-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 70px;
+    }
+    
+    .barcode-container svg { 
+        width: 100%; 
+        height: 45px; 
+    }
+</style>
 @endsection
 
 @push('scripts')
@@ -69,124 +96,87 @@
 $(document).ready(function() {
     let daftarBerkas = [];
 
-    function prosesTambah() {
-        let no = $('#input_no_permohonan').val().trim();
-        let nama = $('#input_nama').val().trim();
-
-        if (no === "" || nama === "") {
-            alert("Harap isi Nomor dan Nama!");
-            return;
-        }
-
-        if (daftarBerkas.includes(no)) {
-            alert("Nomor Permohonan sudah ada di daftar!");
-            return;
-        }
-
-        $.ajax({
-            url: "{{ route('cari-permohonan') }}",
-            method: "POST",
-            data: {
-                no_permohonan: no,
-                nama: nama,
-                _token: "{{ csrf_token() }}"
-            },
-            success: function(response) {
-                if(response.success) {
-                    daftarBerkas.push(no);
-                    $('#btn-cetak-semua').prop('disabled', false);
-
-                    let safeId = no.replace(/[^a-z0-9]/gi, '-');
-                    let html = `
-                        <tr id="row-${safeId}">
-                            <td class="fw-bold text-primary">${no}</td>
-                            <td>${response.data.nama}</td>
-                            <td class="text-center bg-light p-2">
-                                <div id="print-area-${safeId}">
-                                    <svg id="barcode-${safeId}"></svg>
-                                    <div class="barcode-label-text" style="font-size: 11px; font-weight: bold; font-family: Arial;">${no}</div>
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-info btn-sm text-white mb-1" onclick="printBarcode('${safeId}')">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger btn-sm mb-1" onclick="hapusBaris('${no}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>`;
-                    
-                    $('#tabel-pengiriman tbody').append(html);
-                    
-                    JsBarcode("#barcode-" + safeId, no, { 
-                        format: "CODE128", 
-                        width: 2, 
-                        height: 45, 
-                        displayValue: false 
-                    });
-                    
-                    $('#input_no_permohonan').val('').focus();
-                    $('#input_nama').val('');
-                }
-            }
-        });
+    function updateCetakButton() {
+        $('#btn-cetak-semua').prop('disabled', daftarBerkas.length === 0);
     }
 
-    $('#btn-tambah-langsung').on('click', function(e) { e.preventDefault(); prosesTambah(); });
+    function tambahKeTabel(no, nama) {
+        if (daftarBerkas.includes(no)) {
+            alert("Nomor sudah ada di daftar!");
+            return;
+        }
 
-    $('#input_no_permohonan').on('keypress', function(e) { 
-        if (e.which === 13) { e.preventDefault(); $('#input_nama').focus(); } 
+        daftarBerkas.push(no);
+        let safeId = no.replace(/[^a-z0-9]/gi, '-');
+        
+        let html = `
+            <tr id="row-${safeId}">
+                <td class="fw-bold text-primary">${no}</td>
+                <td class="text-dark">${nama}</td>
+                <td class="text-center">
+                    <div id="print-area-${safeId}" class="barcode-container">
+                        <svg id="barcode-${safeId}"></svg>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn-action-icon btn-print-row" title="Cetak Barcode" onclick="printBarcode('${safeId}')">
+                            <i class="fas fa-print"></i>
+                        </button>
+                        <button type="button" class="btn-action-icon btn-delete-row" title="Hapus" onclick="hapusBaris('${no}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        
+        $('#tabel-pengiriman tbody').append(html);
+        
+        // Render Barcode dengan Teks di Bawah
+        JsBarcode("#barcode-" + safeId, no, {
+            format: "CODE128",
+            width: 1.5,
+            height: 40,
+            displayValue: true, // Menampilkan nomor di bawah barcode
+            fontSize: 12,      // Ukuran teks nomor permohonan
+            fontOptions: "bold",
+            textMargin: 2,     // Jarak teks dari garis barcode
+            margin: 5
+        });
+
+        updateCetakButton();
+        $('#input_no_permohonan').val('').focus();
+        $('#input_nama').val('');
+    }
+
+    $('#btn-tambah-langsung').on('click', function() {
+        let no = $('#input_no_permohonan').val().trim();
+        let nama = $('#input_nama').val().trim();
+        if (no && nama) tambahKeTabel(no, nama);
+        else alert("Harap isi nomor dan nama!");
     });
 
-    $('#input_nama').on('keypress', function(e) { 
-        if (e.which === 13) { e.preventDefault(); prosesTambah(); } 
-    });
-
-    window.printBarcode = function(safeId) {
-        let content = document.getElementById('print-area-' + safeId).innerHTML;
-        let printWindow = window.open('', '_blank', 'height=300,width=500');
-        printWindow.document.write('<html><head><title>Print Label</title>');
-        printWindow.document.write('<style>body{margin:0;display:flex;flex-direction:column;justify-content:center;align-items:center;height:90vh;font-family:Arial,sans-serif;}svg{width:220px;height:auto;}.barcode-label-text{font-size:16px!important;margin-top:4px;font-weight:bold;}</style>');
-        printWindow.document.write('</head><body>' + content + '</body></html>');
-        printWindow.document.close();
-        setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
-    };
+    $('#input_no_permohonan').on('keypress', function(e) { if (e.which === 13) $('#input_nama').focus(); });
+    $('#input_nama').on('keypress', function(e) { if (e.which === 13) $('#btn-tambah-langsung').click(); });
 
     window.hapusBaris = function(no) {
         let safeId = no.replace(/[^a-z0-9]/gi, '-');
         $(`#row-${safeId}`).remove();
         daftarBerkas = daftarBerkas.filter(item => item !== no);
-        if(daftarBerkas.length === 0) $('#btn-cetak-semua').prop('disabled', true);
+        updateCetakButton();
     };
 
-    $('#btn-simpan-pengiriman').on('click', function() {
-        const dataList = [];
-        $('#tabel-pengiriman tbody tr').each(function() {
-            dataList.push({
-                no_permohonan: $(this).find('td:eq(0)').text().trim(),
-                nama: $(this).find('td:eq(1)').text().trim()
-            });
-        });
-
-        if (dataList.length === 0) return alert("Tambahkan berkas dulu!");
-
-        $.ajax({
-            url: "{{ route('pengiriman-berkas.store') }}",
-            method: "POST",
-            data: { _token: "{{ csrf_token() }}", nomor_permohonan_list: dataList },
-            success: function(res) {
-                if(res.success) {
-                    alert("Berhasil disimpan!");
-                    window.location.href = "{{ route('pengiriman-berkas.index') }}"; // Kembali ke tabel riwayat
-                }
-            }
-        });
-    });
+    window.printBarcode = function(safeId) {
+        let content = document.getElementById('print-area-' + safeId).innerHTML;
+        let printWindow = window.open('', '_blank', 'height=300,width=500');
+        printWindow.document.write('<html><head><title>Print Label</title><style>body{margin:0;display:flex;flex-direction:column;justify-content:center;align-items:center;height:90vh;}svg{width:220px;height:auto;}</style></head><body>' + content + '</body></html>');
+        printWindow.document.close();
+        setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+    };
 
     $('#btn-cetak-semua').on('click', function() {
         let printWindow = window.open('', '_blank', 'height=600,width=800');
-        printWindow.document.write('<html><head><title>Cetak Semua</title><style>body{font-family:sans-serif;padding:10px;text-align:center;}.item{display:inline-block;width:220px;margin:10px;padding:10px;border:1px dashed #ccc;}svg{width:100%;height:auto;}</style></head><body>');
+        printWindow.document.write('<html><head><title>Cetak Semua</title><style>body{font-family:sans-serif;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px;}.item{border:1px solid #eee;padding:10px;text-align:center;}svg{width:150px;height:auto;}</style></head><body>');
         daftarBerkas.forEach(no => {
             let safeId = no.replace(/[^a-z0-9]/gi, '-');
             let content = document.getElementById('print-area-' + safeId).innerHTML;
@@ -195,6 +185,24 @@ $(document).ready(function() {
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+    });
+
+    $('#btn-simpan-pengiriman').on('click', function() {
+        if (daftarBerkas.length === 0) return alert("Daftar masih kosong!");
+        const dataList = [];
+        $('#tabel-pengiriman tbody tr').each(function() {
+            dataList.push({
+                no_permohonan: $(this).find('td:eq(0)').text().trim(),
+                nama: $(this).find('td:eq(1)').text().trim()
+            });
+        });
+        $.ajax({
+            url: "{{ route('pengiriman-berkas.store') }}",
+            method: "POST",
+            data: { _token: "{{ csrf_token() }}", nomor_permohonan_list: dataList },
+            success: function(res) { if(res.success) window.location.href = "{{ route('pengiriman-berkas.index') }}"; },
+            error: function() { alert("Gagal menyimpan data."); }
+        });
     });
 });
 </script>

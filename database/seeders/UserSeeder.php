@@ -12,20 +12,11 @@ class UserSeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void
-    {
-        // Pengecekan agar data tidak diduplikasi
-        if (User::where('email', 'admin@imigrasi.com')->doesntExist()) {
-            
-            User::create([
-                'name' => 'Admin Utama',
-                'email' => 'admin@imigrasi.com',
-                // Password yang di-hash: 'password'
-                'password' => Hash::make('password'), 
-            ]);
-
-            $this->command->info('✅ Pengguna "Admin Utama" berhasil ditambahkan.');
-        } else {
-            $this->command->warn('⚠️ Pengguna "Admin Utama" sudah ada, lewati penambahan data.');
-        }
-    }
+{
+    \App\Models\User::create([
+        'name' => 'Admin',
+        'email' => 'admin@gmail.com',
+        'password' => bcrypt('password123'), // Ini adalah password login Anda
+    ]);
+}
 }

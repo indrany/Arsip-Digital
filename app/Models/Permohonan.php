@@ -2,30 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Permohonan extends Model
 {
-    use HasFactory;
-
-    // Paksa nama tabel dengan P kapital sesuai file migrasi tadi
-    protected $table = 'Permohonan'; 
-
-    // no_permohonan adalah Primary Key
-    protected $primaryKey = 'no_permohonan';
-    public $incrementing = false; 
-    protected $keyType = 'string';
-
-    public $timestamps = true; 
+    protected $table = 'permohonan';
 
     protected $fillable = [
         'no_permohonan',
         'tanggal_permohonan',
+        'tanggal_terbit',
         'nama',
         'tempat_lahir',
         'tanggal_lahir',
+        'jenis_kelamin',
+        'no_telp',
+        'jenis_permohonan',
+        'jenis_paspor',
+        'tujuan_paspor',
+        'no_paspor',
+        'alur_terakhir',
+        'lokasi_arsip',
         'status_berkas',
-        'tanggal_diterima',
+
+        // 🔥 TAMBAHKAN INI
+        'no_pengirim'
     ];
 }
