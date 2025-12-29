@@ -106,47 +106,51 @@
     </button>
 </div>
 
-{{-- MODAL DETAIL (Langsung di sini agar tidak error) --}}
+{{-- MODAL DETAIL (Disesuaikan dengan Desain Ramping & Padat) --}}
 <div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-            <div class="modal-header bg-light py-2">
-                <h6 class="modal-title fw-bold text-secondary">Detail</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; width: 410px; padding: 15px 25px;">
+            <div class="modal-header border-0 p-0 mb-2">
+                <h6 class="modal-title fw-bold text-secondary" style="font-size: 16px;">Detail</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 12px;"></button>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body p-0">
                 <form id="form-detail-pop">
                     @php
                         $fields = [
-                            'nomor'        => 'Nomor Permohonan',
-                            'tgl-mohon'    => 'Tanggal Permohonan',
-                            'tgl-terbit'   => 'Tanggal Terbit',
-                            'nama'         => 'Nama',
-                            'tempat-lahir' => 'Tempat Lahir',
-                            'tgl-lahir'    => 'Tanggal Lahir',
-                            'jk'           => 'Jenis Kelamin',
-                            'telp'         => 'No Telpon',
-                            'jenis-mohon'  => 'Jenis Permohonan',
-                            'jenis-paspor' => 'Jenis Paspor',
-                            'tujuan'       => 'Tujuan Paspor',
-                            'no-paspor'    => 'No Paspor',
-                            'alur'         => 'Alur Terakhir',
-                            'lokasi'       => 'Lokasi Arsip'
+                            'm_no_permohonan'   => 'Nomor Permohonan',
+                            'm_tgl_permohonan'  => 'Tanggal Permohonan',
+                            'm_tgl_terbit'      => 'Tanggal Terbit',
+                            'm_nama'            => 'Nama',
+                            'm_tempat_lahir'    => 'Tempat Lahir',
+                            'm_tgl_lahir'       => 'Tanggal Lahir',
+                            'm_gender'          => 'Jenis Kelamin',
+                            'm_telp'            => 'No Telpon',
+                            'm_jns_permohonan'  => 'Jenis Permohonan',
+                            'm_jns_paspor'      => 'Jenis Paspor',
+                            'm_tujuan'          => 'Tujuan Paspor',
+                            'm_no_paspor'       => 'No Paspor',
+                            'm_alur'            => 'Alur Terakhir',
+                            'm_lokasi'          => 'Lokasi Arsip'
                         ];
                     @endphp
 
                     @foreach($fields as $id => $label)
-                    <div class="row mb-2 align-items-center">
-                        <label class="col-sm-5 col-form-label-sm text-muted">{{ $label }}</label>
-                        <div class="col-sm-7">
-                            <input type="text" id="det-{{ $id }}" class="form-control form-control-sm bg-white" readonly style="border: 1px solid #dee2e6; border-radius: 6px;">
+                    <div class="info-item-row d-flex align-items-center mb-1" style="margin-bottom: 6px !important;">
+                        <label style="flex: 0 0 42%; font-size: 11px; color: #48505E; font-weight: 500;">{{ $label }}</label>
+                        <div class="input-wrapper" style="flex: 0 0 58%;">
+                            <input type="text" id="{{ $id }}" readonly 
+                                   style="width: 100%; padding: 5px 10px; border: 1px solid #D0D5DD; border-radius: 6px; background: #FFFFFF; font-size: 11px; color: #344054; height: 28px;">
                         </div>
                     </div>
                     @endforeach
                 </form>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-danger btn-sm px-4" data-bs-dismiss="modal" style="background-color: #ff5a5a; border: none; border-radius: 6px;">Tutup</button>
+            <div class="modal-footer border-0 p-0 mt-3 d-flex justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm px-4 fw-medium" data-bs-dismiss="modal" 
+                        style="background: #F97066; border: none; border-radius: 6px; font-size: 12px; padding: 7px 20px;">
+                    Tutup
+                </button>
             </div>
         </div>
     </div>
@@ -159,28 +163,23 @@
 $(document).ready(function() {
     const inputBarcode = $('#input-barcode-permohonan');
     const beepSuccess = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    const beepError = new Audio('https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3'); // Suara Buzzer Peringatan
+    const beepError = new Audio('https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3');
 
-    // 1. PENJAGA KURSOR (Agar kursor selalu standby menerima ketikan dari HP)
     function forceFocus() {
         if (!$('.modal').is(':visible')) {
             inputBarcode.focus();
         }
     }
     
-    // Paksa kursor fokus setiap 1 detik agar scanner HP selalu masuk ke input rahasia
     setInterval(forceFocus, 1000); 
     $(document).on('click', forceFocus);
     $('#modalDetailBerkas').on('hidden.bs.modal', forceFocus);
 
-    // 2. PROSES SCAN & VALIDASI
     inputBarcode.on('keypress', function(e) {
         if (e.which === 13) { 
             e.preventDefault();
             const barcode = $(this).val().trim();
-            
             if (barcode) {
-                console.log("Memproses scan: " + barcode);
                 $.post("{{ route('penerimaan-berkas.scan-permohonan') }}", {
                     _token: "{{ csrf_token() }}",
                     nomor_permohonan: barcode
@@ -188,54 +187,51 @@ $(document).ready(function() {
                 .done(res => {
                     if (res.success) {
                         beepSuccess.play(); 
-                        location.reload(); // Reload agar angka 0 berubah jadi 1
+                        location.reload(); 
                     }
                 })
                 .fail(err => {
-                    // NOTIFIKASI JIKA BARCODE TIDAK PAS
                     beepError.play(); 
                     alert("⚠️ Barcode tidak sesuai, silahkan scan ulang!"); 
-                    
-                    inputBarcode.val(''); // Kosongkan input agar bisa scan ulang
-                    forceFocus();         // Kembalikan kursor ke posisi standby
+                    inputBarcode.val('');
+                    forceFocus();
                 })
                 .always(() => inputBarcode.val(''));
             }
         }
     });
 
-    // 3. POLLING OTOMATIS (Deteksi scan dari HP secara real-time)
     setInterval(function() {
         $.get("{{ route('penerimaan-berkas.check-new-scan') }}", function(res) {
-            // Jika Controller mendeteksi ada data baru berstatus 'DITERIMA'
             if (res.has_new === true) { 
-                console.log("Data baru terdeteksi dari HP, me-reload...");
                 location.reload(); 
             }
         });
-    }, 2000); // Cek ke database setiap 2 detik
+    }, 2000);
 
-    // 4. LOGIKA TOMBOL DETAIL (Melihat data detail permohonan)
+    // LOGIKA TOMBOL DETAIL (Melihat data detail permohonan)
     $(document).on('click', '.btn-detail-native', function() {
         const data = $(this).data('item');
-        $('#det-nomor').val(data.no_permohonan || '-');
-        $('#det-tgl-mohon').val(data.tgl_permohonan || '-');
-        $('#det-tgl-terbit').val(data.tanggal_terbit || '-');
-        $('#det-nama').val(data.nama || '-');
-        $('#det-tempat-lahir').val(data.tempat_lahir || '-');
-        $('#det-tgl-lahir').val(data.tanggal_lahir || '-');
-        $('#det-jk').val(data.jenis_kelamin || '-');
-        $('#det-telp').val(data.no_telp || '-');
-        $('#det-jenis-mohon').val(data.jenis_permohonan || '-');
-        $('#det-jenis-paspor').val(data.jenis_paspor || '-');
-        $('#det-tujuan').val(data.tujuan_paspor || '-');
-        $('#det-no-paspor').val(data.no_paspor || '-');
-        $('#det-alur').val(data.status_berkas || '-');
-        $('#det-lokasi').val(data.lokasi_arsip || '-');
+        
+        // Mapping data (Sesuaikan dengan nama kolom database Anda)
+        $('#m_no_permohonan').val(data.no_permohonan || '-');
+        $('#m_tgl_permohonan').val(data.tanggal_permohonan || '-');
+        $('#m_tgl_terbit').val(data.tanggal_terbit || '-');
+        $('#m_nama').val(data.nama || '-');
+        $('#m_tempat_lahir').val(data.tempat_lahir || '-');
+        $('#m_tgl_lahir').val(data.tanggal_lahir || '-');
+        $('#m_gender').val(data.jenis_kelamin || '-');
+        $('#m_telp').val(data.no_telp || '-');
+        $('#m_jns_permohonan').val(data.jenis_permohonan || '-');
+        $('#m_jns_paspor').val(data.jenis_paspor || '-');
+        $('#m_tujuan').val(data.tujuan_paspor || '-');
+        $('#m_no_paspor').val(data.no_paspor || '-');
+        $('#m_alur').val(data.status_berkas || '-');
+        $('#m_lokasi').val(data.lokasi_arsip || '-');
+        
         $('#modalDetailBerkas').modal('show');
     });
 
-    // 5. AKSI TOMBOL SIMPAN & KONFIRMASI (Mereset angka ke 0)
     $(document).on('click', '#btn-simpan-penerimaan', function() {
         if(!confirm("Simpan sesi penerimaan ini dan mulai sesi baru?")) return;
 
@@ -246,7 +242,7 @@ $(document).ready(function() {
             success: function(res) {
                 if(res.success) {
                     alert("Status berhasil diperbarui menjadi DITERIMA OLEH ARSIP");
-                    window.location.reload(); // Angka kembali jadi 0 Berkas
+                    window.location.reload();
                 }
             },
             error: function(xhr) {

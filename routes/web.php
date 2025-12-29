@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ArsipController; 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PinjamBerkasController;
 
 // 1. Rute Default
 Route::get('/', function () {
@@ -25,17 +26,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [ArsipController::class, 'dashboard'])->name('dashboard');
     
     // --- MODUL PENGIRIMAN BERKAS ---
-    // Menampilkan Tabel Riwayat Pengiriman
     Route::get('/pengiriman-berkas', [ArsipController::class, 'pengirimanBerkas'])->name('pengiriman-berkas.index');
-    
-    // PERBAIKAN: Menampilkan Form Tambah Pengiriman (Menyelesaikan Error Route Not Defined)
     Route::get('/pengiriman-berkas/tambah', [ArsipController::class, 'tambahPengiriman'])->name('pengiriman-berkas.create');
-    
-    // Menyimpan data pengiriman baru ke database
     Route::post('/pengiriman-berkas/store', [ArsipController::class, 'store'])->name('pengiriman-berkas.store');
-    
-    // Mencari nomor permohonan saat input
-    Route::post('/cari-permohonan', [ArsipController::class, 'cariPermohonan'])->name('cari-permohonan');
+
+    Route::get(
+        '/arsip/list-berkas/{no_pengirim}',
+        [ArsipController::class, 'listBerkas']
+    )->name('arsip.list-berkas');
+// PERBAIKAN: Ubah ke GET agar sinkron dengan AJAX pencarian
+Route::get('/cari-permohonan', [ArsipController::class, 'cariPermohonan'])->name('cari-permohonan');
     
     
     // --- MODUL PENERIMAAN BERKAS ---
@@ -50,12 +50,27 @@ Route::middleware('auth')->group(function () {
     // Tombol Simpan & Konfirmasi Penerimaan
     Route::post('/penerimaan-berkas/konfirmasi-bulk', [ArsipController::class, 'konfirmasiBulk'])->name('penerimaan-berkas.konfirmasi-bulk');
 
-
-    // --- MODUL LAINNYA ---
+    // Halaman utama pencarian (Form Kosong)
     Route::get('/pencarian-berkas', [ArsipController::class, 'pencarianBerkas'])->name('pencarian-berkas.index');
+
+    // Proses pencarian (Hasil Cari) - Tambahkan rute ini
     Route::get('/pencarian-berkas/search', [ArsipController::class, 'searchAction'])->name('pencarian-berkas.search');
-    Route::get('/pinjam-berkas', [ArsipController::class, 'pinjamBerkas'])->name('pinjam-berkas.index');
     
+    Route::middleware('auth')->group(function () {
+        // Tampilan Utama
+        Route::get('/pinjam-berkas', [PinjamBerkasController::class, 'index'])->name('pinjam-berkas.index');
+    
+        // Simpan Data Baru
+        Route::post('/pinjam-berkas/store', [PinjamBerkasController::class, 'store'])->name('pinjam-berkas.store');
+    
+        // --- TAMBAHKAN BARIS INI (Update Divisi via AJAX) ---
+        Route::post('/pinjam-berkas/update-divisi/{id}', [PinjamBerkasController::class, 'updateDivisi'])->name('pinjam-berkas.update-divisi');
+    
+        // Aksi Tombol Status
+        Route::post('/pinjam-berkas/approve/{id}', [PinjamBerkasController::class, 'approve'])->name('pinjam-berkas.approve');
+        Route::post('/pinjam-berkas/reject/{id}', [PinjamBerkasController::class, 'reject'])->name('pinjam-berkas.reject');
+        Route::post('/pinjam-berkas/complete/{id}', [PinjamBerkasController::class, 'complete'])->name('pinjam-berkas.complete');
+    });
     // Pengaturan User & Logout
     Route::resource('users', UserController::class)->except(['show']); 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

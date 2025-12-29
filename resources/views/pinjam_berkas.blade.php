@@ -12,22 +12,27 @@
             <h2 class="table-title-custom">Data Berkas yang dipinjam</h2>
             
             <div class="table-actions-custom" id="filterArea">
+                {{-- TOMBOL FILTER --}}
                 <button type="button" class="btn-filter-custom" onclick="toggleFilter()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                    </svg>
                     Filters
                 </button>
 
-                <div id="filterDropdown" class="filter-dropdown-custom">
-                <form onsubmit="applyFilter(); return false;">
+                {{-- DROPDOWN FILTER MELAYANG --}}
+                <div id="filterDropdown" class="filter-dropdown-custom shadow-lg">
+                    <form action="{{ route('pinjam-berkas.index') }}" method="GET">
                         <div class="filter-group-custom">
                             <label>Dari Tanggal</label>
-                            <input type="date" name="from">
+                            <input type="date" name="from" value="{{ request('from') }}">
                         </div>
                         <div class="filter-group-custom">
                             <label>Sampai Tanggal</label>
-                            <input type="date" name="to">
+                            <input type="date" name="to" value="{{ request('to') }}">
                         </div>
-                        <button type="submit" class="btn-submit-filter">Terapkan</button>
+                        <button type="submit" class="btn-submit-filter">Terapkan Filter</button>
+                        <a href="{{ route('pinjam-berkas.index') }}" class="btn-reset-filter">Reset</a>
                     </form>
                 </div>
             </div>
@@ -40,385 +45,199 @@
                         <th>No. Permohonan</th>
                         <th>Tanggal Permohonan</th>
                         <th>Nama Pemohon</th>
-                        <th>Tempat Lahir</th>
-                        <th>Tanggal Lahir</th>
-                        <th>Nama Peminjam</th>
-                        <th>Aksi</th>
+                        <th style="width: 200px;">Divisi Peminjam</th>
+                        <th>Tanggal Pinjam</th>
+                        <th>Tanggal Kembali</th>
+                        <th class="text-center">Aksi</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
-    <tr>
-        <td>023445677744</td>
-        <td>08-12-2025</td>
-        <td>Ahmad Budianto</td>
-        <td>Surabaya</td>
-        <td>05-06-1985</td>
-        <td>Nando</td>
-        <td>
-    <div class="aksi-wrapper" style="display:flex; gap:5px; align-items:center;">
-    <button onclick="setujui(this)" class="btn-check-custom">
-    ✓
-    </button>
-    <button onclick="tolak(this)"
-    style="width:28px;height:28px;background:#FF383C;color:white;border:none;border-radius:4px;">
-    ✕
-    </button>
-
-        <button 
-            type="button"
-            style="background:#629FF4;color:white;border:none;padding:0 10px;border-radius:4px;font-size:11px;height:28px;">
-            Detail
-        </button>
-    </div>
-</td>
-
-<td>
-    <span class="badge-custom bg-pengajuan">Pengajuan</span>
-</td>
-    </tr>
-
-</tbody>
-<style>
-    /* Styling khusus agar tidak bentrok dengan layout utama */
-    .card-custom {
-        background: white;
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        border: none;
-        margin-top: 10px;
-    }
-
-    .table-header-custom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .table-title-custom {
-        font-size: 18px;
-        font-weight: 600;
-        color: #383E49;
-        margin: 0;
-    }
-
-    .table-actions-custom { position: relative; }
-    
-    .btn-filter-custom {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: white;
-        border: 1px solid #D0D5DD;
-        padding: 8px 16px;
-        border-radius: 8px;
-        color: #5D6679;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .filter-dropdown-custom {
-        display: none;
-        position: absolute;
-        top: 45px;
-        right: 0;
-        background: white;
-        border: 1px solid #D0D5DD;
-        border-radius: 8px;
-        padding: 16px;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        z-index: 100;
-        width: 260px;
-    }
-    .filter-dropdown-custom.show { display: block; }
-
-    .table-custom {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }
-
-    .table-custom th {
-        text-align: left;
-        padding: 12px;
-        border-bottom: 2px solid #F0F1F3;
-        color: #171C26;
-        font-weight: 600;
-    }
-
-    .table-custom td {
-        padding: 12px;
-        border-bottom: 1px solid #F0F1F3;
-        color: #48505E;
-        vertical-align: middle;
-    }
-
-    .badge-custom {
-        padding: 5px 12px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-        color: white;
-    }
-    .bg-pengajuan { background-color: #FFCC00; color: #fff; }
-    .bg-disetujui { background-color: #34C759; }
-    .bg-ditolak { background-color: #FF383C; }
-    .bg-selesai { background-color: #0088FF; }
-
-    .action-group-custom { display: flex; gap: 6px; }
-    
-    .btn-icon-custom {
-        width: 26px;
-        height: 26px;
-        border-radius: 4px;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        cursor: pointer;
-    }
-    .btn-check { 
-        background-color: #34C759; 
-    }
-    .btn-cross { 
-        background-color: #FF383C; 
-    }
-    
-    .btn-detail-small-custom {
-        background-color: #629FF4;
-        color: white;
-        border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 11px;
-        cursor: pointer;
-    }
-
-    .filter-group-custom { margin-bottom: 12px; }
-    .filter-group-custom label { display: block; font-size: 12px; margin-bottom: 5px; color: #344054; }
-    .filter-group-custom input { width: 100%; padding: 8px; border: 1px solid #D0D5DD; border-radius: 6px; box-sizing: border-box; }
-    .btn-submit-filter { width: 100%; background: #1366D9; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
-
-    .btn-icon-custom.btn-check { 
-        background-color: #34C759 !important; /* Hijau Centang */
-        color: white !important;
-    }
-
-    .btn-icon-custom.btn-cross { 
-        background-color: #FF383C !important; /* Merah Silang */
-        color: white !important;
-    }
-
-    /* Tambahan agar saat di-hover warna tidak hilang */
-    .btn-icon-custom:hover {
-        opacity: 0.8;
-    }
-    .popup-progress {
-    width: 100%;
-    height: 4px;
-    background: #eee;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 16px;
-}
-
-.popup-progress-bar {
-    height: 100%;
-    width: 100%;
-    background: #34C759;
-    animation: progressRun 2s linear forwards;
-}
-
-@keyframes progressRun {
-    from { width: 100%; }
-    to   { width: 0%; }
-}
-.btn-check-custom {
-    width: 28px;
-    height: 28px;
-    background: #34C759;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.btn-selesai {
-    background-color: #0D6EFD; /* biru tua */
-    color: white;
-    border: none;
-    padding: 0 12px;
-    height: 28px;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
-}
-
-</style>
-    
-<script>
-function showPopup(type, message) {
-    const overlay = document.getElementById('popupOverlay');
-    const icon = document.getElementById('popupIcon');
-    const title = document.getElementById('popupTitle');
-    const text = document.getElementById('popupText');
-    const progress = document.querySelector('.popup-progress-bar');
-
-    if (type === 'success') {
-        icon.innerHTML = '✓';
-        icon.style.background = '#34C759';
-        title.innerText = 'SUCCESS';
-        title.style.color = '#34C759';
-        text.innerText = message;
-        progress.style.background = '#34C759';
-    } else {
-        icon.innerHTML = '✕';
-        icon.style.background = '#FF383C';
-        title.innerText = 'DITOLAK';
-        title.style.color = '#FF383C';
-        text.innerText = message;
-        progress.style.background = '#FF383C';
-    }
-
-    // reset animasi progress
-    progress.style.animation = 'none';
-    progress.offsetHeight;
-    progress.style.animation = 'progressRun 2s linear forwards';
-
-    overlay.style.display = 'flex';
-
-    setTimeout(() => {
-        overlay.style.display = 'none';
-    }, 2000);
-}
-
-function setujui(btn) {
-    const row = btn.closest('tr');
-    const status = row.querySelector('.badge-custom');
-    const aksiWrapper = row.querySelector('.aksi-wrapper');
-
-    // Status jadi disetujui
-    status.innerText = 'Disetujui';
-    status.className = 'badge-custom bg-disetujui';
-
-    // Aksi diganti tombol "Selesai"
-    aksiWrapper.innerHTML = `
-        <button onclick="selesai(this)" class="btn-selesai">
-            Selesai
-        </button>
-
-        <button 
-            type="button"
-            style="background:#629FF4;color:white;border:none;padding:0 10px;border-radius:4px;font-size:11px;height:28px;">
-            Detail
-        </button>
-    `;
-
-    showPopup('success', 'Berkas berhasil dipinjam');
-}
-
-function tolak(btn) {
-    const row = btn.closest('tr');
-    const status = row.querySelector('.badge-custom');
-    const aksiWrapper = row.querySelector('.aksi-wrapper');
-
-    status.innerText = 'Ditolak';
-    status.className = 'badge-custom bg-ditolak';
-
-    aksiWrapper.innerHTML = `
-        <button 
-            type="button"
-            style="background:#629FF4;color:white;border:none;padding:0 10px;border-radius:4px;font-size:11px;height:28px;">
-            Detail
-        </button>
-    `;
-
-    showPopup('error', 'Berkas ditolak dipinjam');
-}
-
-function selesai(btn) {
-    const row = btn.closest('tr');
-    const status = row.querySelector('.badge-custom');
-    const aksiWrapper = row.querySelector('.aksi-wrapper');
-
-    // Status jadi selesai
-    status.innerText = 'Selesai';
-    status.className = 'badge-custom bg-selesai';
-
-    // Aksi tinggal detail
-    aksiWrapper.innerHTML = `
-        <button 
-            type="button"
-            style="background:#629FF4;color:white;border:none;padding:0 10px;border-radius:4px;font-size:11px;height:28px;">
-            Detail
-        </button>
-    `;
-
-    showPopup('success', 'Berkas telah dikembalikan');
-}
-
-function toggleFilter() {
-    document.getElementById('filterDropdown').classList.toggle('show');
-}
-
-function applyFilter() {
-    const from = document.querySelector('input[name="from"]').value;
-    const to   = document.querySelector('input[name="to"]').value;
-
-    const rows = document.querySelectorAll('.table-custom tbody tr');
-
-    rows.forEach(row => {
-        // Kolom tanggal permohonan = kolom ke-2
-        const dateText = row.children[1].innerText.trim(); // 08-12-2025
-        const rowDate = convertToDate(dateText);
-
-        let show = true;
-
-        if (from && rowDate < new Date(from)) show = false;
-        if (to && rowDate > new Date(to)) show = false;
-
-        row.style.display = show ? '' : 'none';
-    });
-
-    document.getElementById('filterDropdown').classList.remove('show');
-}
-
-function convertToDate(dateStr) {
-    const [day, month, year] = dateStr.split('-');
-    return new Date(year, month - 1, day);
-}
-</script>
-
-<!-- POPUP MODAL -->
-<div id="popupOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:9999;">
-    <div style="background:white; border-radius:12px; width:360px; padding:30px 20px; text-align:center;">
-        
-        <div id="popupIcon" style="
-            width:72px;
-            height:72px;
-            margin:0 auto 16px;
-            border-radius:50%;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:36px;
-            color:white;
-        ">✓</div>
-
-        <h3 id="popupTitle" style="margin:0; font-size:20px; font-weight:700;">SUCCESS</h3>
-        <p id="popupText" style="margin:10px 0 20px; font-size:14px; color:#555;"></p>
-
-        <div class="popup-progress">
-            <div class="popup-progress-bar"></div>
+                    @forelse($dataPinjam as $item)
+                    <tr>
+                        <td>{{ $item->permohonan->no_permohonan ?? '-' }}</td>
+                        <td>{{ $item->permohonan->tanggal_permohonan ?? '-' }}</td>
+                        <td>{{ $item->permohonan->nama ?? '-' }}</td>
+                        <td>
+                            {{-- SELECT DIVISI SPESIFIK PER BARIS --}}
+                            <select class="form-select-divisi-table" onchange="updateDivisi({{ $item->id }}, this.value)">
+                                <option value="Menunggu Input" {{ $item->nama_peminjam == 'Menunggu Input' ? 'selected' : '' }}>-- Pilih Divisi --</option>
+                                <option value="UMUM" {{ $item->nama_peminjam == 'UMUM' ? 'selected' : '' }}>Bagian Umum</option>
+                                <option value="WASDAK" {{ $item->nama_peminjam == 'WASDAK' ? 'selected' : '' }}>Wasdak</option>
+                                <option value="LANTASKIM" {{ $item->nama_peminjam == 'LANTASKIM' ? 'selected' : '' }}>Lantaskim</option>
+                                <option value="INTELDAKIM" {{ $item->nama_peminjam == 'INTELDAKIM' ? 'selected' : '' }}>Inteldakim</option>
+                                <option value="TIKIM" {{ $item->nama_peminjam == 'TIKIM' ? 'selected' : '' }}>Tikim</option>
+                            </select>
+                        </td>
+                        <td><span class="text-muted small">{{ $item->tgl_pinjam }}</span></td>
+                        <td><span class="text-muted small">{{ $item->tgl_kembali ?? '-' }}</span></td>
+                        <td>
+                            <div class="aksi-wrapper" style="display:flex; gap:5px; align-items:center; justify-content:center;">
+                                @if($item->status == 'Pengajuan')
+                                    <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" class="btn-check-custom" title="Setujui">✓</button>
+                                    </form>
+                                    <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" class="btn-reject-custom" title="Tolak">✕</button>
+                                    </form>
+                                @elseif($item->status == 'Disetujui')
+                                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" style="margin:0;">
+                                        @csrf
+                                        <button type="submit" class="btn-selesai">Selesai</button>
+                                    </form>
+                                @endif
+                                {{-- TOMBOL DETAIL MENGIRIM DATA LENGKAP KE MODAL --}}
+                                <button type="button" onclick="showDetail({{ json_encode($item->permohonan) }})" class="btn-detail-blue">Detail</button>
+                            </div>
+                        </td>
+                        <td>
+                            @php
+                                $statusClass = [
+                                    'Pengajuan' => 'bg-pengajuan',
+                                    'Disetujui' => 'bg-disetujui',
+                                    'Ditolak'   => 'bg-ditolak',
+                                    'Selesai'   => 'bg-selesai'
+                                ][$item->status] ?? 'bg-secondary';
+                            @endphp
+                            <span class="badge-custom {{ $statusClass }}">{{ $item->status }}</span>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">Data tidak ditemukan.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
-        </button>
+
+{{-- MODAL DETAIL (Disesuaikan dengan Desain Ramping & Padat) --}}
+<div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; width: 410px; padding: 15px 25px; margin: auto;">
+            <div class="modal-header border-0 p-0 mb-2">
+                <h6 class="modal-title fw-bold text-secondary" style="font-size: 16px;">Detail</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 12px;"></button>
+            </div>
+            <div class="modal-body p-0">
+                <form id="form-detail-pop">
+                    @php
+                        $fields = [
+                            'm_no_permohonan'   => 'Nomor Permohonan',
+                            'm_tgl_permohonan'  => 'Tanggal Permohonan',
+                            'm_tgl_terbit'      => 'Tanggal Terbit',
+                            'm_nama'            => 'Nama',
+                            'm_tempat_lahir'    => 'Tempat Lahir',
+                            'm_tgl_lahir'       => 'Tanggal Lahir',
+                            'm_gender'          => 'Jenis Kelamin',
+                            'm_telp'            => 'No Telpon',
+                            'm_jns_permohonan'  => 'Jenis Permohonan',
+                            'm_jns_paspor'      => 'Jenis Paspor',
+                            'm_tujuan'          => 'Tujuan Paspor',
+                            'm_no_paspor'       => 'No Paspor',
+                            'm_alur'            => 'Alur Terakhir',
+                            'm_lokasi'          => 'Lokasi Arsip'
+                        ];
+                    @endphp
+
+                    @foreach($fields as $id => $label)
+                    <div class="info-item-row d-flex align-items-center mb-1" style="margin-bottom: 6px !important;">
+                        <label style="flex: 0 0 42%; font-size: 11px; color: #48505E; font-weight: 500;">{{ $label }}</label>
+                        <div class="input-wrapper" style="flex: 0 0 58%;">
+                            <input type="text" id="{{ $id }}" readonly 
+                                   style="width: 100%; padding: 5px 10px; border: 1px solid #D0D5DD; border-radius: 6px; background: #FFFFFF; font-size: 11px; color: #344054; height: 28px;">
+                        </div>
+                    </div>
+                    @endforeach
+                </form>
+            </div>
+            <div class="modal-footer border-0 p-0 mt-3 d-flex justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm px-4 fw-medium" data-bs-dismiss="modal" 
+                        style="background: #F97066; border: none; border-radius: 6px; font-size: 12px; padding: 7px 20px;">
+                    Tutup
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
+<style>
+    .card-custom { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .table-header-custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: relative; }
+    .table-title-custom { font-size: 18px; font-weight: 600; color: #383E49; margin: 0; }
+    
+    .table-actions-custom { display: flex; align-items: center; gap: 12px; position: relative !important; }
+
+    /* STYLE SELECT DIVISI DI DALAM TABEL */
+    .form-select-divisi-table {
+        width: 100%; height: 32px; padding: 0 8px; border: 1px solid #D0D5DD; border-radius: 6px;
+        background-color: #ffffff; font-family: 'Inter', sans-serif; font-size: 12px; color: #344054; cursor: pointer;
+    }
+
+    .btn-filter-custom { 
+        display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #D0D5DD; 
+        height: 38px; padding: 0 16px; border-radius: 8px; color: #5D6679; font-size: 14px; cursor: pointer; 
+    }
+
+    .filter-dropdown-custom { 
+        display: none; position: absolute; top: 45px; right: 0; background: white; 
+        border: 1px solid #E4E7EC; border-radius: 12px; padding: 20px; width: 280px; 
+        z-index: 1050; box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    }
+    .filter-dropdown-custom.show { display: block; }
+    
+    .btn-submit-filter { width: 100%; background: #1366D9; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
+
+    .table-custom { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table-custom th { text-align: left; padding: 12px; border-bottom: 2px solid #F0F1F3; font-weight: 600; }
+    .table-custom td { padding: 12px; border-bottom: 1px solid #F0F1F3; vertical-align: middle; }
+    .badge-custom { padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; color: white; }
+    .bg-pengajuan { background-color: #FFCC00; }
+    .bg-disetujui { background-color: #34C759; }
+    .bg-ditolak { background-color: #FF383C; }
+    .bg-selesai { background-color: #0088FF; }
+    .btn-check-custom { width: 28px; height: 28px; background: #34C759; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-reject-custom { width: 28px; height: 28px; background: #FF383C; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-detail-blue { background:#629FF4; color:white; border:none; padding:0 10px; border-radius:4px; font-size:11px; height:28px; cursor:pointer; }
+</style>
+
+<script>
+// AJAX UPDATE DIVISI
+function updateDivisi(id, divisiBaru) {
+    if (divisiBaru === "Menunggu Input") return;
+    fetch(`/pinjam-berkas/update-divisi/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ divisi: divisiBaru })
+    })
+    .then(response => response.json())
+    .then(data => { if(data.success) console.log('Update Berhasil'); });
+}
+
+// MENGISI DATA KE MODAL DETAIL RAMPING
+function showDetail(item) {
+    if(!item) return;
+    document.getElementById('m_no_permohonan').value = item.no_permohonan || '-';
+    document.getElementById('m_tgl_permohonan').value = item.tanggal_permohonan || '-';
+    document.getElementById('m_tgl_terbit').value = item.tanggal_terbit || '-';
+    document.getElementById('m_nama').value = item.nama || '-';
+    document.getElementById('m_tempat_lahir').value = item.tempat_lahir || '-';
+    document.getElementById('m_tgl_lahir').value = item.tanggal_lahir || '-';
+    document.getElementById('m_gender').value = item.jenis_kelamin || '-';
+    document.getElementById('m_telp').value = item.no_telp || '-';
+    document.getElementById('m_jns_permohonan').value = item.jenis_permohonan || '-';
+    document.getElementById('m_jns_paspor').value = item.jenis_paspor || '-';
+    document.getElementById('m_tujuan').value = item.tujuan_paspor || '-';
+    document.getElementById('m_no_paspor').value = item.no_paspor || '-';
+    document.getElementById('m_alur').value = item.status_berkas || '-';
+    document.getElementById('m_lokasi').value = item.lokasi_arsip || '-';
+    new bootstrap.Modal(document.getElementById('modalDetailBerkas')).show();
+}
+
+function toggleFilter() { document.getElementById('filterDropdown').classList.toggle('show'); }
+</script>
 @endsection

@@ -5,22 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PengirimanBerkas extends Model
+class PengirimanBatch extends Model
 {
     use HasFactory;
 
-    // Sesuaikan nama tabel jika berbeda
-    protected $table = 'pengiriman_berkas'; 
+    protected $table = 'pengiriman_batch';
 
-    // Kolom yang boleh diisi (sesuai dengan kolom yang akan Anda insert)
     protected $fillable = [
-        'no_pengiriman', 
-        'tanggal_pengiriman', 
-        'jumlah_berkas', 
-        'user_id',
+        'no_pengirim',
+        'tgl_pengirim',
+        'tanggal_diterima',
+        'jumlah_berkas',
         'status'
-        // ... kolom lain yang relevan ...
     ];
-
-    // Jika Anda mencatat detail berkas, Anda mungkin butuh relasi 'hasMany' ke tabel detail
 }
