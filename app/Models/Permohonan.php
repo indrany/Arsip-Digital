@@ -8,24 +8,23 @@ class Permohonan extends Model
 {
     protected $table = 'permohonan';
 
+    // WAJIB mendaftarkan kolom baru di sini agar tidak ditolak sistem
     protected $fillable = [
-        'no_permohonan',
-        'tanggal_permohonan',
+        'no_permohonan', 
+        'no_pengirim', 
+        'tanggal_permohonan', 
         'tanggal_terbit',
-        'nama',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'jenis_kelamin',
-        'no_telp',
-        'jenis_permohonan',
-        'jenis_paspor',
-        'tujuan_paspor',
-        'no_paspor',
-        'alur_terakhir',
-        'lokasi_arsip',
+        'nama', 
+        'tempat_lahir',    // Ditambahkan
+        'tanggal_lahir',   // Ditambahkan
+        'jenis_kelamin',   // Ditambahkan
+        'no_telp',         // Ditambahkan
+        'jenis_permohonan', 
+        'jenis_paspor', 
+        'tujuan_paspor', 
+        'no_paspor',       // Ditambahkan
+        'alur_terakhir', 
         'status_berkas',
-
-        // 🔥 TAMBAHKAN INI
-        'no_pengirim'
+        'lokasi_arsip'     // Ditambahkan
     ];
 }
