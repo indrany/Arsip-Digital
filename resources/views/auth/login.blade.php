@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 
     <title>Sistem Arsip Imigrasi - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
     <div class="login-container">
@@ -35,6 +36,11 @@
             </div>
 
             <!-- FORM LOGIN -->
+            @if (session('success'))
+                <div style="background: #dcfce7; color: #15803d; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: center; border: 1px solid #bbf7d0;">
+                    {{ session('success') }}
+                </div>
+            @endif
             <form action="{{ route('login.post') }}" method="POST" class="login-form">
                 @csrf
 
@@ -50,20 +56,40 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Password</label>
+                <label for="password">Password</label>
+                <div style="position: relative; display: flex; align-items: center;">
                     <input 
-                        type="password" 
-                        id="password" 
-                        name="password"
-                        placeholder="••••••••" 
-                        required
-                    >
+                        type="password" id="password" name="password" placeholder="••••••••" required style="padding-right: 40px; width: 100%;">
+                    <i class="fa-regular fa-eye" 
+                    id="togglePassword" onclick="togglePassword('password', this)"
+                    style="position: absolute; right: 15px; cursor: pointer; color: #667085;">
+                    </i>
+                </div>
                 </div>
 
                 <button type="submit" class="btn-primary">Masuk</button>
             </form>
+            <div class="text-center mt-3">
+                <p class="small text-muted" style="font-size: 14px;">
+                    Belum punya akun? <a href="{{ route('register') }}" class="text-primary fw-bold">Daftar di sini</a></p>
+            </div>
         </div>
 
     </div>
+    <script>
+    function togglePassword(inputId, icon) {
+        const passwordInput = document.getElementById(inputId);
+        
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            icon.classList.remove("fa-eye");
+            icon.classList.add("fa-eye-slash");
+        } else {
+            passwordInput.type = "password";
+            icon.classList.remove("fa-eye-slash");
+            icon.classList.add("fa-eye");
+        }
+    }
+</script>
 </body>
 </html>

@@ -216,7 +216,7 @@
         cursor: pointer;
         font-size: 13px;
     }
-    /* Update CSS Modal agar Sejajar */
+    
 .info-item-row {
     display: flex;
     align-items: center;
@@ -257,7 +257,7 @@
     background: #F04438;
     color: white;
     border: none;
-    padding: 8px 24px;
+    padding: 8px 24px; 
     border-radius: 6px;
     cursor: pointer;
     font-weight: 500;

@@ -130,28 +130,23 @@ class ArsipController extends Controller
     }
 
     public function scanPermohonan(Request $request)
-    {
-        $permohonan = Permohonan::where('no_permohonan', $request->nomor_permohonan)->first();
+{
+    $permohonan = Permohonan::where('no_permohonan', $request->nomor_permohonan)->first();
 
-        if (!$permohonan) {
-            return response()->json(['success' => false], 404);
-        }
-
-        $permohonan->update([
-            'status_berkas' => 'DITERIMA',
-            'updated_at' => now()
-        ]);
-
-        // 🔥 MASUK KE PINJAM BERKAS
-        PinjamBerkas::create([
-            'permohonan_id' => $permohonan->id,
-            'nama_peminjam' => 'Menunggu Input',
-            'tgl_pinjam'    => now()->format('Y-m-d'), // KUNCI
-            'status'        => 'Pengajuan'
-        ]);
-
-        return response()->json(['success' => true]);
+    if (!$permohonan) {
+        return response()->json(['success' => false], 404);
     }
+
+    // 1. Berhenti di sini (Hanya update status berkas)
+    $permohonan->update([
+        'status_berkas' => 'DITERIMA',
+        'updated_at' => now()
+    ]);
+
+    // 2. BAGIAN PinjamBerkas::create SUDAH DIHAPUS 
+    // Jadi data TIDAK AKAN masuk ke tabel pinjam_berkas secara otomatis
+    return response()->json(['success' => true]);
+}
 
     public function konfirmasiBulk()
     {
@@ -180,8 +175,6 @@ class ArsipController extends Controller
             return response()->json(['success' => false], 500);
         }
     }
-
-    
     // PENCARIAN BERKAS
     
     public function pencarianBerkas()

@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Permohonan extends Model
 {
-    protected $table = 'permohonan';
+    use HasFactory;
+
+    protected $table = 'permohonan'; // Kembali ke tabel awal
 
     protected $fillable = [
         'no_permohonan',
@@ -21,11 +24,8 @@ class Permohonan extends Model
         'jenis_paspor',
         'tujuan_paspor',
         'no_paspor',
-        'alur_terakhir',
-        'lokasi_arsip',
         'status_berkas',
-
-        // 🔥 TAMBAHKAN INI
+        'lokasi_arsip',
         'no_pengirim'
     ];
 }
