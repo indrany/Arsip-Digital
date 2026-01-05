@@ -7,7 +7,10 @@
     <div class="card shadow-sm border-0 rounded-3">
         {{-- Header Kartu --}}
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-            <h5 class="mb-0 fw-bold text-primary">Tambah Pengiriman Berkas</h5>
+            <div>
+                <h5 class="mb-0 fw-bold text-primary">Tambah Pengiriman Berkas</h5>
+                <small class="text-muted">Pengirim: <strong>{{ Auth::user()->name }}</strong> ({{ Auth::user()->unit_kerja ?? 'Kanim' }})</small>
+            </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('pengiriman-berkas.index') }}" class="btn btn-light btn-sm border">
                     <i class="fas fa-arrow-left me-1"></i> Kembali ke Riwayat
@@ -23,7 +26,7 @@
             <div class="row g-3 mb-4">
                 <div class="col-md-5">
                     <label class="small text-muted mb-1">Nomor Permohonan</label>
-                    <input type="text" id="input_no_permohonan" class="form-control" placeholder="Contoh: 0234822811" autofocus>
+                    <input type="text" id="input_no_permohonan" class="form-control" placeholder="Scan atau Ketik Nomor Permohonan" autofocus>
                 </div>
                 <div class="col-md-5">
                     <label class="small text-muted mb-1">Nama Pemohon</label>
@@ -36,7 +39,7 @@
                 </div>
             </div>
 
-            {{-- Tabel Pengiriman sesuai Gambar 2025-12-24 at 08.32.11 --}}
+            {{-- Tabel Pengiriman --}}
             <div class="table-responsive border rounded">
                 <table class="table table-bordered align-middle mb-0" id="tabel-pengiriman">
                     <thead class="bg-light">
@@ -55,8 +58,8 @@
 
             {{-- Tombol Simpan --}}
             <div class="text-end mt-4">
-                <button type="button" class="btn btn-success px-4 py-2 fw-bold" id="btn-simpan-pengiriman" style="background-color: #10b981; border: none;">
-                    <i class="fas fa-paper-plane me-2"></i> Simpan Pengiriman
+                <button type="button" class="btn btn-success px-5 py-2 fw-bold shadow-sm" id="btn-simpan-pengiriman" style="background-color: #10b981; border: none; border-radius: 8px;">
+                    <i class="fas fa-paper-plane me-2"></i> Kirim ke Arsip
                 </button>
             </div>
         </div>
@@ -64,29 +67,13 @@
 </div>
 
 <style>
-    /* Styling agar identik dengan Gambar yang diinginkan */
     .table thead th { border-bottom: 1px solid #dee2e6; font-size: 14px; padding: 12px; }
-    
-    /* Padding ditingkatkan agar teks barcode tidak menempel garis tabel */
-    .table td { font-size: 14px; padding: 15px 15px !important; }
-    
+    .table td { font-size: 14px; padding: 12px !important; }
     .btn-action-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; border: none; color: white; cursor: pointer; }
     .btn-print-row { background-color: #3498db; }
     .btn-delete-row { background-color: #e74c3c; }
-    
-    /* Container untuk memastikan barcode dan teks di bawahnya terpusat dan rapi */
-    .barcode-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 70px;
-    }
-    
-    .barcode-container svg { 
-        width: 100%; 
-        height: 45px; 
-    }
+    .barcode-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60px; }
+    .barcode-container svg { width: 100%; height: 40px; }
 </style>
 @endsection
 
@@ -132,15 +119,12 @@ $(document).ready(function() {
         
         $('#tabel-pengiriman tbody').append(html);
         
-        // Render Barcode dengan Teks di Bawah
         JsBarcode("#barcode-" + safeId, no, {
             format: "CODE128",
             width: 1.5,
-            height: 40,
-            displayValue: true, // Menampilkan nomor di bawah barcode
-            fontSize: 12,      // Ukuran teks nomor permohonan
-            fontOptions: "bold",
-            textMargin: 2,     // Jarak teks dari garis barcode
+            height: 35,
+            displayValue: true,
+            fontSize: 10,
             margin: 5
         });
 
@@ -169,14 +153,14 @@ $(document).ready(function() {
     window.printBarcode = function(safeId) {
         let content = document.getElementById('print-area-' + safeId).innerHTML;
         let printWindow = window.open('', '_blank', 'height=300,width=500');
-        printWindow.document.write('<html><head><title>Print Label</title><style>body{margin:0;display:flex;flex-direction:column;justify-content:center;align-items:center;height:90vh;}svg{width:220px;height:auto;}</style></head><body>' + content + '</body></html>');
+        printWindow.document.write('<html><head><title>Print Label</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;}svg{width:250px;}</style></head><body>' + content + '</body></html>');
         printWindow.document.close();
         setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
     };
 
     $('#btn-cetak-semua').on('click', function() {
         let printWindow = window.open('', '_blank', 'height=600,width=800');
-        printWindow.document.write('<html><head><title>Cetak Semua</title><style>body{font-family:sans-serif;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px;}.item{border:1px solid #eee;padding:10px;text-align:center;}svg{width:150px;height:auto;}</style></head><body>');
+        printWindow.document.write('<html><head><title>Cetak Semua</title><style>body{font-family:sans-serif;display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:20px;}.item{border:1px solid #ddd;padding:10px;text-align:center;}svg{width:150px;}</style></head><body>');
         daftarBerkas.forEach(no => {
             let safeId = no.replace(/[^a-z0-9]/gi, '-');
             let content = document.getElementById('print-area-' + safeId).innerHTML;
@@ -187,8 +171,12 @@ $(document).ready(function() {
         setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
     });
 
+    // PROSES SIMPAN: Mengirim data ke ArsipController@store
     $('#btn-simpan-pengiriman').on('click', function() {
         if (daftarBerkas.length === 0) return alert("Daftar masih kosong!");
+        
+        if (!confirm("Kirim " + daftarBerkas.length + " berkas ini ke Arsip?")) return;
+
         const dataList = [];
         $('#tabel-pengiriman tbody tr').each(function() {
             dataList.push({
@@ -196,12 +184,23 @@ $(document).ready(function() {
                 nama: $(this).find('td:eq(1)').text().trim()
             });
         });
+
         $.ajax({
             url: "{{ route('pengiriman-berkas.store') }}",
             method: "POST",
-            data: { _token: "{{ csrf_token() }}", nomor_permohonan_list: dataList },
-            success: function(res) { if(res.success) window.location.href = "{{ route('pengiriman-berkas.index') }}"; },
-            error: function() { alert("Gagal menyimpan data."); }
+            data: { 
+                _token: "{{ csrf_token() }}", 
+                nomor_permohonan_list: dataList 
+            },
+            success: function(res) { 
+                if(res.success) {
+                    alert("Berkas berhasil diajukan ke Arsip!");
+                    window.location.href = "{{ route('pengiriman-berkas.index') }}"; 
+                }
+            },
+            error: function(xhr) { 
+                alert("Gagal menyimpan: " + (xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan")); 
+            }
         });
     });
 });

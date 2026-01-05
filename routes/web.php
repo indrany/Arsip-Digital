@@ -24,33 +24,36 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [ArsipController::class, 'dashboard'])->name('dashboard');
     
-    // --- MODUL PENGIRIMAN BERKAS ---
+    // --- MODUL PENGIRIMAN BERKAS (LOKET) ---
     Route::get('/pengiriman-berkas', [ArsipController::class, 'pengirimanBerkas'])->name('pengiriman-berkas.index');
     Route::get('/pengiriman-berkas/tambah', [ArsipController::class, 'tambahPengiriman'])->name('pengiriman-berkas.create');
     Route::post('/pengiriman-berkas/store', [ArsipController::class, 'store'])->name('pengiriman-berkas.store');
 
-    Route::get(
-        '/arsip/list-berkas/{no_pengirim}',
-        [ArsipController::class, 'listBerkas']
-    )->name('arsip.list-berkas');
-    // PERBAIKAN: Ubah ke GET agar sinkron dengan AJAX pencarian
-    Route::get('/cari-permohonan', [ArsipController::class, 'cariPermohonan'])->name('cari-permohonan');
-    // --- MODUL PENERIMAAN BERKAS ---
+    // Mengambil daftar berkas per batch (AJAX Modal)
+    Route::get('/arsip/list-berkas/{no_pengirim}', [ArsipController::class, 'listBerkas'])->name('arsip.list-berkas');
+    
+    // Rute cetak pengantar
+    Route::get('/arsip/cetak-pengantar/{no_pengirim}', [ArsipController::class, 'cetakPengantar'])->name('arsip.cetak-pengantar');
+    
+    
+    // --- MODUL PENERIMAAN BERKAS (ARSIP) ---
     Route::get('/penerimaan-berkas', [ArsipController::class, 'penerimaanBerkas'])->name('penerimaan-berkas.index');
     
-    // Route untuk Scan (Manual Laptop atau API HP)
+    // AJX: Mengambil daftar berkas khusus untuk batch yang dipilih
+    Route::get('/penerimaan-berkas/items/{no_pengirim}', [ArsipController::class, 'getBatchItems'])->name('penerimaan-berkas.get-items');
+    
+    // AJAX: Ambil detail permohonan untuk POP-UP saat scan barcode
+    Route::get('/penerimaan-berkas/get-detail/{nomor}', [ArsipController::class, 'getDetail'])->name('penerimaan-berkas.get-detail');
+    
+    // Proses update status per berkas (setelah konfirmasi pop-up)
     Route::post('/penerimaan-berkas/scan', [ArsipController::class, 'scanPermohonan'])->name('penerimaan-berkas.scan-permohonan');
     
-    // Cek otomatis scan dari HP (Polling)
-    Route::get('/penerimaan-berkas/check-new-scan', [ArsipController::class, 'checkNewScan'])->name('penerimaan-berkas.check-new-scan');
-    
-    // Tombol Simpan & Konfirmasi Penerimaan
+    // Proses simpan permanen seluruh batch
     Route::post('/penerimaan-berkas/konfirmasi-bulk', [ArsipController::class, 'konfirmasiBulk'])->name('penerimaan-berkas.konfirmasi-bulk');
 
-    // Halaman utama pencarian (Form Kosong)
-    Route::get('/pencarian-berkas', [ArsipController::class, 'pencarianBerkas'])->name('pencarian-berkas.index');
 
-    // Proses pencarian (Hasil Cari) - Tambahkan rute ini
+    // --- MODUL PENCARIAN BERKAS ---
+    Route::get('/pencarian-berkas', [ArsipController::class, 'pencarianBerkas'])->name('pencarian-berkas.index');
     Route::get('/pencarian-berkas/search', [ArsipController::class, 'searchAction'])->name('pencarian-berkas.search');
     
     // --- MODUL PINJAM BERKAS (SUDAH DIRAPIKAN) ---

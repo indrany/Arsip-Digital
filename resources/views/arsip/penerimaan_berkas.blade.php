@@ -1,156 +1,143 @@
 @extends('layouts.app') 
 
-@section('title', 'Penerimaan Berkas') 
-@section('page-title', 'Penerimaan Berkas')
-@section('page-subtitle', 'Verifikasi dan penerimaan berkas permohonan satu per satu.')
-
 @section('content')
 
-{{-- Input Scan Barcode (Hidden secara visual tapi tetap aktif) --}}
+{{-- Input Scan Barcode (Tersembunyi secara visual) --}}
 <div style="position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; overflow: hidden; z-index: -1;">
     <input type="text" id="input-barcode-permohonan" autofocus autocomplete="off">
 </div>
 
-<div class="form-container mb-4" style="border: none; padding: 0;">
-    <div class="row align-items-center">
-        <div class="col-md-12 d-flex justify-content-end align-items-center">
-             <div class="barcode-area text-end p-3 rounded bg-light border">
-                 <h5 class="m-0 text-muted">Berkas Menunggu Konfirmasi</h5>
-                 <span id="scan-count" class="h3 fw-bold text-success">{{ count($list_sudah_scan) }} Berkas</span>
-             </div>
+{{-- BAGIAN 1: TABEL RIWAYAT (Antrean Masuk dari Loket/Unit) --}}
+<div id="section-riwayat">
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; font-family: Arial;">
+        <div class="card-header bg-white py-3">
+            <h6 class="m-0 fw-bold text-dark">Daftar Kiriman Berkas Masuk (Antrean)</h6>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0" style="font-size: 13px;">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">No. Pengirim</th>
+                        <th>Asal Unit</th>
+                        <th>Petugas Kirim</th>
+                        <th>Tanggal Kirim</th>
+                        <th>Jumlah Berkas</th>
+                        <th>Status</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($riwayat_batches as $batch)
+                    <tr style="{{ $batch->status == 'DITERIMA OLEH ARSIP' ? 'background-color: #f8f9fa;' : '' }}">
+                        <td class="ps-4 fw-bold text-primary">{{ $batch->no_pengirim }}</td>
+                        {{-- Menampilkan Asal Unit (Kanim/UKK/ULP) --}}
+                        <td><span class="badge bg-info text-dark px-2">{{ $batch->asal_unit ?? 'Kanim' }}</span></td>
+                        {{-- Menampilkan Nama Lengkap Petugas --}}
+                        <td>{{ $batch->petugas_kirim ?? '-' }}</td>
+                        <td>{{ \Carbon\Carbon::parse($batch->tgl_pengirim)->format('d-m-Y') }}</td>
+                        <td>{{ $batch->jumlah_berkas }} Berkas</td>
+                        <td>
+                            <span class="badge rounded-pill {{ $batch->status == 'DITERIMA OLEH ARSIP' ? 'bg-success' : 'bg-warning text-dark' }} px-3">
+                                {{ $batch->status }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            @if($batch->status != 'DITERIMA OLEH ARSIP')
+                                <button class="btn btn-primary btn-sm btn-proses-batch" data-id="{{ $batch->no_pengirim }}" style="border-radius: 8px;">
+                                    <i class="fas fa-barcode me-1"></i> Mulai Terima Berkas
+                                </button>
+                            @else
+                                <span class="text-muted small">Selesai Verifikasi</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="7" class="text-center py-4">Tidak ada kiriman berkas masuk.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<div class="row penerimaan-berkas-container">
-    {{-- KOLOM KIRI (Data Berkas Dikirim) --}}
-    <div class="col-lg-6 mb-4">
-        <div class="form-container" style="min-height: 450px;">
-            <div class="section-title">Data Berkas Dikirim</div>
-            <div class="table-container p-0 border-0 shadow-none">
-                <table id="table-berkas-dikirim" class="custom-table">
+{{-- BAGIAN 2: PROSES SCAN (Muncul setelah klik "Mulai Terima") --}}
+<div id="section-proses-scan" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-sm btn-outline-secondary btn-back-riwayat">
+            <i class="fas fa-arrow-left"></i> Kembali ke Antrean
+        </button>
+        <h5 class="fw-bold m-0" style="font-family: Arial;">Proses Verifikasi Batch: <span id="current-batch-id" class="text-primary">-</span></h5>
+    </div>
+
+    <div class="row">
+        {{-- Tabel Kiri: Daftar yang Harus Diterima --}}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm p-3" style="min-height: 450px; border-radius: 12px;">
+                <h6 class="fw-bold mb-3">1. Berkas Harus Ada (List Kiriman)</h6>
+                <table class="table table-sm" id="table-verifikasi-kiri">
                     <thead>
-                        <tr>
-                            <th>No. Permohonan</th>
+                        <tr class="text-muted" style="font-size: 12px;">
+                            <th>No. Pengirim</th>
                             <th>Nama</th>
-                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="tbody-berkas-dikirim">
-                        @forelse ($list_semua as $item)
-                            <tr data-permohonan-id="{{ $item->no_permohonan }}" 
-                                style="{{ $item->status_berkas == 'DITERIMA' ? 'background-color: #d1fae5;' : '' }}">
-                                <td class="fw-bold {{ $item->status_berkas == 'DITERIMA' ? 'text-success' : '' }}">
-                                    {{ $item->no_permohonan }}
-                                    @if($item->status_berkas == 'DITERIMA')
-                                        <i class="fas fa-check-circle ms-1"></i>
-                                    @endif
-                                </td>
-                                <td>{{ $item->nama }}</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-info text-white btn-detail-native" data-item="{{ json_encode($item) }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr class="empty-row">
-                                <td colspan="3" class="text-center text-muted">Tidak ada berkas.</td>
-                            </tr>
-                        @endforelse
+                    <tbody id="tbody-perlu-scan" style="font-size: 13px;">
+                        {{-- Diisi via AJAX --}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- Tabel Kanan: Berkas Fisik Ditemukan (Hasil Scan) --}}
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm p-3" style="min-height: 450px; border-radius: 12px;">
+                <h6 class="fw-bold mb-3">2. Berkas Fisik Ditemukan (Hasil Scan)</h6>
+                <div class="alert alert-success py-2 px-3 mb-3 d-flex justify-content-between align-items-center" style="border-radius: 8px; border: none;">
+                    <span class="small fw-bold">Total Scan:</span>
+                    <strong id="scan-count-live" class="h5 m-0">0 Berkas</strong>
+                </div>
+                <table class="table table-sm">
+                    <thead>
+                        <tr class="text-muted" style="font-size: 12px;">
+                            <th>No. Permohonan</th>
+                            <th>Nama</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-hasil-scan" style="font-size: 13px;">
+                        {{-- Diisi saat scan berhasil --}}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    {{-- KOLOM KANAN (Berkas Diterima) --}}
-    <div class="col-lg-6 mb-4">
-        <div class="form-container" style="min-height: 450px;">
-            <div class="section-title">Berkas Diterima</div>
-            <div class="table-container p-0 border-0 shadow-none">
-                <table id="table-berkas-diterima" class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>No. Permohonan</th>
-                            <th>Nama</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-berkas-diterima">
-                        @forelse ($list_sudah_scan as $item)
-                            <tr class="animate__animated animate__fadeIn baris-diterima" data-id="{{ $item->no_permohonan }}">
-                                <td class="fw-bold">{{ $item->no_permohonan }}</td>
-                                <td>{{ $item->nama }}</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-info text-white btn-detail-native" data-item="{{ json_encode($item) }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr class="empty-row-kanan">
-                                <td colspan="3" class="text-center text-muted">Gunakan barcode scanner.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    {{-- Tombol Simpan Akhir --}}
+    <div class="text-center mt-4">
+        <button id="btn-simpan-batch" class="btn btn-success px-5 fw-bold shadow-sm" style="border-radius: 50px; padding: 12px;">
+            <i class="fas fa-check-double me-2"></i> Simpan & Konfirmasi Seluruh Berkas
+        </button>
     </div>
 </div>
 
-<div class="form-footer">
-    <button id="btn-simpan-penerimaan" class="action-button primary-action" style="background-color: #10b981;" {{ count($list_sudah_scan) > 0 ? '' : 'disabled' }}>
-        <i class="fas fa-check-circle me-2"></i> Simpan & Konfirmasi Penerimaan (<span id="count-simpan">{{ count($list_sudah_scan) }}</span> Berkas)
-    </button>
-</div>
-
-{{-- MODAL DETAIL (Disesuaikan dengan Desain Ramping & Padat) --}}
-<div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; width: 410px; padding: 15px 25px;">
-            <div class="modal-header border-0 p-0 mb-2">
-                <h6 class="modal-title fw-bold text-secondary" style="font-size: 16px;">Detail</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 12px;"></button>
-            </div>
-            <div class="modal-body p-0">
-                <form id="form-detail-pop">
-                    @php
-                        $fields = [
-                            'm_no_permohonan'   => 'Nomor Permohonan',
-                            'm_tgl_permohonan'  => 'Tanggal Permohonan',
-                            'm_tgl_terbit'      => 'Tanggal Terbit',
-                            'm_nama'            => 'Nama',
-                            'm_tempat_lahir'    => 'Tempat Lahir',
-                            'm_tgl_lahir'       => 'Tanggal Lahir',
-                            'm_gender'          => 'Jenis Kelamin',
-                            'm_telp'            => 'No Telpon',
-                            'm_jns_permohonan'  => 'Jenis Permohonan',
-                            'm_jns_paspor'      => 'Jenis Paspor',
-                            'm_tujuan'          => 'Tujuan Paspor',
-                            'm_no_paspor'       => 'No Paspor',
-                            'm_alur'            => 'Alur Terakhir',
-                            'm_lokasi'          => 'Lokasi Arsip'
-                        ];
-                    @endphp
-
-                    @foreach($fields as $id => $label)
-                    <div class="info-item-row d-flex align-items-center mb-1" style="margin-bottom: 6px !important;">
-                        <label style="flex: 0 0 42%; font-size: 11px; color: #48505E; font-weight: 500;">{{ $label }}</label>
-                        <div class="input-wrapper" style="flex: 0 0 58%;">
-                            <input type="text" id="{{ $id }}" readonly 
-                                   style="width: 100%; padding: 5px 10px; border: 1px solid #D0D5DD; border-radius: 6px; background: #FFFFFF; font-size: 11px; color: #344054; height: 28px;">
-                        </div>
+{{-- POP-UP KONFIRMASI (Setiap kali barcode di-scan) --}}
+<div class="modal fade" id="modalConfirmScan" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-file-invoice text-success" style="font-size: 50px;"></i>
+                </div>
+                <h5 class="fw-bold mb-1" id="pop-nama-pemohon">-</h5>
+                <p class="text-muted mb-4" id="pop-no-permohonan" style="font-size: 14px;">-</p>
+                
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button type="button" class="btn btn-light w-100 fw-bold text-muted" data-bs-dismiss="modal" style="border-radius: 10px;">Batal</button>
                     </div>
-                    @endforeach
-                </form>
-            </div>
-            <div class="modal-footer border-0 p-0 mt-3 d-flex justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm px-4 fw-medium" data-bs-dismiss="modal" 
-                        style="background: #F97066; border: none; border-radius: 6px; font-size: 12px; padding: 7px 20px;">
-                    Tutup
-                </button>
+                    <div class="col-6">
+                        <button type="button" id="btn-fix-terima" class="btn btn-success w-100 fw-bold shadow-sm" style="border-radius: 10px;">TERIMA BERKAS</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -161,94 +148,136 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    $.ajaxSetup({
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    });
+
     const inputBarcode = $('#input-barcode-permohonan');
-    const beepSuccess = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    const beepError = new Audio('https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3');
+    let currentBatch = '';
 
-    function forceFocus() {
-        if (!$('.modal').is(':visible')) {
-            inputBarcode.focus();
-        }
-    }
-    
-    setInterval(forceFocus, 1000); 
-    $(document).on('click', forceFocus);
-    $('#modalDetailBerkas').on('hidden.bs.modal', forceFocus);
+    // 1. PINDAH KE AREA SCAN & LOAD DATA BATCH LENGKAP
+    $('.btn-proses-batch').on('click', function() {
+        currentBatch = $(this).data('id');
+        $('#current-batch-id').text(currentBatch);
+        
+        $('#tbody-hasil-scan').empty();
+        $('#scan-count-live').text('0 Berkas');
+        
+        // Panggil fungsi listBerkas di controller yang sudah menyertakan data lengkap
+        $.get(`/arsip/list-berkas/${currentBatch}`, function(res) {
+            if(res.success) {
+                let html = '';
+                res.data.forEach(item => {
+                    let rowClass = item.status_berkas === 'DITERIMA' || item.status_berkas === 'DITERIMA OLEH ARSIP' ? 'table-success' : '';
+                    let checkIcon = rowClass ? ' <i class="fas fa-check-circle ms-2 text-success"></i>' : '';
+                    
+                    html += `
+                        <tr id="row-${item.no_permohonan}" class="align-middle border-bottom ${rowClass}">
+                            <td class="fw-bold no-pengirim-cell py-3 ps-2">${currentBatch}${checkIcon}</td>
+                            <td>${item.nama}</td>
+                        </tr>
+                    `;
 
+                    // Jika status sudah diterima, masukkan juga ke tabel kanan hasil scan
+                    if(item.status_berkas === 'DITERIMA') {
+                        $('#tbody-hasil-scan').append(`
+                            <tr id="hasil-${item.no_permohonan}" class="border-bottom">
+                                <td class="fw-bold py-3 text-dark">${item.no_permohonan}</td>
+                                <td>${item.nama}</td>
+                            </tr>
+                        `);
+                    }
+                });
+                
+                $('#tbody-perlu-scan').html(html);
+                $('#scan-count-live').text($('#tbody-hasil-scan tr').length + ' Berkas');
+                
+                $('#section-riwayat').hide();
+                $('#section-proses-scan').fadeIn();
+                inputBarcode.val('').focus();
+            }
+        });
+    });
+
+    // 2. LOGIKA SCAN BARCODE
     inputBarcode.on('keypress', function(e) {
-        if (e.which === 13) { 
+        if (e.which === 13) {
             e.preventDefault();
             const barcode = $(this).val().trim();
+            
             if (barcode) {
-                $.post("{{ route('penerimaan-berkas.scan-permohonan') }}", {
-                    _token: "{{ csrf_token() }}",
-                    nomor_permohonan: barcode
-                })
-                .done(res => {
+                $.get(`/penerimaan-berkas/get-detail/${barcode}`, function(res) {
                     if (res.success) {
-                        beepSuccess.play(); 
-                        location.reload(); 
+                        // Pastikan berkas milik batch ini
+                        if ($(`#row-${res.data.no_permohonan}`).length === 0) {
+                            alert("Berkas ditemukan, tetapi bukan milik batch " + currentBatch);
+                            return;
+                        }
+                        $('#pop-nama-pemohon').text(res.data.nama);
+                        $('#pop-no-permohonan').text(res.data.no_permohonan);
+                        $('#modalConfirmScan').modal('show');
                     }
-                })
-                .fail(err => {
-                    beepError.play(); 
-                    alert("⚠️ Barcode tidak sesuai, silahkan scan ulang!"); 
-                    inputBarcode.val('');
-                    forceFocus();
-                })
-                .always(() => inputBarcode.val(''));
+                }).fail(() => alert("Barcode tidak terdaftar!"));
             }
+            $(this).val('');
         }
     });
 
-    setInterval(function() {
-        $.get("{{ route('penerimaan-berkas.check-new-scan') }}", function(res) {
-            if (res.has_new === true) { 
-                location.reload(); 
-            }
-        });
-    }, 2000);
+    // 3. KONFIRMASI TERIMA BERKAS
+    $('#btn-fix-terima').off('click').on('click', function() {
+        const noPermohonan = $('#pop-no-permohonan').text();
+        const nama = $('#pop-nama-pemohon').text();
 
-    // LOGIKA TOMBOL DETAIL (Melihat data detail permohonan)
-    $(document).on('click', '.btn-detail-native', function() {
-        const data = $(this).data('item');
-        
-        // Mapping data (Sesuaikan dengan nama kolom database Anda)
-        $('#m_no_permohonan').val(data.no_permohonan || '-');
-        $('#m_tgl_permohonan').val(data.tanggal_permohonan || '-');
-        $('#m_tgl_terbit').val(data.tanggal_terbit || '-');
-        $('#m_nama').val(data.nama || '-');
-        $('#m_tempat_lahir').val(data.tempat_lahir || '-');
-        $('#m_tgl_lahir').val(data.tanggal_lahir || '-');
-        $('#m_gender').val(data.jenis_kelamin || '-');
-        $('#m_telp').val(data.no_telp || '-');
-        $('#m_jns_permohonan').val(data.jenis_permohonan || '-');
-        $('#m_jns_paspor').val(data.jenis_paspor || '-');
-        $('#m_tujuan').val(data.tujuan_paspor || '-');
-        $('#m_no_paspor').val(data.no_paspor || '-');
-        $('#m_alur').val(data.status_berkas || '-');
-        $('#m_lokasi').val(data.lokasi_arsip || '-');
-        
-        $('#modalDetailBerkas').modal('show');
+        $.post("{{ route('penerimaan-berkas.scan-permohonan') }}", {
+            nomor_permohonan: noPermohonan
+        }, function(res) {
+            $('#modalConfirmScan').modal('hide');
+
+            const barisKiri = $(`#row-${noPermohonan}`);
+            barisKiri.addClass('table-success'); 
+            
+            if (barisKiri.find('.fa-check-circle').length === 0) {
+                barisKiri.find('.no-pengirim-cell').append(' <i class="fas fa-check-circle ms-2 text-success"></i>');
+            }
+
+            if ($(`#hasil-${noPermohonan}`).length === 0) {
+                $('#tbody-hasil-scan').prepend(`
+                    <tr id="hasil-${noPermohonan}" class="border-bottom">
+                        <td class="fw-bold py-3 text-dark">${noPermohonan}</td>
+                        <td>${nama}</td>
+                    </tr>
+                `);
+            }
+
+            $('#scan-count-live').text($('#tbody-hasil-scan tr').length + ' Berkas');
+            inputBarcode.val('').focus();
+        });
     });
 
-    $(document).on('click', '#btn-simpan-penerimaan', function() {
-        if(!confirm("Simpan sesi penerimaan ini dan mulai sesi baru?")) return;
+    // 4. SIMPAN SELURUH BATCH
+    $('#btn-simpan-batch').on('click', function() {
+        const totalScan = $('#tbody-hasil-scan tr').length;
+        if (totalScan === 0) return alert("Belum ada berkas di-scan!");
 
-        $.ajax({
-            url: "{{ route('penerimaan-berkas.konfirmasi-bulk') }}",
-            method: "POST",
-            data: { _token: "{{ csrf_token() }}" },
-            success: function(res) {
-                if(res.success) {
-                    alert("Status berhasil diperbarui menjadi DITERIMA OLEH ARSIP");
-                    window.location.reload();
-                }
-            },
-            error: function(xhr) {
-                alert("Terjadi kesalahan: " + xhr.responseJSON.message);
-            }
-        });
+        if(!confirm(`Konfirmasi penerimaan ${totalScan} berkas untuk batch ini?`)) return;
+        
+        $.post("{{ route('penerimaan-berkas.konfirmasi-bulk') }}", {
+            no_pengirim: currentBatch
+        }).done(function() {
+            alert("Batch Berhasil Diterima.");
+            window.location.reload(); 
+        }).fail(() => alert("Gagal menyimpan konfirmasi batch."));
+    });
+
+    $('.btn-back-riwayat').on('click', () => {
+        $('#section-proses-scan').hide();
+        $('#section-riwayat').fadeIn();
+    });
+
+    $(document).on('click', () => {
+        if (!$('.modal').is(':visible') && $('#section-proses-scan').is(':visible')) {
+            inputBarcode.focus();
+        }
     });
 });
 </script>
