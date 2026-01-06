@@ -8,15 +8,19 @@
     <div class="card-custom">
         <div class="table-header-custom">
             <h2 class="table-title-custom">Data Berkas yang dipinjam</h2>
-            
-            <div class="table-actions-custom" id="filterArea">
-               {{-- Hanya tampilkan tombol jika role adalah admin --}}
-                @if(auth()->user()->role == 'admin')
+
+                <div class="table-actions-custom" id="filterArea">
+                {{-- Revisi: UKK, ULP, LANTASKIM, KANIM, dan ADMIN bisa input pinjaman --}}
+                @php
+                    $roleUser = strtolower(auth()->user()->role);
+                    $unitUser = strtolower(auth()->user()->unit_kerja); // Sesuaikan nama kolom unit di tabel user kamu
+                @endphp
+
+                @if(in_array($roleUser, ['admin', 'kanim', 'ukk', 'ulp', 'lantaskim']))
                     <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam">
                         + Pinjam Berkas
                     </button>
                 @endif
-
                 {{-- TOMBOL FILTER (Tetap muncul untuk semua role agar bisa mencari data) --}}
                 <button type="button" class="btn-filter-custom" onclick="toggleFilter()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -86,54 +90,66 @@
                         <td>{{ $item->tgl_pinjam }}</td>
                         <td>{{ $item->tgl_kembali ?? '-' }}</td>
                         <td>
-                            <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center;">
+                        <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center;">
+                            
+                            {{-- 1. TOMBOL DETAIL: Tetap ada untuk SEMUA ROLE --}}
+                            <button 
+                                type="button" 
+                                onclick="showDetail({{ json_encode($item->permohonan) }})" 
+                                class="btn-detail-blue">
+                                Detail
+                            </button>
+
+                            {{-- 2. TOMBOL AKSI: Hanya muncul jika role adalah admin atau kanim --}}
+                            @if(auth()->user()->role == 'admin' || auth()->user()->role == 'kanim')
+                                
                                 @if($item->status == 'Pengajuan')
+                                    {{-- Tombol Setuju --}}
                                     <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST">
                                         @csrf
-                                        <button class="btn-check-custom">✓</button>
+                                        <button class="btn-check-custom" title="Setujui">✓</button>
                                     </form>
+
+                                    {{-- Tombol Tolak --}}
                                     <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST">
                                         @csrf
-                                        <button class="btn-reject-custom">✕</button>
+                                        <button class="btn-reject-custom" title="Tolak">✕</button>
                                     </form>
+
                                 @elseif($item->status == 'Disetujui')
+                                    {{-- Tombol Selesai --}}
                                     <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST">
                                         @csrf
                                         <button class="btn-selesai">Selesai</button>
                                     </form>
                                 @endif
-                                <button 
-                                    type="button" 
-                                    onclick="showDetail({{ json_encode($item->permohonan) }})" 
-                                    class="btn-detail-blue">
-                                    Detail
-                                </button>
 
+                            @endif
+                        </div>
+                    </td>
+                                            <td>
+                                                @php
+                                                    $statusClass = [
+                                                        'Pengajuan'=>'bg-pengajuan',
+                                                        'Disetujui'=>'bg-disetujui',
+                                                        'Ditolak'=>'bg-ditolak',
+                                                        'Selesai'=>'bg-selesai'
+                                                    ][$item->status] ?? '';
+                                                @endphp
+                                                <span class="badge-custom {{ $statusClass }}">{{ $item->status }}</span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted">Data tidak ditemukan</td>
+                                        </tr>
+                                    @endforelse
+
+                                    </tbody>
+                                </table>
                             </div>
-                        </td>
-                        <td>
-                            @php
-                                $statusClass = [
-                                    'Pengajuan'=>'bg-pengajuan',
-                                    'Disetujui'=>'bg-disetujui',
-                                    'Ditolak'=>'bg-ditolak',
-                                    'Selesai'=>'bg-selesai'
-                                ][$item->status] ?? '';
-                            @endphp
-                            <span class="badge-custom {{ $statusClass }}">{{ $item->status }}</span>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">Data tidak ditemukan</td>
-                    </tr>
-                @endforelse
-
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                        </div>
+                    </div>
 
 {{-- MODAL PINJAM --}}
 <div class="modal fade" id="modalPinjam" tabindex="-1">
