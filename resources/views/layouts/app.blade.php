@@ -59,15 +59,14 @@
                 </li>
 
                 {{-- Penerimaan Berkas --}}
-                <li class="{{ Request::is('penerimaan-berkas*') ? 'active' : '' }}">
-                    <a href="{{ route('penerimaan-berkas.index') }}">
-                        <div class="menu-icon">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 20V4M12 20L18 14M12 20L6 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 17H20C21.1046 17 22 17.8954 22 19V20C22 21.1046 21.1046 22 20 22H4C2.89543 22 2 21.1046 2 20V19C2 17.8954 2.89543 17 4 17H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </div> 
-                        Penerimaan Berkas
+                @if(auth()->user()->role == 'admin' || auth()->user()->role == 'kanim')
+                <li class="nav-item">
+                    <a href="{{ route('penerimaan-berkas') }}" class="nav-link {{ $current_page == 'penerimaan-berkas' ? 'active' : '' }}">
+                        <i class="fas fa-file-import"></i>
+                        <p>Penerimaan Berkas</p>
                     </a>
                 </li>
-
+                @endif
                 {{-- Pencarian Berkas --}}
                 <li class="{{ Request::is('pencarian-berkas*') ? 'active' : '' }}">
                     <a href="{{ route('pencarian-berkas.index') }}">

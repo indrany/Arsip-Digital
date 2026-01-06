@@ -69,24 +69,22 @@ class ArsipController extends Controller
     // 6. HALAMAN PENERIMAAN BERKAS (Tampilan Arsip)
     public function penerimaanBerkas()
     {
-        // 1. Ambil semua batch untuk tabel antrean utama
-        $riwayat_batches = DB::table('pengiriman_batch')->orderBy('created_at', 'desc')->get();
-
-        // 2. Ambil list berkas yang dikirim (tabel kiri)
-        $list_semua = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
-
-        // 3. Ambil list berkas yang sudah di-scan tapi belum dikonfirmasi bulk (tabel kanan)
-        // Perbaikan: Variabel ini dikirim agar tidak error "Undefined variable"
-        $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA')->get();
-
-        return view('arsip.penerimaan_berkas', [
-            'current_page'    => 'penerimaan-berkas',
-            'riwayat_batches' => $riwayat_batches,
-            'list_semua'      => $list_semua,
-            'list_sudah_scan' => $list_sudah_scan 
-        ]);
+    // Proteksi: Jika bukan admin/kanim, arahkan kembali ke dashboard
+    if (auth()->user()->role != 'admin' && auth()->user()->role != 'kanim') {
+        return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman Penerimaan Berkas.');
     }
 
+    $riwayat_batches = DB::table('pengiriman_batch')->orderBy('created_at', 'desc')->get();
+    $list_semua = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
+    $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA')->get();
+
+    return view('arsip.penerimaan_berkas', [
+        'current_page'    => 'penerimaan-berkas',
+        'riwayat_batches' => $riwayat_batches,
+        'list_semua'      => $list_semua,
+        'list_sudah_scan' => $list_sudah_scan 
+    ]);
+    }
     // 7. AJAX: Ambil Item Batch untuk Verifikasi Scan
     public function getBatchItems($no_pengirim)
     {
@@ -151,7 +149,7 @@ class ArsipController extends Controller
         $list = $request->nomor_permohonan_list;
         if (!$list) return response()->json(['success' => false], 400);
     
-        $user = Auth::user(); 
+        $user = Auth::user(); // Mengambil data user yang sedang login
     
         DB::beginTransaction();
         try {
@@ -162,7 +160,8 @@ class ArsipController extends Controller
                 'tgl_pengirim'  => now()->format('Y-m-d'),
                 'jumlah_berkas' => count($list),
                 'status'        => 'Diajukan',
-                'asal_unit'     => $user->unit_kerja ?? 'Kanim', 
+                // LOGIKA DINAMIS: Mengambil dari kolom unit_kerja, jika kosong pakai role
+                'asal_unit'     => $user->unit_kerja ?? $user->role ?? 'KANIM', 
                 'petugas_kirim' => $user->name, 
                 'created_at'    => now(),
                 'updated_at'    => now()
