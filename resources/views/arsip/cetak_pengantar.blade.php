@@ -86,50 +86,51 @@
             text-transform: uppercase;
         }
 
-        /* Styling Row Horizontal ala Detail */
-        .batch-detail-row {
+        /* PERBAIKAN: List Formal pengganti tabel rincian */
+        .batch-info-list {
+            margin: 20px 0 40px 60px;
+            list-style: none;
+        }
+
+        .batch-info-list li {
+            margin-bottom: 8px;
             display: flex;
-            justify-content: space-between;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0 40px 0;
         }
 
-        .detail-item {
-            text-align: center;
-            flex: 1;
+        .label-list {
+            width: 180px;
+            display: inline-block;
         }
 
-        .detail-label {
-            display: block;
-            font-size: 9pt;
-            color: #6c757d;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
+        /* Tanda Tangan Tanpa Underline & Sangat Rapi */
+        .table-ttd {
+        width: 100%;
+        margin-top: 50px;
+        border-collapse: collapse;
+        table-layout: fixed; /* Kunci lebar kolom 50% kiri, 50% kanan */
+    }
 
-        .detail-value {
-            display: block;
-            font-weight: bold;
-            font-size: 11pt;
-            color: #2d9cdb;
-        }
+    .td-ttd {
+        vertical-align: top;
+        text-align: center;
+        font-size: 12pt;
+    }
 
-        .signature-section {
-            margin-top: 50px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-        }
+    .ttd-space {
+        height: 80px; /* Ruang tanda tangan basah */
+    }
 
-        .sig-box {
-            width: 40%;
-            text-align: center;
-            font-size: 12pt;
-        }
+    .nama-ttd {
+        font-weight: bold;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 2px;
+    }
 
+    .nip-label {
+        font-size: 11pt;
+        display: block;
+    }
         .print-control {
             position: fixed;
             bottom: 30px;
@@ -152,8 +153,6 @@
             body { background: white; padding: 0; }
             .paper-container { box-shadow: none; width: 100%; margin: 0; padding: 10mm; }
             .no-print { display: none !important; }
-            .batch-detail-row { border: 1px solid #000; background: transparent !important; -webkit-print-color-adjust: exact; }
-            .detail-value { color: #000 !important; }
         }
     </style>
 </head>
@@ -178,7 +177,6 @@
 
         <div class="doc-title-area">
             <h3 class="doc-title">SURAT PENGANTAR PENGIRIMAN BERKAS</h3>
-            <p style="font-size: 12pt;">NOMOR : {{ $batch->no_pengirim }}</p>
         </div>
         
         <div style="font-size: 12pt; text-align: justify; text-indent: 40px; margin-bottom: 25px;">
@@ -189,40 +187,57 @@
             dengan rincian sebagai berikut:
         </div>
 
-        <div class="batch-detail-row">
-            <div class="detail-item">
-                <span class="detail-label">No Pengirim</span>
-                <span class="detail-value">{{ $batch->no_pengirim }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Tanggal Pengirim</span>
-                <span class="detail-value">{{ \Carbon\Carbon::parse($batch->tgl_pengirim)->format('Y-m-d') }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Tanggal Diterima</span>
-                <span class="detail-value">{{ $batch->tgl_diterima ?? '-' }}</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Status</span>
-                <span class="detail-value">{{ strtoupper(str_replace('_', ' ', $batch->status)) }}</span>
-            </div>
-        </div>
+        <ul class="batch-info-list">
+            <li><span class="label-list">Nomor Pengirim</span>: <b>{{ $batch->no_pengirim }}</b></li>
+            <li><span class="label-list">Tanggal Pengiriman</span>: <b>{{ \Carbon\Carbon::parse($batch->tgl_pengirim)->format('d-m-Y') }}</b></li>
+            <li><span class="label-list">Jumlah Berkas</span>: <b>{{ $batch->jumlah_berkas }} Berkas</b></li>
+            <li><span class="label-list">Asal Unit</span>: <b>{{ $batch->asal_unit ?? 'Kanim' }}</b></li>
+        </ul>
 
-        <p style="font-size: 12pt; margin-bottom: 40px;">Demikian surat pengantar ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+        <p style="font-size: 12pt; margin-bottom: 40px; text-indent: 40px;">Demikian surat pengantar ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
 
-        <div class="signature-section">
-            <div class="sig-box">
-                <p>PIHAK PERTAMA,</p>
-                <p>Petugas Pengirim</p>
-                <div style="height: 80px;"></div>
-                <p><b>( {{ $batch->petugas_kirim ?? Auth::user()->name }} )</b></p>
-            </div>
-            <div class="sig-box">
-                <p>PIHAK KEDUA,</p>
-                <p>Petugas Arsip Penerima</p>
-                <div style="height: 80px;"></div>
-                <p>( ........................................ )</p>
-            </div>
+        <table style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 50px; font-family: Arial, sans-serif;">
+            <tr>
+                <td style="width: 50%;"></td>
+                <td style="text-align: center; vertical-align: top; width: 50%; padding-bottom: 20px;">
+                    Surabaya, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}
+                </td>
+            </tr>
+        
+            <tr>
+                <td style="text-align: center; vertical-align: top;">
+                    <p>Pihak Pertama,</p>
+                    <p>Petugas Pengirim</p>
+                </td>
+                <td style="text-align: center; vertical-align: top;">
+                    <p>Pihak Kedua,</p>
+                    <p>Petugas Penerima</p>
+                </td>
+            </tr>
+        
+            <tr>
+                <td style="height: 80px;"></td>
+                <td style="height: 80px;"></td>
+            </tr>
+        
+            <tr>
+                <td style="text-align: center; font-weight: bold; font-size: 12pt;">
+                    ( {{ strtoupper(Auth::user()->name) }} )
+                </td>
+                <td style="text-align: center; font-size: 12pt;">
+                    ( ........................................ )
+                </td>
+            </tr>
+        
+            <tr>
+                <td style="text-align: center; font-size: 11pt; padding-top: 5px;">
+                    NIP. ........................................
+                </td>
+                <td style="text-align: center; font-size: 11pt; padding-top: 5px;">
+                    NIP. ........................................
+                </td>
+            </tr>
+        </table>
         </div>
     </div>
 

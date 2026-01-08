@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Permohonan;
 use App\Models\PinjamBerkas;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth; // Penting untuk menghilangkan error P1013
 use Carbon\Carbon;
 
 class ArsipController extends Controller
@@ -20,14 +20,23 @@ class ArsipController extends Controller
     // 2. HALAMAN TAMBAH PENGIRIMAN (Sisi Loket/Unit)
     public function tambahPengiriman()
     {
-        $riwayat = DB::table('pengiriman_batch')->orderBy('created_at', 'desc')->get();
+        // Filter agar user UKK/ULP hanya melihat riwayat milik mereka sendiri
+        $user = Auth::user();
+        $query = DB::table('pengiriman_batch');
+
+        if (!in_array($user->role, ['admin', 'Arsip'])) {
+            $query->where('petugas_kirim', $user->name);
+        }
+
+        $riwayat = $query->orderBy('created_at', 'desc')->get();
+
         return view('auth.dashboard.pengiriman_berkas', [
             'current_page' => 'pengiriman-berkas',
             'riwayat' => $riwayat
         ]);
     }
 
-    // 3. HALAMAN RIWAYAT PENGIRIMAN (Daftar Global)
+    // 3. HALAMAN RIWAYAT PENGIRIMAN (Daftar Global untuk Admin)
     public function pengirimanBerkas()
     {
         return view('arsip.riwayat_pengiriman', [
@@ -40,15 +49,12 @@ class ArsipController extends Controller
     public function listBerkas($no_pengirim)
     {
         try {
-            // Mengambil Header Batch untuk mendapatkan info Asal Unit & Petugas
             $batch = DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->first();
-            
-            // Mengambil Daftar Berkas lengkap agar tidak NULL
             $data = Permohonan::where('no_pengirim', $no_pengirim)->get();
             
             return response()->json([
                 'success' => true,
-                'batch'   => $batch, // Mengirim objek batch (isi: asal_unit, petugas_kirim)
+                'batch'   => $batch,
                 'data'    => $data
             ]);
         } catch (\Exception $e) {
@@ -69,22 +75,25 @@ class ArsipController extends Controller
     // 6. HALAMAN PENERIMAAN BERKAS (Tampilan Arsip)
     public function penerimaanBerkas()
     {
-    // Proteksi: Jika bukan admin/kanim, arahkan kembali ke dashboard
-    if (auth()->user()->role != 'admin' && auth()->user()->role != 'kanim') {
-        return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman Penerimaan Berkas.');
+        $user = Auth::user();
+
+        // Proteksi Role: Hanya admin, Arsip, atau kanim yang bisa masuk
+        if (!$user || !in_array($user->role, ['admin', 'Arsip', 'kanim'])) {
+            return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman Penerimaan Berkas.');
+        }
+
+        $riwayat_batches = DB::table('pengiriman_batch')->orderBy('created_at', 'desc')->get();
+        $list_semua = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
+        $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA')->get();
+
+        return view('arsip.penerimaan_berkas', [
+            'current_page'    => 'penerimaan-berkas',
+            'riwayat_batches' => $riwayat_batches,
+            'list_semua'      => $list_semua,
+            'list_sudah_scan' => $list_sudah_scan 
+        ]);
     }
 
-    $riwayat_batches = DB::table('pengiriman_batch')->orderBy('created_at', 'desc')->get();
-    $list_semua = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
-    $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA')->get();
-
-    return view('arsip.penerimaan_berkas', [
-        'current_page'    => 'penerimaan-berkas',
-        'riwayat_batches' => $riwayat_batches,
-        'list_semua'      => $list_semua,
-        'list_sudah_scan' => $list_sudah_scan 
-    ]);
-    }
     // 7. AJAX: Ambil Item Batch untuk Verifikasi Scan
     public function getBatchItems($no_pengirim)
     {
@@ -94,30 +103,43 @@ class ArsipController extends Controller
         return response()->json(['success' => true, 'data' => $items]);
     }
 
-    // 8. AJAX: Detail Berkas saat Scan Pop-up
+    // 8. AJAX: Detail Berkas saat Scan Pop-up & Tombol Detail
     public function getDetail($nomor)
     {
-    // Pastikan ini mengambil semua kolom dari model Permohonan
-    $data = Permohonan::where('no_permohonan', $nomor)->first();
-    
-    if ($data) {
-        return response()->json(['success' => true, 'data' => $data]);
-    }
-    return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        $data = Permohonan::where('no_permohonan', trim($nomor))->first();
+        
+        if ($data) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+        return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
     }
 
-    // 9. AJAX: Scan Per Item
+    // 9. AJAX: Scan Per Item (DIPERBAIKI UNTUK REALTIME)
     public function scanPermohonan(Request $request)
     {
         $nomor = trim($request->nomor_permohonan);
+        
         $permohonan = Permohonan::where('no_permohonan', $nomor)
-                                ->where('status_berkas', 'SIAP_DITERIMA')->first();
+                                ->where('status_berkas', 'SIAP_DITERIMA')
+                                ->first();
 
-        if (!$permohonan) return response()->json(['success' => false], 404);
+        if (!$permohonan) {
+            return response()->json(['success' => false, 'message' => 'Berkas tidak ditemukan atau sudah di-scan'], 404);
+        }
 
-        $permohonan->update(['status_berkas' => 'DITERIMA', 'updated_at' => now()]);
+        $permohonan->update([
+            'status_berkas' => 'DITERIMA', 
+            'updated_at' => now()
+        ]);
 
-        return response()->json(['success' => true]);
+        // Mengembalikan data nama agar bisa langsung muncul di tabel kanan secara realtime
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'no_permohonan' => $permohonan->no_permohonan,
+                'nama' => $permohonan->nama
+            ]
+        ]);
     }
 
     // 10. AJAX: Konfirmasi Penerimaan Batch
@@ -149,7 +171,7 @@ class ArsipController extends Controller
         $list = $request->nomor_permohonan_list;
         if (!$list) return response()->json(['success' => false], 400);
     
-        $user = Auth::user(); // Mengambil data user yang sedang login
+        $user = Auth::user(); 
     
         DB::beginTransaction();
         try {
@@ -160,7 +182,6 @@ class ArsipController extends Controller
                 'tgl_pengirim'  => now()->format('Y-m-d'),
                 'jumlah_berkas' => count($list),
                 'status'        => 'Diajukan',
-                // LOGIKA DINAMIS: Mengambil dari kolom unit_kerja, jika kosong pakai role
                 'asal_unit'     => $user->unit_kerja ?? $user->role ?? 'KANIM', 
                 'petugas_kirim' => $user->name, 
                 'created_at'    => now(),
@@ -168,13 +189,10 @@ class ArsipController extends Controller
             ]);
     
             foreach ($list as $item) {
-                // DISAMAKAN: Menggunakan database datapaspor.datapaspor
-                // Pastikan di phpMyAdmin nama DB-nya 'datapaspor'
                 $asalData = DB::table('datapaspor.datapaspor')
                             ->where('nopermohonan', $item['no_permohonan'])->first();
     
                 if ($asalData) {
-                    // DISAMAKAN: Logika tglpermohonan_datetime
                     $tglMohon = ($asalData->tglpermohonan_datetime && $asalData->tglpermohonan_datetime != '0000-00-00 00:00:00') 
                                 ? Carbon::parse($asalData->tglpermohonan_datetime)->format('Y-m-d') : now()->format('Y-m-d');
     
@@ -188,7 +206,7 @@ class ArsipController extends Controller
                             'jenis_kelamin'      => $asalData->jeniskelamin,
                             'no_telp'            => $asalData->notelepon,
                             'jenis_permohonan'   => $asalData->jenispermohonan,
-                            'jenis_paspor'       => $asalData->jenispaspor, // Nama kolom harus sama dengan di migrasi kamu
+                            'jenis_paspor'       => $asalData->jenispaspor, 
                             'tujuan_paspor'      => $asalData->tujuanpaspor,
                             'no_paspor'          => $asalData->nopaspor,
                             'tanggal_permohonan' => $tglMohon,
