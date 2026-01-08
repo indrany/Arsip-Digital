@@ -45,8 +45,8 @@
                     --}}
                     @if(Auth::check() && in_array(strtoupper(trim(Auth::user()->role)), ['ARSIP', 'ADMIN']))
                     <li class="{{ Request::is('penerimaan-berkas*') ? 'active' : '' }}">
-                        <a href="{{ route('penerimaan-berkas.index') }}">
-                            <div class="menu-icon"><i class="fas fa-file-import"></i></div> Penerimaan Berkas
+                        <a href="{{ route('penerimaan-berkas.index') }}"> 
+                            <i class="fas fa-file-import"></i> Penerimaan Berkas
                         </a>
                     </li>
                     @endif
@@ -59,11 +59,34 @@
                     </li>
             
                     {{-- 4. Pinjam Berkas: Muncul untuk semua role agar sidebar memiliki 4 menu --}}
+                    {{-- Menu Pinjam Berkas (Sudah Ada) --}}
                     <li class="{{ Request::is('pinjam-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('pinjam-berkas.index') }}">
-                            <div class="menu-icon"><i class="fas fa-book"></i></div> Pinjam Berkas
+                            <div class="menu-icon">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C5.44772 2 5 2.44772 5 3V21C5 21.5523 5.44772 22 6 22H18C18.5523 22 19 21.5523 19 21V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2V8H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div> 
+                            Pinjam Berkas
                         </a>
                     </li>
+
+                    {{-- TAMBAHAN: Menu Manajemen User (Hanya muncul jika Role ADMIN) --}}
+                    @if(auth()->user()->role == 'ADMIN')
+                    <li class="{{ Request::is('users*') ? 'active' : '' }}">
+                        <a href="{{ route('users.index') }}">
+                            <div class="menu-icon">
+                                {{-- Ikon User Gear --}}
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="8.5" cy="7" r="4"></circle>
+                                    <circle cx="19" cy="11" r="2"></circle>
+                                    <path d="M19 8v1"></path>
+                                    <path d="M19 13v1"></path>
+                                </svg>
+                            </div> 
+                            Manajemen User
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </nav>
         </div>

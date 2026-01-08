@@ -69,10 +69,6 @@
 
                 <button type="submit" class="btn-primary">Masuk</button>
             </form>
-            <div class="text-center mt-3">
-                <p class="small text-muted" style="font-size: 14px;">
-                    Belum punya akun? <a href="{{ route('register') }}" class="text-primary fw-bold">Daftar di sini</a></p>
-            </div>
         </div>
 
     </div>
