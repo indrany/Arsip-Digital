@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PinjamBerkas;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PinjamBerkasController extends Controller
 {
@@ -30,7 +31,7 @@ class PinjamBerkasController extends Controller
 
 public function store(Request $request)
 {
-    $user = auth()->user();
+    $user = Auth::user();
 
     // 1. Validasi minimal: hanya cek nomor permohonan
     $request->validate([
@@ -110,22 +111,23 @@ public function store(Request $request)
         return back()->with('success', 'Berkas telah dikembalikan.');
     }
     public function cariPermohonan($no)
-    {
-        $permohonan = Permohonan::where('no_permohonan', $no)->first();
+{
+    $permohonan = Permohonan::where('no_permohonan', $no)->first();
 
-        if ($permohonan) {
-            return response()->json([
-                'success' => true,
-                'data' => $permohonan
-            ]);
-        }
+    if ($permohonan) {
+        // Cek apakah ada peminjaman yang statusnya masih 'Pengajuan' atau 'Disetujui'
+        $pinjamAktif = PinjamBerkas::where('permohonan_id', $permohonan->id)
+            ->whereIn('status', ['Pengajuan', 'Disetujui'])
+            ->first();
 
-        return response()->json(['success' => false]);
+        return response()->json([
+            'success' => true,
+            'data' => $permohonan,
+            'is_borrowed' => $pinjamAktif ? true : false,
+            'borrower_name' => $pinjamAktif ? $pinjamAktif->nama_peminjam : ''
+        ]);
     }
-    public function destroy($id) {
-        $data = PinjamBerkas::findOrFail($id);
-        $data->delete(); // Ini hanya akan mengisi kolom deleted_at
-    
-        return back()->with('success', 'Riwayat berhasil disembunyikan.');
-    }
+
+    return response()->json(['success' => false]);
+}
 }
