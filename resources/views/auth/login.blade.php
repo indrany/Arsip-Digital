@@ -41,6 +41,15 @@
                     {{ session('success') }}
                 </div>
             @endif
+
+            {{-- 2. Pesan Error (Untuk Akun Non-Aktif atau Salah Password) --}}
+            @if ($errors->any())
+                <div style="background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: center; border: 1px solid #fecaca;">
+                    @foreach ($errors->all() as $error)
+                        {{ $error }}
+                    @endforeach
+                </div>
+            @endif
             <form action="{{ route('login.post') }}" method="POST" class="login-form">
                 @csrf
 

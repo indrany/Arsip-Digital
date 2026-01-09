@@ -9,67 +9,74 @@ use Illuminate\Http\Request;
 class PinjamBerkasController extends Controller
 {
     /**
-     * TAMPIL DATA PINJAM BERKAS
-     * Mengambil data HANYA dari tabel pinjam_berkas.
-     */
+     * TAMPIL DATA PINJAM BERKAS*/
     public function index(Request $request)
-    {
-        $query = PinjamBerkas::with('permohonan');
+{
+    // Ambil SEMUA data tanpa filter role agar riwayat tetap sama untuk semua user
+    $query = PinjamBerkas::with('permohonan');
 
-        // Filter No Permohonan jika ada input cari
-        if ($request->filled('no_permohonan')) {
-            $query->whereHas('permohonan', function ($q) use ($request) {
-                $q->where('no_permohonan', 'like', '%' . $request->no_permohonan . '%');
-            });
-        }
-
-        $dataPinjam = $query->orderBy('created_at', 'desc')->get();
-
-        return view('scripts.pinjam_berkas', compact('dataPinjam'));
+    // Filter No Permohonan jika ada input cari
+    if ($request->filled('no_permohonan')) {
+        $query->whereHas('permohonan', function ($q) use ($request) {
+            $q->where('no_permohonan', 'like', '%' . $request->no_permohonan . '%');
+        });
     }
 
-    /**
-     * SIMPAN PEMINJAMAN BARU (MANUAL)
-     * Fungsi ini digunakan untuk menginputkan permohonan ke daftar pinjam.
-     */
-    public function store(Request $request)
+    // Mengurutkan dari yang terbaru diinput
+    $dataPinjam = $query->orderBy('created_at', 'desc')->get();
+
+    return view('scripts.pinjam_berkas', compact('dataPinjam'));
+}
+
+public function store(Request $request)
 {
-    // 1. Validasi Input
+    $user = auth()->user();
+
+    // 1. Validasi minimal: hanya cek nomor permohonan
     $request->validate([
-        'no_permohonan' => 'required|exists:permohonan,no_permohonan', 
-        'nama_peminjam' => 'required'
+        'no_permohonan' => 'required|exists:permohonan,no_permohonan',
     ], [
         'no_permohonan.exists' => 'Nomor permohonan tidak ditemukan.',
-        'nama_peminjam.required' => 'Divisi peminjam harus dipilih.'
     ]);
 
-    // 2. Cari Data Permohonan
-    $permohonan = Permohonan::where('no_permohonan', $request->no_permohonan)->first();
+    // 2. Tentukan Divisi Peminjam
+    // Jika Admin/Kanim, ambil dari pilihan dropdown (nama_peminjam)
+    // Jika Role lain, ambil langsung dari field role user tersebut
+    if (strtoupper($user->role) === 'ADMIN' || strtoupper($user->role) === 'KANIM') {
+        $divisi = $request->nama_peminjam;
+    } else {
+        $divisi = $user->role;
+    }
 
-    // 3. Validasi Duplikasi (Cek apakah sudah dipinjam)
-    $isBorrowed = PinjamBerkas::where('permohonan_id', $permohonan->id)
+    // Pastikan variabel divisi tidak kosong
+    if (!$divisi) {
+        return back()->with('error', 'Gagal! Identitas divisi peminjam tidak ditemukan.');
+    }
+
+    $permohonan = \App\Models\Permohonan::where('no_permohonan', $request->no_permohonan)->first();
+
+    // Logika: Berkas tidak bisa dipinjam jika ada record yang statusnya 'Pengajuan' atau 'Disetujui'
+    $isBorrowed = \App\Models\PinjamBerkas::where('permohonan_id', $permohonan->id)
         ->whereIn('status', ['Pengajuan', 'Disetujui'])
         ->exists();
 
     if ($isBorrowed) {
-        return back()->with('error', 'Gagal! Berkas ini masih dalam status dipinjam.');
+        // Mengirimkan pesan error ke halaman sebelumnya
+        return back()->with('error_pinjam', 'Gagal! Berkas dengan nomor ' . $request->no_permohonan . ' saat ini masih dipinjam atau dalam proses pengajuan.');
     }
 
-    // 4. SIMPAN DATA (Perbaikan Error tgl_pinjam)
-    PinjamBerkas::create([
+    // 4. SIMPAN DATA
+    \App\Models\PinjamBerkas::create([
         'permohonan_id' => $permohonan->id,
-        'nama_peminjam' => $request->nama_peminjam,
-        'tgl_pinjam'    => now(), // SEGERA ISI TANGGAL (Agar tidak error NOT NULL)
+        'nama_peminjam' => $divisi, 
+        'tgl_pinjam'    => now(),
         'status'        => 'Pengajuan'
     ]);
 
-    return redirect()->route('pinjam-berkas.index')
-        ->with('success', 'Peminjaman berhasil didaftarkan secara manual.');
+    return redirect()->route('pinjam-berkas.index')->with('success', 'Peminjaman berhasil diajukan.');
 }
-
     /**
      * APPROVE PEMINJAMAN
-     * Mencatat tanggal pinjam secara otomatis saat disetujui.
      */
     public function approve($id)
     {
@@ -114,5 +121,11 @@ class PinjamBerkasController extends Controller
         }
 
         return response()->json(['success' => false]);
+    }
+    public function destroy($id) {
+        $data = PinjamBerkas::findOrFail($id);
+        $data->delete(); // Ini hanya akan mengisi kolom deleted_at
+    
+        return back()->with('success', 'Riwayat berhasil disembunyikan.');
     }
 }

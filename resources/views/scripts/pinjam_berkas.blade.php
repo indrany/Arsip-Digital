@@ -10,17 +10,14 @@
             <h2 class="table-title-custom">Data Berkas yang dipinjam</h2>
 
                 <div class="table-actions-custom" id="filterArea">
-                {{-- Revisi: UKK, ULP, LANTASKIM, KANIM, dan ADMIN bisa input pinjaman --}}
                 @php
-                    $roleUser = strtolower(auth()->user()->role);
-                    $unitUser = strtolower(auth()->user()->unit_kerja); // Sesuaikan nama kolom unit di tabel user kamu
+                $roleUser = strtoupper(auth()->user()->role); // Ubah ke Huruf Besar agar konsisten
                 @endphp
 
-                @if(in_array($roleUser, ['admin', 'kanim', 'ukk', 'ulp', 'lantaskim']))
-                    <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam">
-                        + Pinjam Berkas
-                    </button>
-                @endif
+                {{-- Tombol muncul untuk semua user --}}
+                <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam">
+                    + Pinjam Berkas
+                </button>
                 {{-- TOMBOL FILTER (Tetap muncul untuk semua role agar bisa mencari data) --}}
                 <button type="button" class="btn-filter-custom" onclick="toggleFilter()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -63,87 +60,75 @@
                 <tbody>
 
                 {{-- KONDISI AWAL --}}
-                @if($dataPinjam->isEmpty() && !request('no_permohonan'))
+                <!-- @if($dataPinjam->isEmpty() && !request('no_permohonan'))
                     <tr>
                         <td colspan="8" class="text-center py-4 text-muted">
                             Silakan masukkan <b>No Permohonan</b> untuk menampilkan data
                         </td>
                     </tr>
-                @endif
+                @endif -->
 
                 @forelse($dataPinjam as $item)
-                    <tr>
-                        <td>{{ $item->permohonan->no_permohonan ?? '-' }}</td>
-                        <td>{{ $item->permohonan->tanggal_permohonan ?? '-' }}</td>
-                        <td>{{ $item->permohonan->nama ?? '-' }}</td>
-                        
-                        {{-- BAGIAN YANG DIPERBAIKI: Menampilkan Nama Divisi sebagai teks --}}
-                        <td>
-                            <span class="fw-medium text-dark" style="font-size: 13px; margin-left: 5px;">
-                                @if($item->nama_peminjam == 'UMUM')
-                                    Bagian Umum
-                                @else
-                                    {{ ucfirst(strtolower($item->nama_peminjam)) }}
-                                @endif
-                            </span>
-                        </td>
-                        <td>{{ $item->tgl_pinjam }}</td>
-                        <td>{{ $item->tgl_kembali ?? '-' }}</td>
-                        <td>
-                        <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center;">
-                            
-                            {{-- 1. TOMBOL DETAIL: Tetap ada untuk SEMUA ROLE --}}
-                            <button 
-                                type="button" 
-                                onclick="showDetail({{ json_encode($item->permohonan) }})" 
-                                class="btn-detail-blue">
-                                Detail
-                            </button>
+    <tr>
+        <td>{{ $item->permohonan->no_permohonan ?? '-' }}</td>
+        <td>{{ $item->permohonan->tanggal_permohonan ?? '-' }}</td>
+        <td>{{ $item->permohonan->nama ?? '-' }}</td>
+        <td>{{ $item->nama_peminjam }}</td>
+        <td>{{ $item->tgl_pinjam }}</td>
+        <td>{{ $item->tgl_kembali ?? '-' }}</td>
 
-                            {{-- 2. TOMBOL AKSI: Hanya muncul jika role adalah admin atau kanim --}}
-                            @if(auth()->user()->role == 'admin' || auth()->user()->role == 'kanim')
-                                
-                                @if($item->status == 'Pengajuan')
-                                    {{-- Tombol Setuju --}}
-                                    <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST">
-                                        @csrf
-                                        <button class="btn-check-custom" title="Setujui">✓</button>
-                                    </form>
+        {{-- 1. KOLOM AKSI --}}
+        {{-- Cari bagian @forelse($dataPinjam as $item) --}}
+<td>
+    <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
+        
+        {{-- 1. Tombol Detail (Sudah ada) --}}
+        <button type="button" onclick="showDetail({{ json_encode($item->permohonan) }})" class="btn-detail-blue">
+            Detail
+        </button>
 
-                                    {{-- Tombol Tolak --}}
-                                    <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST">
-                                        @csrf
-                                        <button class="btn-reject-custom" title="Tolak">✕</button>
-                                    </form>
+        {{-- 2. Tombol Approve/Selesai (Sudah ada) --}}
+        @if(strtoupper(auth()->user()->role) == 'ADMIN' || strtoupper(auth()->user()->role) == 'KANIM')
+             {{-- ... kode approve kamu ... --}}
+        @endif
 
-                                @elseif($item->status == 'Disetujui')
-                                    {{-- Tombol Selesai --}}
-                                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST">
-                                        @csrf
-                                        <button class="btn-selesai">Selesai</button>
-                                    </form>
-                                @endif
+        {{-- 3. TARUH TOMBOL HAPUS DI SINI (Di dalam loop agar dapet $item->id) --}}
+        <form action="{{ route('pinjam-berkas.destroy', $item->id) }}" method="POST" class="d-inline">
+            @csrf
+            @method('DELETE')
+            <button type="button" class="btn-reject-custom btn-hapus-riwayat" 
+                    title="Hapus Riwayat" 
+                    style="width: 28px; height: 28px; background: #6c757d; border: none; border-radius: 6px; color: white;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        </form>
 
-                            @endif
-                        </div>
-                    </td>
-                                            <td>
-                                                @php
-                                                    $statusClass = [
-                                                        'Pengajuan'=>'bg-pengajuan',
-                                                        'Disetujui'=>'bg-disetujui',
-                                                        'Ditolak'=>'bg-ditolak',
-                                                        'Selesai'=>'bg-selesai'
-                                                    ][$item->status] ?? '';
-                                                @endphp
-                                                <span class="badge-custom {{ $statusClass }}">{{ $item->status }}</span>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="8" class="text-center text-muted">Data tidak ditemukan</td>
-                                        </tr>
-                                    @endforelse
+    </div>
+</td>
+
+        {{-- 2. KOLOM BADGE STATUS --}}
+        <td>
+            @php
+                $statusCheck = strtoupper($item->status); 
+                $badgeColor = 'bg-secondary'; 
+                
+                if ($statusCheck == 'PENGAJUAN') $badgeColor = 'bg-pengajuan';
+                elseif ($statusCheck == 'DISETUJUI') $badgeColor = 'bg-disetujui';
+                elseif ($statusCheck == 'DITOLAK') $badgeColor = 'bg-ditolak';
+                elseif ($statusCheck == 'SELESAI') $badgeColor = 'bg-selesai';
+            @endphp
+
+            <span class="badge-custom {{ $badgeColor }}">
+                {{ $item->status }}
+            </span>
+        </td>
+    </tr>
+    @empty
+        <tr><td colspan="8" class="text-center text-muted py-4">Data tidak ditemukan</td></tr>
+    @endforelse
 
                                     </tbody>
                                 </table>
@@ -170,34 +155,40 @@
             </div>
 
             <div class="mb-3">
-                <label class="small">Divisi Tujuan</label>
-                <select name="nama_peminjam" class="form-control" required>
-                    <option value="">-- Pilih Divisi --</option>
-                    <option value="UMUM">Bagian Umum</option>
-                    <option value="WASDAK">Wasdak</option>
-                    <option value="LANTASKIM">Lantaskim</option>
-                    <option value="INTELDAKIM">Inteldakim</option>
-                    <option value="TIKIM">Tikim</option>
-                </select>
+                <label class="form-label fw-bold" style="font-size: 13px;">Divisi Peminjam</label>
+                
+                @if(strtoupper(auth()->user()->role) === 'ADMIN' || strtoupper(auth()->user()->role) === 'KANIM')
+                    <select name="nama_peminjam" class="form-select" required style="font-size: 13px;">
+                        <option value="" selected disabled>-- Pilih Divisi --</option>
+                        {{-- Sesuaikan value ini dengan tulisan di database Manajemen User --}}
+                        <option value="LANTASKIM">LANTASKIM</option>
+                        <option value="TIKIM">TIKIM</option>
+                        <option value="INTELDAKIM">INTELDAKIM</option>
+                        <option value="INTELTUSKIM">INTELTUSKIM</option>
+                    </select>
+                @else
+                    {{-- Otomatis menampilkan role user yang login --}}
+                    <input type="text" class="form-control bg-light" value="{{ auth()->user()->role }}" readonly style="font-size: 13px;">
+                    <input type="hidden" name="nama_peminjam" value="{{ auth()->user()->role }}">
+                @endif
+                </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn-submit-filter w-100">Simpan Peminjaman</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn-submit-filter w-100">Simpan Peminjaman</button>
-            </div>
-        </form>
-    </div>
-</div>
             {{-- MODAL DETAIL --}}
-<div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; width: 410px; padding: 15px 25px; margin: auto;">
-            <div class="modal-header border-0 p-0 mb-2">
-                <h6 class="modal-title fw-bold text-secondary" style="font-size: 16px;">Detail Informasi</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 12px;"></button>
-            </div>
-            <div class="modal-body p-0">
-                <form id="form-detail-pop">
+            <div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content shadow-lg border-0" style="border-radius: 12px; width: 410px; padding: 15px 25px; margin: auto;">
+                        <div class="modal-header border-0 p-0 mb-2">
+                            <h6 class="modal-title fw-bold text-secondary" style="font-size: 16px;">Detail Informasi</h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 12px;"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <form id="form-detail-pop">
                     @php
                         $fields = [
                             'm_no_permohonan'   => 'Nomor Permohonan',
@@ -470,26 +461,56 @@
         justify-content: flex-start;
     }
 }
+/* Mengecilkan komponen SweetAlert */
+.small-swal-title {
+    font-size: 16px !important; /* Judul kecil */
+    font-weight: 600;
+}
+.small-swal-text {
+    font-size: 13px !important; /* Teks kecil */
+}
+.small-swal-button {
+    font-size: 12px !important; /* Tombol kecil */
+    padding: 8px 16px !important;
+}
+/* Mengecilkan Ikon SweetAlert */
+.swal2-icon {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 10px auto 5px !important;
+}
+.swal2-icon .swal2-icon-content {
+    font-size: 25px !important;
+}
 </style>
+{{-- 1. Panggil library SweetAlert2 di luar tag script utama --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-function toggleFilter(){document.getElementById('filterDropdown').classList.toggle('show');}
-function updateDivisi(id,val){
-    if(val==='Menunggu Input')return;
-    fetch(`/pinjam-berkas/update-divisi/${id}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},
-        body:JSON.stringify({divisi:val})
+// --- FUNGSI TOOLS ---
+function toggleFilter() {
+    document.getElementById('filterDropdown').classList.toggle('show');
+}
+
+function updateDivisi(id, val) {
+    if (val === 'Menunggu Input') return;
+    fetch(`/pinjam-berkas/update-divisi/${id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ divisi: val })
     });
 }
 
+// --- FUNGSI DETAIL & CEK ---
 function showDetail(item) {
-    if(!item) {
-        alert("Data permohonan tidak ditemukan");
+    if (!item) {
+        Swal.fire('Error', 'Data permohonan tidak ditemukan', 'error');
         return;
     }
     
-    // Kembali menggunakan format no_permohonan, tempat_lahir, dll.
     document.getElementById('m_no_permohonan').value = item.no_permohonan || '-';
     document.getElementById('m_tgl_permohonan').value = item.tanggal_permohonan || '-';
     document.getElementById('m_tgl_terbit').value = item.tanggal_terbit || '-';
@@ -508,29 +529,102 @@ function showDetail(item) {
     var modalInstance = new bootstrap.Modal(document.getElementById('modalDetailBerkas'));
     modalInstance.show();
 }
+
 function cekDetailSebelumPinjam() {
     const noPermohonan = document.getElementById('input_no_permohonan').value;
 
     if (!noPermohonan) {
-        alert("Silakan masukkan Nomor Permohonan terlebih dahulu.");
+        Swal.fire('Peringatan', 'Silakan masukkan Nomor Permohonan terlebih dahulu.', 'info');
         return;
     }
 
-    // Melakukan fetch ke route pencarian (kita buat route ini di langkah 3)
     fetch(`/cari-permohonan/${noPermohonan}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Jika ketemu, panggil fungsi showDetail yang sudah kamu punya sebelumnya
                 showDetail(data.data);
             } else {
-                alert("Nomor Permohonan tidak ditemukan!");
+                Swal.fire('Gagal', 'Nomor Permohonan tidak ditemukan!', 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert("Terjadi kesalahan saat mencari data.");
+            Swal.fire('Error', 'Terjadi kesalahan saat mencari data.', 'error');
         });
 }
+
+// --- LOGIKA NOTIFIKASI SESSION ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Pengaturan ukuran font & icon custom
+    const ToastConfig = {
+        width: '350px', // Kotak lebih kecil
+        customClass: {
+            title: 'small-swal-title',
+            htmlContainer: 'small-swal-text',
+            confirmButton: 'small-swal-button'
+        }
+    };
+
+    // 1. Notifikasi jika Berkas Masih Dipinjam
+    @if(session('error_pinjam'))
+        Swal.fire({
+            ...ToastConfig,
+            icon: 'warning',
+            iconColor: '#f8bb86',
+            title: 'Perhatian',
+            text: "{!! session('error_pinjam') !!}",
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Oke',
+        });
+    @endif
+
+    // 2. Notifikasi jika Berhasil
+    @if(session('success'))
+        Swal.fire({
+            ...ToastConfig,
+            icon: 'success',
+            title: 'Berhasil!',
+            text: "{!! session('success') !!}",
+            timer: 2000,
+            showConfirmButton: false
+        });
+    @endif
+    
+    // 3. Notifikasi jika ada error umum
+    @if(session('error'))
+        Swal.fire({
+            ...ToastConfig,
+            icon: 'error',
+            title: 'Gagal!',
+            text: "{!! session('error') !!}",
+            confirmButtonColor: '#d33',
+        });
+    @endif
+});
+
+$('.btn-hapus-riwayat').on('click', function(e) {
+    let form = $(this).closest('form');
+    Swal.fire({
+        title: 'Hapus riwayat?',
+        text: "Data tetap aman di database",
+        icon: 'question',
+        width: '300px',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6e7881',
+        confirmButtonText: 'Ya',
+        cancelButtonText: 'Tidak',
+        customClass: {
+            title: 'small-swal-title',
+            htmlContainer: 'small-swal-text',
+            confirmButton: 'small-swal-button',
+            cancelButton: 'small-swal-button'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+});
 </script>
 @endsection

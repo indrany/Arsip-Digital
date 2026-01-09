@@ -50,7 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/pinjam-berkas/reject/{id}', [PinjamBerkasController::class, 'reject'])->name('pinjam-berkas.reject');
     Route::post('/pinjam-berkas/complete/{id}', [PinjamBerkasController::class, 'complete'])->name('pinjam-berkas.complete');
     Route::get('/cari-permohonan/{no}', [PinjamBerkasController::class, 'cariPermohonan'])->name('pinjam-berkas.cari-permohonan');
-
+    // Tambahkan baris ini
+    Route::delete('/pinjam-berkas/{id}', [App\Http\Controllers\PinjamBerkasController::class, 'destroy'])->name('pinjam-berkas.destroy');
     // --- MANAJEMEN USER ---
     Route::resource('users', UserController::class)->except(['show']);
     Route::patch('/users/{user}/update-status', [UserController::class, 'updateStatus'])->name('users.update-status');
