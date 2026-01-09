@@ -5,6 +5,41 @@
 @section('page-subtitle', 'Hi, ' . Auth::user()->name . '. Selamat datang di Sistem Arsip Digital!')
 
 @section('content')
+
+@php
+    $roleUser = strtoupper(Auth::user()->role);
+@endphp
+
+{{-- 1. ALERT KAPASITAS RAK (HANYA UNTUK ADMIN & TIKIM) --}}
+@if(in_array($roleUser, ['ADMIN', 'TIKIM']))
+    @if(isset($rakKritis) && ($rakKritis->count() > 0 || $rakPenuhCount > 0))
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; background-color: #fff5f5; border-left: 5px solid #f97066 !important;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-danger fa-2x me-3"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold text-danger mb-1">Peringatan Kapasitas Penyimpanan!</h6>
+                        <p class="mb-0 text-muted" style="font-size: 13px;">
+                            Terdapat <strong>{{ $rakKritis->count() }} rak</strong> hampir penuh (>80%) 
+                            dan <strong>{{ $rakPenuhCount }} rak</strong> sudah penuh. 
+                            Segera siapkan lemari/rak baru agar proses penerimaan berkas tidak terhambat.
+                        </p>
+                    </div>
+                    <div class="ms-3">
+                        <a href="{{ route('rak-loker.index') }}" class="btn btn-danger btn-sm fw-bold px-3 shadow-sm" style="border-radius: 8px;">
+                            Cek Master Rak
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endif
+
 <div class="statistic-row">
     {{-- Card Data Pemohon --}}
     <a href="{{ route('pengiriman-berkas.index') }}" class="card-link">
@@ -41,7 +76,21 @@
         </div>
     </a>
 
-    {{-- Card Data Aktif --}}
+    {{-- 2. Card Monitoring Rak (HANYA UNTUK ADMIN & TIKIM) --}}
+    @if(in_array($roleUser, ['ADMIN', 'TIKIM']))
+    <a href="{{ route('rak-loker.index') }}" class="card-link">
+        <div class="statistic-card aktif-card" style="background-color: #f0f9ff; border: 1px solid #b9e6fe;">
+            <div class="card-icon-container" style="background-color: #e0f2fe; color: #0284c7;">
+                <i class="fas fa-boxes-stacked" style="font-size: 24px;"></i>
+            </div>
+            <div class="card-content-area">
+                <span class="card-value" style="color: #0369a1;">{{ $rakPenuhCount ?? 0 }}</span>
+                <span class="card-label" style="color: #0c4a6e;">Rak Sudah Penuh</span>
+            </div>
+        </div>
+    </a>
+    @else
+    {{-- JIKA BUKAN ADMIN/TIKIM, Tampilkan Card Default "Data Aktif" agar baris tetap terisi 3 card --}}
     <div class="statistic-card aktif-card">
         <div class="card-icon-container">
             <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -54,6 +103,7 @@
             <span class="card-label">Data Aktif</span>
         </div>
     </div>
+    @endif
 </div>
 
 <div class="v1_309 chart-container">

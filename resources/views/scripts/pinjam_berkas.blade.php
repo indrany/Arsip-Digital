@@ -10,18 +10,18 @@
             <h2 class="table-title-custom">Data Berkas yang dipinjam</h2>
 
                 <div class="table-actions-custom" id="filterArea">
-                {{-- Revisi: UKK, ULP, LANTASKIM, KANIM, dan ADMIN bisa input pinjaman --}}
                 @php
-                    $roleUser = strtolower(auth()->user()->role);
-                    $unitUser = strtolower(auth()->user()->unit_kerja); // Sesuaikan nama kolom unit di tabel user kamu
+                    $roleUser = strtoupper(auth()->user()->role); // Kita gunakan Uppercase agar konsisten dengan request revisi
                 @endphp
 
-                @if(in_array($roleUser, ['admin', 'kanim', 'ukk', 'ulp', 'lantaskim']))
+                {{-- Revisi: Role selain TIKIM (UKK, ULP, LANTASKIM, dll) dan ADMIN bisa input pinjaman --}}
+                @if(in_array($roleUser, ['ADMIN', 'KANIM', 'UKK', 'ULP', 'LANTASKIM', 'INTELDAKIM', 'INTELTUSKIM']))
                     <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam">
                         + Pinjam Berkas
                     </button>
                 @endif
-                {{-- TOMBOL FILTER (Tetap muncul untuk semua role agar bisa mencari data) --}}
+
+                {{-- TOMBOL FILTER --}}
                 <button type="button" class="btn-filter-custom" onclick="toggleFilter()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
@@ -53,7 +53,7 @@
                 <th style="width: 15%;">No. Permohonan</th>
                 <th style="width: 15%;">Tanggal Permohonan</th>
                 <th style="width: 15%;">Nama Pemohon</th>
-                <th style="width: 12%;">Divisi Peminjam</th> {{-- Lebar dikurangi agar lebih rapat --}}
+                <th style="width: 12%;">Divisi Peminjam</th>
                 <th style="width: 12%;">Tanggal Pinjam</th>
                 <th style="width: 12%;">Tanggal Kembali</th>
                 <th style="width: 10%; text-align: center;">Aksi</th>
@@ -62,7 +62,6 @@
             </thead>
                 <tbody>
 
-                {{-- KONDISI AWAL --}}
                 @if($dataPinjam->isEmpty() && !request('no_permohonan'))
                     <tr>
                         <td colspan="8" class="text-center py-4 text-muted">
@@ -77,7 +76,6 @@
                         <td>{{ $item->permohonan->tanggal_permohonan ?? '-' }}</td>
                         <td>{{ $item->permohonan->nama ?? '-' }}</td>
                         
-                        {{-- BAGIAN YANG DIPERBAIKI: Menampilkan Nama Divisi sebagai teks --}}
                         <td>
                             <span class="fw-medium text-dark" style="font-size: 13px; margin-left: 5px;">
                                 @if($item->nama_peminjam == 'UMUM')
@@ -100,8 +98,8 @@
                                 Detail
                             </button>
 
-                            {{-- 2. TOMBOL AKSI: Hanya muncul jika role adalah admin atau kanim --}}
-                            @if(auth()->user()->role == 'admin' || auth()->user()->role == 'kanim')
+                            {{-- 2. REVISI TOMBOL AKSI: Hanya muncul jika role adalah ADMIN atau TIKIM --}}
+                            @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
                                 
                                 @if($item->status == 'Pengajuan')
                                     {{-- Tombol Setuju --}}
@@ -127,29 +125,31 @@
                             @endif
                         </div>
                     </td>
-                                            <td>
-                                                @php
-                                                    $statusClass = [
-                                                        'Pengajuan'=>'bg-pengajuan',
-                                                        'Disetujui'=>'bg-disetujui',
-                                                        'Ditolak'=>'bg-ditolak',
-                                                        'Selesai'=>'bg-selesai'
-                                                    ][$item->status] ?? '';
-                                                @endphp
-                                                <span class="badge-custom {{ $statusClass }}">{{ $item->status }}</span>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="8" class="text-center text-muted">Data tidak ditemukan</td>
-                                        </tr>
-                                    @endforelse
+                    <td>
+                        @php
+                            $statusClass = [
+                                'Pengajuan'=>'bg-pengajuan',
+                                'Disetujui'=>'bg-disetujui',
+                                'Ditolak'=>'bg-ditolak',
+                                'Selesai'=>'bg-selesai'
+                            ][$item->status] ?? '';
+                        @endphp
+                        <span class="badge-custom {{ $statusClass }}">{{ $item->status }}</span>
+                    </td>
+                </tr>
+                @empty
+                    @if(request('no_permohonan'))
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">Data tidak ditemukan</td>
+                    </tr>
+                    @endif
+                @endforelse
 
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 {{-- MODAL PINJAM --}}
 <div class="modal fade" id="modalPinjam" tabindex="-1">
@@ -160,7 +160,7 @@
             
             <div class="mb-2">
                 <label class="small">No Permohonan</label>
-                <div class="input-group"> {{-- Menggunakan input group agar tombol ada di samping --}}
+                <div class="input-group">
                     <input type="text" id="input_no_permohonan" name="no_permohonan" class="form-control" placeholder="Contoh: 02348..." required>
                     <button type="button" class="btn btn-primary" onclick="cekDetailSebelumPinjam()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -178,6 +178,7 @@
                     <option value="LANTASKIM">Lantaskim</option>
                     <option value="INTELDAKIM">Inteldakim</option>
                     <option value="TIKIM">Tikim</option>
+                    <option value="INTELTUSKIM">Inteltuskim</option>
                 </select>
             </div>
             
@@ -188,7 +189,8 @@
         </form>
     </div>
 </div>
-            {{-- MODAL DETAIL --}}
+
+{{-- MODAL DETAIL --}}
 <div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg border-0" style="border-radius: 12px; width: 410px; padding: 15px 25px; margin: auto;">
@@ -237,259 +239,45 @@
         </div>
     </div>
 </div>
+
 <style>
-/* =========================
-   CARD & HEADER
-========================= */
-.card-custom {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.table-header-custom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    position: relative;
-}
-
-.table-title-custom {
-    font-size: 18px;
-    font-weight: 600;
-    color: #383E49;
-    margin: 0;
-}
-
-.table-actions-custom {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: relative;
-}
-
-/* =========================
-   BUTTON
-========================= */
-.btn-filter-custom {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #ffffff;
-    border: 1px solid #D0D5DD;
-    height: 38px;
-    padding: 0 16px;
-    border-radius: 8px;
-    color: #5D6679;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.btn-filter-custom:hover {
-    background: #F9FAFB;
-}
-
-.btn-submit-filter {
-    width: 100%;
-    background: #1366D9;
-    color: #ffffff;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.btn-reset-filter {
-    display: block;
-    text-align: center;
-    margin-top: 8px;
-    font-size: 13px;
-    color: #667085;
-    text-decoration: none;
-}
-
-/* =========================
-   FILTER DROPDOWN
-========================= */
-.filter-dropdown-custom {
-    display: none;
-    position: absolute;
-    top: 45px;
-    right: 0;
-    background: #ffffff;
-    border: 1px solid #E4E7EC;
-    border-radius: 12px;
-    padding: 20px;
-    width: 280px;
-    z-index: 1050;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-}
-
-.filter-dropdown-custom.show {
-    display: block;
-}
-
-.filter-group-custom {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 12px;
-}
-
-.filter-group-custom label {
-    font-size: 12px;
-    color: #48505E;
-}
-
-.filter-group-custom input {
-    height: 34px;
-    border-radius: 6px;
-    border: 1px solid #D0D5DD;
-    padding: 0 10px;
-    font-size: 13px;
-}
-
-/* =========================
-   TABLE
-========================= */
-.table-custom {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.table-custom thead th {
-    text-align: left;
-    padding: 12px;
-    border-bottom: 2px solid #F0F1F3;
-    font-weight: 600;
-    color: #48505E;
-}
-
-.table-custom tbody td {
-    padding: 12px;
-    border-bottom: 1px solid #F0F1F3;
-    vertical-align: middle;
-    color: #344054;
-}
-
-/* =========================
-   SELECT DIVISI
-========================= */
-.form-select-divisi-table {
-    width: 100%;
-    height: 32px;
-    padding: 0 8px;
-    border: 1px solid #D0D5DD;
-    border-radius: 6px;
-    background-color: #ffffff;
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: #344054;
-    cursor: pointer;
-}
-
-/* =========================
-   AKSI BUTTON
-========================= */
-.btn-check-custom {
-    width: 28px;
-    height: 28px;
-    background: #34C759;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-reject-custom {
-    width: 28px;
-    height: 28px;
-    background: #FF383C;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-selesai {
-    height: 28px;
-    background: #0088FF;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    padding: 0 12px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.btn-detail-blue {
-    height: 28px;
-    background: #629FF4;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    padding: 0 10px;
-    font-size: 11px;
-    cursor: pointer;
-}
-
-/* =========================
-   BADGE STATUS
-========================= */
-.badge-custom {
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #ffffff;
-}
-
+/* CSS Kamu Tetap Sama */
+.card-custom { background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.table-header-custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: relative; }
+.table-title-custom { font-size: 18px; font-weight: 600; color: #383E49; margin: 0; }
+.table-actions-custom { display: flex; align-items: center; gap: 12px; position: relative; }
+.btn-filter-custom { display: flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid #D0D5DD; height: 38px; padding: 0 16px; border-radius: 8px; color: #5D6679; font-size: 14px; cursor: pointer; }
+.btn-filter-custom:hover { background: #F9FAFB; }
+.btn-submit-filter { width: 100%; background: #1366D9; color: #ffffff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.btn-reset-filter { display: block; text-align: center; margin-top: 8px; font-size: 13px; color: #667085; text-decoration: none; }
+.filter-dropdown-custom { display: none; position: absolute; top: 45px; right: 0; background: #ffffff; border: 1px solid #E4E7EC; border-radius: 12px; padding: 20px; width: 280px; z-index: 1050; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+.filter-dropdown-custom.show { display: block; }
+.filter-group-custom { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.filter-group-custom label { font-size: 12px; color: #48505E; }
+.filter-group-custom input { height: 34px; border-radius: 6px; border: 1px solid #D0D5DD; padding: 0 10px; font-size: 13px; }
+.table-custom { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-custom thead th { text-align: left; padding: 12px; border-bottom: 2px solid #F0F1F3; font-weight: 600; color: #48505E; }
+.table-custom tbody td { padding: 12px; border-bottom: 1px solid #F0F1F3; vertical-align: middle; color: #344054; }
+.btn-check-custom { width: 28px; height: 28px; background: #34C759; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.btn-reject-custom { width: 28px; height: 28px; background: #FF383C; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.btn-selesai { height: 28px; background: #0088FF; color: #ffffff; border: none; border-radius: 6px; padding: 0 12px; font-size: 12px; cursor: pointer; }
+.btn-detail-blue { height: 28px; background: #629FF4; color: #ffffff; border: none; border-radius: 6px; padding: 0 10px; font-size: 11px; cursor: pointer; }
+.badge-custom { padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; color: #ffffff; }
 .bg-pengajuan { background-color: #FFCC00; }
 .bg-disetujui { background-color: #34C759; }
 .bg-ditolak   { background-color: #FF383C; }
 .bg-selesai   { background-color: #0088FF; }
-
-/* =========================
-   RESPONSIVE
-========================= */
-@media (max-width: 768px) {
-    .table-header-custom {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .table-actions-custom {
-        width: 100%;
-        justify-content: flex-start;
-    }
-}
+@media (max-width: 768px) { .table-header-custom { flex-direction: column; align-items: flex-start; gap: 12px; } .table-actions-custom { width: 100%; justify-content: flex-start; } }
 </style>
 
 <script>
 function toggleFilter(){document.getElementById('filterDropdown').classList.toggle('show');}
-function updateDivisi(id,val){
-    if(val==='Menunggu Input')return;
-    fetch(`/pinjam-berkas/update-divisi/${id}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},
-        body:JSON.stringify({divisi:val})
-    });
-}
 
 function showDetail(item) {
     if(!item) {
         alert("Data permohonan tidak ditemukan");
         return;
     }
-    
-    // Kembali menggunakan format no_permohonan, tempat_lahir, dll.
     document.getElementById('m_no_permohonan').value = item.no_permohonan || '-';
     document.getElementById('m_tgl_permohonan').value = item.tanggal_permohonan || '-';
     document.getElementById('m_tgl_terbit').value = item.tanggal_terbit || '-';
@@ -508,20 +296,17 @@ function showDetail(item) {
     var modalInstance = new bootstrap.Modal(document.getElementById('modalDetailBerkas'));
     modalInstance.show();
 }
+
 function cekDetailSebelumPinjam() {
     const noPermohonan = document.getElementById('input_no_permohonan').value;
-
     if (!noPermohonan) {
         alert("Silakan masukkan Nomor Permohonan terlebih dahulu.");
         return;
     }
-
-    // Melakukan fetch ke route pencarian (kita buat route ini di langkah 3)
     fetch(`/cari-permohonan/${noPermohonan}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Jika ketemu, panggil fungsi showDetail yang sudah kamu punya sebelumnya
                 showDetail(data.data);
             } else {
                 alert("Nomor Permohonan tidak ditemukan!");
