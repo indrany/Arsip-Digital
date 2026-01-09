@@ -14,11 +14,14 @@
                 $roleUser = strtoupper(auth()->user()->role); // Ubah ke Huruf Besar agar konsisten
                 @endphp
 
-                {{-- Tombol muncul untuk semua user --}}
-                <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam">
-                    + Pinjam Berkas
-                </button>
-                {{-- TOMBOL FILTER (Tetap muncul untuk semua role agar bisa mencari data) --}}
+                {{-- Revisi: Role selain TIKIM (UKK, ULP, LANTASKIM, dll) dan ADMIN bisa input pinjaman --}}
+                @if(in_array($roleUser, ['ADMIN', 'KANIM', 'UKK', 'ULP', 'LANTASKIM', 'INTELDAKIM', 'INTELTUSKIM']))
+                    <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam">
+                        + Pinjam Berkas
+                    </button>
+                @endif
+
+                {{-- TOMBOL FILTER --}}
                 <button type="button" class="btn-filter-custom" onclick="toggleFilter()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
@@ -50,7 +53,7 @@
                 <th style="width: 15%;">No. Permohonan</th>
                 <th style="width: 15%;">Tanggal Permohonan</th>
                 <th style="width: 15%;">Nama Pemohon</th>
-                <th style="width: 12%;">Divisi Peminjam</th> {{-- Lebar dikurangi agar lebih rapat --}}
+                <th style="width: 12%;">Divisi Peminjam</th>
                 <th style="width: 12%;">Tanggal Pinjam</th>
                 <th style="width: 12%;">Tanggal Kembali</th>
                 <th style="width: 10%; text-align: center;">Aksi</th>
@@ -59,8 +62,7 @@
             </thead>
                 <tbody>
 
-                {{-- KONDISI AWAL --}}
-                <!-- @if($dataPinjam->isEmpty() && !request('no_permohonan'))
+                @if($dataPinjam->isEmpty() && !request('no_permohonan'))
                     <tr>
                         <td colspan="8" class="text-center py-4 text-muted">
                             Silakan masukkan <b>No Permohonan</b> untuk menampilkan data
@@ -87,54 +89,58 @@
             Detail
         </button>
 
-        {{-- 2. Tombol Approve/Selesai (Sudah ada) --}}
-        @if(strtoupper(auth()->user()->role) == 'ADMIN' || strtoupper(auth()->user()->role) == 'KANIM')
-             {{-- ... kode approve kamu ... --}}
-        @endif
+                            {{-- 2. REVISI TOMBOL AKSI: Hanya muncul jika role adalah ADMIN atau TIKIM --}}
+                            @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
+                                
+                                @if($item->status == 'Pengajuan')
+                                    {{-- Tombol Setuju --}}
+                                    <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST">
+                                        @csrf
+                                        <button class="btn-check-custom" title="Setujui">✓</button>
+                                    </form>
 
-        {{-- 3. TARUH TOMBOL HAPUS DI SINI (Di dalam loop agar dapet $item->id) --}}
-        <form action="{{ route('pinjam-berkas.destroy', $item->id) }}" method="POST" class="d-inline">
-            @csrf
-            @method('DELETE')
-            <button type="button" class="btn-reject-custom btn-hapus-riwayat" 
-                    title="Hapus Riwayat" 
-                    style="width: 28px; height: 28px; background: #6c757d; border: none; border-radius: 6px; color: white;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-            </button>
-        </form>
+                                    {{-- Tombol Tolak --}}
+                                    <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST">
+                                        @csrf
+                                        <button class="btn-reject-custom" title="Tolak">✕</button>
+                                    </form>
 
-    </div>
-</td>
+                                @elseif($item->status == 'Disetujui')
+                                    {{-- Tombol Selesai --}}
+                                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST">
+                                        @csrf
+                                        <button class="btn-selesai">Selesai</button>
+                                    </form>
+                                @endif
 
-        {{-- 2. KOLOM BADGE STATUS --}}
-        <td>
-            @php
-                $statusCheck = strtoupper($item->status); 
-                $badgeColor = 'bg-secondary'; 
-                
-                if ($statusCheck == 'PENGAJUAN') $badgeColor = 'bg-pengajuan';
-                elseif ($statusCheck == 'DISETUJUI') $badgeColor = 'bg-disetujui';
-                elseif ($statusCheck == 'DITOLAK') $badgeColor = 'bg-ditolak';
-                elseif ($statusCheck == 'SELESAI') $badgeColor = 'bg-selesai';
-            @endphp
-
-            <span class="badge-custom {{ $badgeColor }}">
-                {{ $item->status }}
-            </span>
-        </td>
-    </tr>
-    @empty
-        <tr><td colspan="8" class="text-center text-muted py-4">Data tidak ditemukan</td></tr>
-    @endforelse
-
-                                    </tbody>
-                                </table>
-                            </div>
+                            @endif
                         </div>
-                    </div>
+                    </td>
+                    <td>
+                        @php
+                            $statusClass = [
+                                'Pengajuan'=>'bg-pengajuan',
+                                'Disetujui'=>'bg-disetujui',
+                                'Ditolak'=>'bg-ditolak',
+                                'Selesai'=>'bg-selesai'
+                            ][$item->status] ?? '';
+                        @endphp
+                        <span class="badge-custom {{ $statusClass }}">{{ $item->status }}</span>
+                    </td>
+                </tr>
+                @empty
+                    @if(request('no_permohonan'))
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">Data tidak ditemukan</td>
+                    </tr>
+                    @endif
+                @endforelse
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 {{-- MODAL PINJAM --}}
 <div class="modal fade" id="modalPinjam" tabindex="-1">
@@ -145,7 +151,7 @@
             
             <div class="mb-2">
                 <label class="small">No Permohonan</label>
-                <div class="input-group"> {{-- Menggunakan input group agar tombol ada di samping --}}
+                <div class="input-group">
                     <input type="text" id="input_no_permohonan" name="no_permohonan" class="form-control" placeholder="Contoh: 02348..." required>
                     <button type="button" class="btn btn-primary" onclick="cekDetailSebelumPinjam()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -228,219 +234,30 @@
         </div>
     </div>
 </div>
+
 <style>
-/* =========================
-   CARD & HEADER
-========================= */
-.card-custom {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.table-header-custom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    position: relative;
-}
-
-.table-title-custom {
-    font-size: 18px;
-    font-weight: 600;
-    color: #383E49;
-    margin: 0;
-}
-
-.table-actions-custom {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: relative;
-}
-
-/* =========================
-   BUTTON
-========================= */
-.btn-filter-custom {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #ffffff;
-    border: 1px solid #D0D5DD;
-    height: 38px;
-    padding: 0 16px;
-    border-radius: 8px;
-    color: #5D6679;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.btn-filter-custom:hover {
-    background: #F9FAFB;
-}
-
-.btn-submit-filter {
-    width: 100%;
-    background: #1366D9;
-    color: #ffffff;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.btn-reset-filter {
-    display: block;
-    text-align: center;
-    margin-top: 8px;
-    font-size: 13px;
-    color: #667085;
-    text-decoration: none;
-}
-
-/* =========================
-   FILTER DROPDOWN
-========================= */
-.filter-dropdown-custom {
-    display: none;
-    position: absolute;
-    top: 45px;
-    right: 0;
-    background: #ffffff;
-    border: 1px solid #E4E7EC;
-    border-radius: 12px;
-    padding: 20px;
-    width: 280px;
-    z-index: 1050;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-}
-
-.filter-dropdown-custom.show {
-    display: block;
-}
-
-.filter-group-custom {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 12px;
-}
-
-.filter-group-custom label {
-    font-size: 12px;
-    color: #48505E;
-}
-
-.filter-group-custom input {
-    height: 34px;
-    border-radius: 6px;
-    border: 1px solid #D0D5DD;
-    padding: 0 10px;
-    font-size: 13px;
-}
-
-/* =========================
-   TABLE
-========================= */
-.table-custom {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.table-custom thead th {
-    text-align: left;
-    padding: 12px;
-    border-bottom: 2px solid #F0F1F3;
-    font-weight: 600;
-    color: #48505E;
-}
-
-.table-custom tbody td {
-    padding: 12px;
-    border-bottom: 1px solid #F0F1F3;
-    vertical-align: middle;
-    color: #344054;
-}
-
-/* =========================
-   SELECT DIVISI
-========================= */
-.form-select-divisi-table {
-    width: 100%;
-    height: 32px;
-    padding: 0 8px;
-    border: 1px solid #D0D5DD;
-    border-radius: 6px;
-    background-color: #ffffff;
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: #344054;
-    cursor: pointer;
-}
-
-/* =========================
-   AKSI BUTTON
-========================= */
-.btn-check-custom {
-    width: 28px;
-    height: 28px;
-    background: #34C759;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-reject-custom {
-    width: 28px;
-    height: 28px;
-    background: #FF383C;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-selesai {
-    height: 28px;
-    background: #0088FF;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    padding: 0 12px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.btn-detail-blue {
-    height: 28px;
-    background: #629FF4;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    padding: 0 10px;
-    font-size: 11px;
-    cursor: pointer;
-}
-
-/* =========================
-   BADGE STATUS
-========================= */
-.badge-custom {
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #ffffff;
-}
-
+/* CSS Kamu Tetap Sama */
+.card-custom { background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.table-header-custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: relative; }
+.table-title-custom { font-size: 18px; font-weight: 600; color: #383E49; margin: 0; }
+.table-actions-custom { display: flex; align-items: center; gap: 12px; position: relative; }
+.btn-filter-custom { display: flex; align-items: center; gap: 8px; background: #ffffff; border: 1px solid #D0D5DD; height: 38px; padding: 0 16px; border-radius: 8px; color: #5D6679; font-size: 14px; cursor: pointer; }
+.btn-filter-custom:hover { background: #F9FAFB; }
+.btn-submit-filter { width: 100%; background: #1366D9; color: #ffffff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.btn-reset-filter { display: block; text-align: center; margin-top: 8px; font-size: 13px; color: #667085; text-decoration: none; }
+.filter-dropdown-custom { display: none; position: absolute; top: 45px; right: 0; background: #ffffff; border: 1px solid #E4E7EC; border-radius: 12px; padding: 20px; width: 280px; z-index: 1050; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+.filter-dropdown-custom.show { display: block; }
+.filter-group-custom { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.filter-group-custom label { font-size: 12px; color: #48505E; }
+.filter-group-custom input { height: 34px; border-radius: 6px; border: 1px solid #D0D5DD; padding: 0 10px; font-size: 13px; }
+.table-custom { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table-custom thead th { text-align: left; padding: 12px; border-bottom: 2px solid #F0F1F3; font-weight: 600; color: #48505E; }
+.table-custom tbody td { padding: 12px; border-bottom: 1px solid #F0F1F3; vertical-align: middle; color: #344054; }
+.btn-check-custom { width: 28px; height: 28px; background: #34C759; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.btn-reject-custom { width: 28px; height: 28px; background: #FF383C; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+.btn-selesai { height: 28px; background: #0088FF; color: #ffffff; border: none; border-radius: 6px; padding: 0 12px; font-size: 12px; cursor: pointer; }
+.btn-detail-blue { height: 28px; background: #629FF4; color: #ffffff; border: none; border-radius: 6px; padding: 0 10px; font-size: 11px; cursor: pointer; }
+.badge-custom { padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; color: #ffffff; }
 .bg-pengajuan { background-color: #FFCC00; }
 .bg-disetujui { background-color: #34C759; }
 .bg-ditolak   { background-color: #FF383C; }
@@ -532,12 +349,10 @@ function showDetail(item) {
 
 function cekDetailSebelumPinjam() {
     const noPermohonan = document.getElementById('input_no_permohonan').value;
-
     if (!noPermohonan) {
         Swal.fire('Peringatan', 'Silakan masukkan Nomor Permohonan terlebih dahulu.', 'info');
         return;
     }
-
     fetch(`/cari-permohonan/${noPermohonan}`)
         .then(response => response.json())
         .then(data => {

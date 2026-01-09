@@ -31,6 +31,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/pengiriman-berkas/store', [ArsipController::class, 'store'])->name('pengiriman-berkas.store');
     Route::get('/arsip/list-berkas/{no_pengirim}', [ArsipController::class, 'listBerkas'])->name('arsip.list-berkas');
     Route::get('/arsip/cetak-pengantar/{no_pengirim}', [ArsipController::class, 'cetakPengantar'])->name('arsip.cetak-pengantar');
+    
+    // TAMBAHKAN BARIS INI UNTUK AUTO-FILL SAAT INPUT NO PERMOHONAN
+    Route::get('/get-permohonan-detail/{nomor}', [ArsipController::class, 'getPermohonanDetail'])->name('get-permohonan-detail');
 
     // --- MODUL PENERIMAAN BERKAS (ARSIP) ---
     Route::get('/penerimaan-berkas', [ArsipController::class, 'penerimaanBerkas'])->name('penerimaan-berkas.index');
@@ -55,4 +58,10 @@ Route::middleware('auth')->group(function () {
     // --- MANAJEMEN USER ---
     Route::resource('users', UserController::class)->except(['show']);
     Route::patch('/users/{user}/update-status', [UserController::class, 'updateStatus'])->name('users.update-status');
+
+    // --- MODUL MASTER RAK LOKER (TAMBAHAN REVISI) ---
+    Route::get('/rak-loker', [ArsipController::class, 'rakIndex'])->name('rak-loker.index');
+    Route::post('/rak-loker/store', [ArsipController::class, 'rakStore'])->name('rak-loker.store');
+    Route::delete('/rak-loker/{id}', [ArsipController::class, 'rakDestroy'])->name('rak-loker.destroy');
 });
+
