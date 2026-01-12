@@ -28,7 +28,6 @@
                         <tr>
                             <th>Username</th>
                             <th>Nama Lengkap</th>
-                            <th>Email</th>
                             <th>Role / Unit</th>
                             <th>Status</th>
                             <th class="text-center">Aksi</th>
@@ -39,7 +38,6 @@
     <tr>
         <td class="fw-bold">{{ $user->name }}</td>
         <td>{{ $user->nama_lengkap }}</td>
-        <td>{{ $user->email }}</td>
         <td>
             <span class="badge bg-outline-primary text-primary border border-primary">
                 {{ $user->role }}
@@ -89,13 +87,13 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
+                        <div class="mb-3">
+                                <label class="form-label fw-bold">Username</label>
+                                <input type="text" name="username" class="form-control" value="{{ $user->name }}" required>
+                            </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Nama Lengkap</label>
                                 <input type="text" name="nama_lengkap" class="form-control" value="{{ $user->nama_lengkap }}" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Email</label>
-                                <input type="email" name="email" class="form-control" value="{{ $user->email }}" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Role (Unit Kerja)</label>
@@ -146,35 +144,35 @@
 </div>
 
 {{-- MODAL TAMBAH USER --}}
-<div class="modal fade" id="modalTambahUser" tabindex="-1" aria-labelledby="modalTambahUserLabel" aria-hidden="true">
+{{-- MODAL TAMBAH USER --}}
+<div class="modal fade" id="modalTambahUser" tabindex="-1" autocomplete="off">
     <div class="modal-dialog">
-    <form action="{{ route('users.store') }}" method="POST" class="modal-content" autocomplete="off">
+        <form action="{{ route('users.store') }}" method="POST" class="modal-content">
             @csrf
+            {{-- Trik matiin autofill --}}
+            <input type="text" style="display:none">
+            <input type="password" style="display:none">
+
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTambahUserLabel">Input Data User Baru</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Input Data User Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label fw-bold">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Masukan username" autocomplete="off" required>
+                    <input type="text" name="username" class="form-control" placeholder="Contoh: admin_tikim" required autocomplete="off">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nama Lengkap</label>
                     <input type="text" name="nama_lengkap" class="form-control" placeholder="Nama Lengkap Pegawai" required>
                 </div>
+                {{-- EMAIL DIHAPUS DARI SINI --}}
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="Contoh:tikim@gmail.com" required>
-                </div>
-                <div class="mb-3">
-                <label class="form-label fw-bold">Password</label>
-                <div class="input-group">
-                <input type="password" name="password" class="form-control pass-input" placeholder="" autocomplete="new-password" required>
-                    <button class="btn btn-outline-secondary toggle-password" type="button">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
+                    <label class="form-label fw-bold">Password</label>
+                    <div class="input-group">
+                        <input type="password" name="password" class="form-control pass-input" placeholder="Minimal 6 karakter" required autocomplete="new-password">
+                        <button class="btn btn-outline-secondary toggle-password" type="button"><i class="fas fa-eye"></i></button>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Role (Unit Kerja)</label>

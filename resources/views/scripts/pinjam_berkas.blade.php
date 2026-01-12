@@ -103,21 +103,99 @@
 
 {{-- MODAL PINJAM --}}
 <div class="modal fade" id="modalPinjam" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content p-3 shadow border-0" style="border-radius: 12px;">
-            <h6 class="mb-3 fw-bold">Pinjam Berkas Baru</h6>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;"> 
+        <div class="modal-content p-4 shadow border-0" style="border-radius: 12px;">
+            <h6 class="mb-3 fw-bold text-primary"><i class="fas fa-plus-circle me-2"></i>Pinjam Berkas Baru</h6>
             <form id="formPinjamBerkas" action="{{ route('pinjam-berkas.store') }}" method="POST">
                 @csrf
-                <div class="mb-2">
-                    <label class="small text-muted">No Permohonan</label>
-                    <div class="input-group">
-                        <input type="text" id="input_no_permohonan" name="no_permohonan" class="form-control" placeholder="Contoh: 02348..." required>
-                        <button type="button" class="btn btn-primary" onclick="cekDetailSebelumPinjam()">Cek</button>
+                
+                {{-- Input Utama --}}
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Nomor Permohonan</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-white border-primary"><i class="fas fa-barcode text-primary"></i></span>
+                        <input type="text" id="input_no_permohonan" name="no_permohonan" class="form-control border-primary" placeholder="Ketik nomor permohonan..." required autocomplete="off">
                     </div>
                 </div>
 
+                {{-- AREA DETAIL OTOMATIS (Lengkap 14 Field) --}}
+        <div id="areaDetailOtomatis" class="p-3 bg-light rounded-3 mb-4 border" style="display: none; max-width: 600px; margin: 0 auto;">
+            <h6 class="small fw-bold text-muted mb-3 text-uppercase text-center">Informasi Lengkap Berkas</h6>
+            
+            <div class="row g-2 justify-content-center">
+        {{-- Baris 1 --}}
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Tanggal Permohonan</label>
+            <input type="text" id="det_tgl_mohon" class="form-control form-control-sm bg-white" readonly>
+        </div>
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Tanggal Terbit</label>
+            <input type="text" id="det_tgl_terbit" class="form-control form-control-sm bg-white" readonly>
+        </div>
+        
+        {{-- Baris 2 --}}
+        <div class="col-sm-10">
+            <label class="small text-muted mb-1">Nama Lengkap</label>
+            <input type="text" id="det_nama" class="form-control form-control-sm bg-white" readonly>
+        </div>
+
+        {{-- Baris 3 --}}
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Tempat Lahir</label>
+            <input type="text" id="det_tempat_lahir" class="form-control form-control-sm bg-white" readonly>
+        </div>
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Tanggal Lahir</label>
+            <input type="text" id="det_tgl_lahir" class="form-control form-control-sm bg-white" readonly>
+        </div>
+
+        {{-- Baris 4 --}}
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Jenis Kelamin</label>
+            <input type="text" id="det_jk" class="form-control form-control-sm bg-white" readonly>
+        </div>
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">No Telpon</label>
+            <input type="text" id="det_telp" class="form-control form-control-sm bg-white" readonly>
+        </div>
+
+        {{-- Baris 5 --}}
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Jenis Permohonan</label>
+            <input type="text" id="det_jns_mohon" class="form-control form-control-sm bg-white" readonly>
+        </div>
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Jenis Paspor</label>
+            <input type="text" id="det_jns_paspor" class="form-control form-control-sm bg-white" readonly>
+        </div>
+
+        {{-- Baris 6 --}}
+        <div class="col-sm-10">
+            <label class="small text-muted mb-1">Tujuan Paspor</label>
+            <input type="text" id="det_tujuan" class="form-control form-control-sm bg-white" readonly>
+        </div>
+
+        {{-- Baris 7 --}}
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">No Paspor</label>
+            <input type="text" id="det_no_paspor" class="form-control form-control-sm bg-white" readonly>
+        </div>
+        <div class="col-sm-5">
+            <label class="small text-muted mb-1">Alur Terakhir</label>
+            <input type="text" id="det_alur" class="form-control form-control-sm bg-white" readonly>
+        </div>
+
+        {{-- Baris 8 --}}
+        <div class="col-sm-10">
+            <label class="small text-muted mb-1">Lokasi Arsip</label>
+            <input type="text" id="det_lokasi" class="form-control form-control-sm bg-white fw-bold text-success border-success" readonly>
+        </div>
+    </div>
+</div>
+
+                {{-- Input Peminjam --}}
                 <div class="mb-3">
-                    <label class="form-label fw-bold small text-muted">Divisi Peminjam</label>
+                    <label class="form-label fw-bold small">Divisi Peminjam</label>
                     @if(in_array($roleUser, ['ADMIN', 'KANIM']))
                         <select name="nama_peminjam" class="form-select" required>
                             <option value="" selected disabled>-- Pilih Divisi --</option>
@@ -132,15 +210,14 @@
                     @endif
                 </div>
 
-                <div class="d-flex gap-2 mt-3">
-                    <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn-submit-filter w-100" onclick="handleSimpanPinjaman()">Simpan Peminjaman</button>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="button" class="btn btn-light w-100 border" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary w-100" onclick="handleSimpanPinjaman()">Simpan Peminjaman</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 {{-- MODAL DETAIL --}}
 <div class="modal fade" id="modalDetailBerkas" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -240,27 +317,51 @@ function showDetail(item) {
     new bootstrap.Modal(document.getElementById('modalDetailBerkas')).show();
 }
 
-function cekDetailSebelumPinjam() {
-    const no = document.getElementById('input_no_permohonan').value;
-    if(!no) { Swal.fire('Info', 'Masukkan Nomor Permohonan', 'info'); return; }
-    fetch(`/cari-permohonan/${no}`).then(r => r.json()).then(data => {
-        if(data.success) {
-            if(data.is_borrowed) {
-                Swal.fire({
-                    title: 'Berkas Sedang Dipinjam!',
-                    html: `Berkas ini sedang dipinjam oleh divisi <b>${data.borrower_name}</b>.<br>Selesaikan pengembalian berkas terlebih dahulu.`,
-                    icon: 'error',
-                    confirmButtonColor: '#F97066'
-                });
-            } else {
-                showDetail(data.data);
-            }
-        } else {
-            Swal.fire('Gagal', 'Nomor tidak ditemukan!', 'error');
-        }
-    });
-}
+let debounceTimer;
 
+document.getElementById('input_no_permohonan').addEventListener('input', function() {
+    const no = this.value;
+    const detailArea = document.getElementById('areaDetailOtomatis');
+    
+    clearTimeout(debounceTimer);
+    if (!no || no.length < 5) {
+        detailArea.style.display = 'none';
+        return;
+    }
+
+    debounceTimer = setTimeout(() => {
+        fetch(`/cari-permohonan/${no}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_borrowed) {
+                        Swal.fire('Info', `Berkas sedang dipinjam oleh ${data.borrower_name}`, 'warning');
+                        this.value = '';
+                        detailArea.style.display = 'none';
+                    } else {
+                        // Isi 14 Field Lengkap
+                        document.getElementById('det_tgl_mohon').value = data.data.tanggal_permohonan || '-';
+                        document.getElementById('det_tgl_terbit').value = data.data.tanggal_terbit || '-';
+                        document.getElementById('det_nama').value = data.data.nama || '-';
+                        document.getElementById('det_tempat_lahir').value = data.data.tempat_lahir || '-';
+                        document.getElementById('det_tgl_lahir').value = data.data.tanggal_lahir || '-';
+                        document.getElementById('det_jk').value = data.data.jenis_kelamin || '-';
+                        document.getElementById('det_telp').value = data.data.no_telp || '-';
+                        document.getElementById('det_jns_mohon').value = data.data.jenis_permohonan || '-';
+                        document.getElementById('det_jns_paspor').value = data.data.jenis_paspor || '-';
+                        document.getElementById('det_tujuan').value = data.data.tujuan_paspor || '-';
+                        document.getElementById('det_no_paspor').value = data.data.no_paspor || '-';
+                        document.getElementById('det_alur').value = data.data.status_berkas || '-';
+                        document.getElementById('det_lokasi').value = data.data.lokasi_arsip || '-';
+                        
+                        detailArea.style.display = 'block';
+                    }
+                } else {
+                    detailArea.style.display = 'none';
+                }
+            });
+    }, 500); 
+});
 function handleSimpanPinjaman() {
     const no = document.getElementById('input_no_permohonan').value;
     if(!no) { Swal.fire('Peringatan', 'Masukkan Nomor Permohonan', 'warning'); return; }

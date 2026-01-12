@@ -17,25 +17,25 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'username' => 'required|unique:users,name',
-            'nama_lengkap' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'role' => 'required|in:TIKIM,LANTASKIM,INTELDAKIM,INTELTUSKIM,ADMIN',
-            'is_active' => 'required'
-        ]);
+    $request->validate([
+        'username' => 'required|unique:users,name', // Sesuaikan kolom 'name' di tabel users
+        'nama_lengkap' => 'required',
+        'password' => 'required|min:6',
+        'role' => 'required',
+    ], [
+        'username.unique' => 'Username sudah terdaftar!',
+    ]);
 
-        User::create([
-            'name' => $request->username,
-            'nama_lengkap' => $request->nama_lengkap,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'is_active' => $request->is_active,
-        ]);
+    \App\Models\User::create([
+        'name' => $request->username,
+        'nama_lengkap' => $request->nama_lengkap,
+        'password' => bcrypt($request->password),
+        'role' => $request->role,
+        'is_active' => $request->is_active ?? 1,
+        // email bisa dikosongkan atau diisi default null jika di database diizinkan null
+    ]);
 
-        return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
+    return back()->with('success', 'User berhasil ditambahkan!');
     }
 
     // --- INI FUNGSI YANG HARUS DITAMBAHKAN AGAR TIDAK ERROR LAGI ---
@@ -49,31 +49,30 @@ class UserController extends Controller
         return redirect()->back()->with('success', "User {$user->name} berhasil {$pesan}.");
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
         
+        // Validasi agar username tetap unik tapi mengabaikan ID user ini sendiri
         $request->validate([
+            'username' => 'required|unique:users,name,' . $id, 
             'nama_lengkap' => 'required',
             'role' => 'required',
-            'is_active' => 'required'
         ]);
-
-        $data = [
-            'nama_lengkap' => $request->nama_lengkap,
-            'role' => $request->role,
-            'is_active' => $request->is_active,
-        ];
-
+    
+        $user->name = $request->username; // Sesuaikan jika kolomnya 'name' atau 'username'
+        $user->nama_lengkap = $request->nama_lengkap;
+        $user->role = $request->role;
+        $user->is_active = $request->is_active;
+    
+        // Hanya update password jika diisi
         if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+            $user->password = bcrypt($request->password);
         }
-
-        $user->update($data);
-
-        return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');
+    
+        $user->save();
+        return back()->with('success', 'Data user berhasil diperbarui!');
     }
-
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);

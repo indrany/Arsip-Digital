@@ -50,36 +50,44 @@
                     @endforeach
                 </div>
             @endif
-            <form action="{{ route('login.post') }}" method="POST" class="login-form">
-                @csrf
+            <form action="{{ route('login.post') }}" method="POST" class="login-form" autocomplete="off">
+            @csrf
 
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        name="email"
-                        placeholder="Masukkan email anda" 
-                        required
-                    >
-                </div>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" {{-- name ini harus sesuai dengan LoginController: $request->username --}}
+                    placeholder="Masukkan username anda" 
+                    required
+                    autocomplete="off"
+                    value="{{ old('username') }}" {{-- Menjaga username tetap ada jika login gagal --}}
+                >
+            </div>
 
-                <div class="form-group">
+            <div class="form-group">
                 <label for="password">Password</label>
                 <div style="position: relative; display: flex; align-items: center;">
                     <input 
-                        type="password" id="password" name="password" placeholder="••••••••" required style="padding-right: 40px; width: 100%;">
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="••••••••" 
+                        required 
+                        style="padding-right: 40px; width: 100%;"
+                        autocomplete="current-password"
+                    >
                     <i class="fa-regular fa-eye" 
-                    id="togglePassword" onclick="togglePassword('password', this)"
+                    id="togglePassword" 
+                    onclick="togglePassword('password', this)"
                     style="position: absolute; right: 15px; cursor: pointer; color: #667085;">
                     </i>
                 </div>
-                </div>
+            </div>
 
-                <button type="submit" class="btn-primary">Masuk</button>
+            <button type="submit" class="btn-primary">Masuk</button>
             </form>
-        </div>
-
     </div>
     <script>
     function togglePassword(inputId, icon) {
