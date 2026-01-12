@@ -4,56 +4,75 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0" style="border-radius: 12px;">
         <div class="card-body">
-            {{-- Tombol Navigasi & Cetak Global --}}
+            {{-- Tombol Navigasi --}}
             <div class="d-flex justify-content-start align-items-center mb-4 gap-2">
-                <a href="{{ route('pengiriman-berkas.create') }}" class="btn btn-primary fw-bold">
+                <a href="{{ route('pengiriman-berkas.create') }}" class="btn btn-primary fw-bold px-3 shadow-sm" style="border-radius: 8px;">
                     <i class="fas fa-plus-circle me-1"></i> Tambah Pengiriman
                 </a>
-                <button type="button" class="btn btn-success fw-bold" id="btnCetakGlobal">
-                    <i class="fas fa-print me-1"></i> Cetak Surat Pengantar
-                </button>
             </div>
 
-            <h6 class="fw-bold mb-3"><i class="fas fa-history me-2"></i>Tabel Riwayat Pengiriman Berkas</h6>
+            <h6 class="fw-bold mb-3 d-flex align-items-center">
+                <i class="fas fa-history me-2 text-primary"></i>Tabel Riwayat Pengiriman Berkas
+            </h6>
 
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                    <thead class="bg-light text-muted uppercase">
                         <tr>
-                            <th>No. Permohonan</th>
-                            <th>Nama Pemohon</th>
-                            <th>Asal Unit</th>
-                            <th>Tanggal Kirim</th>
-                            <th>Status</th>
-                            <th class="text-center">Aksi</th>
+                            <th class="ps-4" style="width: 20%;">No. Pengirim</th>
+                            <th style="width: 15%;">Tanggal Kirim</th>
+                            <th class="text-center" style="width: 15%;">Jumlah Berkas</th>
+                            <th style="width: 15%;">Asal Unit</th>
+                            <th class="text-center" style="width: 15%;">Status</th>
+                            <th class="text-center" style="width: 20%;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($riwayat as $row)
                         <tr>
-                            <td class="fw-bold text-primary">{{ $row->no_permohonan }}</td>
-                            <td class="text-dark">{{ $row->nama }}</td>
-                            <td><span class="badge bg-info text-dark">{{ $row->asal_unit ?? 'Kanim' }}</span></td>
+                            <td class="ps-4 fw-bold text-primary">{{ $row->no_pengirim }}</td>
                             <td>{{ \Carbon\Carbon::parse($row->tgl_pengirim)->format('d-m-Y') }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary-subtle text-secondary px-3 py-2" style="border-radius: 8px; font-weight: 600;">
+                                    <i class="fas fa-files me-1"></i>{{ $row->jumlah_berkas }} Berkas
+                                </span>
+                            </td>
                             <td>
-                                @if($row->status == 'Diajukan')
-                                    <span class="badge bg-warning text-dark">Diajukan</span>
-                                @else
-                                    <span class="badge bg-success">DITERIMA</span>
-                                @endif
+                                <span class="badge bg-info-subtle text-info px-3 py-2 text-uppercase" style="border-radius: 8px;">
+                                    {{ $row->asal_unit }}
+                                </span>
                             </td>
                             <td class="text-center">
-                                {{-- Tombol untuk memicu modal detail --}}
-                                <button class="btn btn-outline-primary btn-sm btn-detail-gabungan" data-batch="{{ $row->batch_id }}">
-                                    <i class="fas fa-eye me-1"></i> Detail & List Berkas
-                                </button>
+                                @php
+                                    $statusClass = [
+                                        'Diajukan' => 'bg-warning text-dark',
+                                        'DITERIMA OLEH ARSIP' => 'bg-success text-white',
+                                        'SIAP_DITERIMA' => 'bg-info text-white'
+                                    ][$row->status] ?? 'bg-secondary text-white';
+                                @endphp
+                                <span class="badge {{ $statusClass }} px-3 py-2" style="border-radius: 8px; font-size: 10px;">
+                                    {{ strtoupper($row->status) }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    {{-- TOMBOL DETAIL --}}
+                                    <button type="button" onclick="lihatDetailBatch('{{ $row->no_pengirim }}')" class="btn btn-outline-primary btn-sm px-3" style="border-radius: 6px; font-size: 11px;">
+                                        <i class="fas fa-eye me-1"></i> Detail
+                                    </button>
+                                    
+                                    {{-- TOMBOL CETAK PER BARIS --}}
+                                    <a href="{{ route('arsip.cetak-pengantar', $row->no_pengirim) }}" target="_blank" class="btn btn-success btn-sm px-3" style="border-radius: 6px; font-size: 11px;">
+                                        <i class="fas fa-print me-1"></i> Cetak
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-5">Belum ada riwayat pengiriman ditemukan.</td>
+                            <td colspan="6" class="text-center py-5 text-muted">Belum ada riwayat pengiriman berkas.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -63,137 +82,128 @@
     </div>
 </div>
 
-{{-- MODAL GABUNGAN (DETAIL + LIST TABEL) --}}
-<div class="modal fade" id="modalDetailGabungan" tabindex="-1">
+{{-- MODAL DETAIL BATCH (Pop-up daftar berkas terlampir) --}}
+<div class="modal fade" id="modalDetailBatch" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white py-3">
-                <h5 class="modal-title fw-bold"><i class="fas fa-file-alt me-2"></i>Detail Batch Pengiriman</h5>
+        <div class="modal-content shadow border-0" style="border-radius: 12px;">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h6 class="modal-title fw-bold m-0"><i class="fas fa-file-alt me-2"></i>Detail Batch Pengiriman</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                {{-- Box Info Header Modal --}}
-                <div class="row g-3 mb-4 p-3 bg-light rounded border mx-0">
-                    <div class="col-md-3">
-                        <label class="text-muted small d-block">ID Batch (No Pengirim)</label>
-                        <span id="v_no_pengirim" class="fw-bold text-primary h6">-</span>
+                {{-- Header Informasi Batch --}}
+                <div class="row bg-light p-3 rounded mb-4 g-3 border">
+                    <div class="col-md-4">
+                        <label class="d-block text-muted small fw-bold">ID Batch (No Pengirim)</label>
+                        <span id="det_no_pengirim" class="fw-bold text-primary" style="font-size: 16px;">-</span>
                     </div>
-                    <div class="col-md-3">
-                        <label class="text-muted small d-block">Tanggal Pengiriman</label>
-                        <span id="v_tgl_pengirim_modal" class="fw-bold h6">-</span>
+                    <div class="col-md-4">
+                        <label class="d-block text-muted small fw-bold">Tanggal Pengiriman</label>
+                        <span id="det_tgl_pengirim" class="fw-bold" style="font-size: 16px;">-</span>
                     </div>
-                    <div class="col-md-3">
-                        <label class="text-muted small d-block">Status Batch</label>
-                        <div id="v_status_badge"></div>
-                    </div>
-                    <div class="col-md-3 text-md-end d-flex align-items-center justify-content-md-end">
+                    <div class="col-md-4">
+                        <label class="d-block text-muted small fw-bold">Status Batch</label>
+                        <div id="det_status_wrapper">
+                             <span id="det_status" class="badge bg-warning text-dark">-</span>
+                        </div>
                     </div>
                 </div>
 
-                <h6 class="fw-bold mb-3 ms-1 text-dark"><i class="fas fa-list me-2 text-primary"></i>Daftar Berkas Terlampir</h6>
-                
-                {{-- Tabel Daftar Berkas di dalam Modal --}}
-                <div class="table-responsive rounded border">
-                    <table class="table table-striped table-hover align-middle mb-0">
-                        <thead class="table-dark">
+                {{-- Daftar Tabel Berkas --}}
+                <h6 class="fw-bold mb-3 d-flex align-items-center"><i class="fas fa-list-ul me-2 text-primary"></i>Daftar Berkas Terlampir</h6>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="bg-dark text-white text-center" style="font-size: 12px;">
                             <tr>
-                                <th class="ps-3">No Permohonan</th>
+                                <th class="py-2">No Permohonan</th>
                                 <th>Nama Pemohon</th>
                                 <th>Jenis Permohonan</th>
                                 <th>Jenis Paspor</th>
                                 <th>Tujuan</th>
-                                <th class="text-center">Status Berkas</th>
+                                <th>Status Berkas</th>
                             </tr>
                         </thead>
-                        <tbody id="v_list_body">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-5">
-                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div> Memuat daftar berkas...
-                                </td>
-                            </tr>
+                        <tbody id="det_list_berkas" style="font-size: 12px;">
+                            {{-- Data diisi via AJAX --}}
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="modal-footer border-0 bg-light">
-                <button class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Tutup</button>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-secondary px-4 fw-bold shadow-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button>
             </div>
         </div>
     </div>
 </div>
-@endsection
 
-@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-$(document).ready(function() {
-    let activeBatchId = null;
+function lihatDetailBatch(noPengirim) {
+    // Tampilkan Loading
+    Swal.fire({ title: 'Mengambil data...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-    /* 1. LOGIKA MENAMPILKAN DETAIL BATCH PADA MODAL */
-    $(document).on('click', '.btn-detail-gabungan', function () {
-        const batchId = $(this).data('batch');
-        activeBatchId = batchId;
+    fetch(`/arsip/list-berkas/${noPengirim}`)
+        .then(response => response.json())
+        .then(res => {
+            Swal.close();
+            if(res.success) {
+                // Isi Header Modal
+                document.getElementById('det_no_pengirim').innerText = res.batch.no_pengirim;
+                document.getElementById('det_tgl_pengirim').innerText = res.batch.tgl_pengirim;
+                document.getElementById('det_status').innerText = res.batch.status;
 
-        $('#v_no_pengirim').text(batchId);
-        $('#v_list_body').html('<tr><td colspan="6" class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin me-2"></i>Mengambil data berkas...</td></tr>');
-        $('#modalDetailGabungan').modal('show');
-
-        // Request AJAX ke controller listBerkas
-        $.get(`/arsip/list-berkas/${batchId}`, function (res) {
-            let html = '';
-            
-            if (res.success && res.data.length > 0) {
-                // Update Info di Header Modal
-                $('#v_tgl_pengirim_modal').text(res.batch ? res.batch.tgl_pengirim : '-');
-                
-                let status = res.batch ? res.batch.status : 'Diajukan';
-                let badgeClass = (status === 'Diajukan') ? 'bg-warning text-dark' : 'bg-success';
-                $('#v_status_badge').html(`<span class="badge ${badgeClass}">${status}</span>`);
-
-                // Generate baris tabel dari data yang diterima
+                // Isi Tabel List Berkas
+                let html = '';
                 res.data.forEach(item => {
-                    html += `<tr>
-                        <td class="fw-bold text-primary ps-3">${item.no_permohonan}</td>
-                        <td class="text-dark">${item.nama}</td>
-                        <td class="small">${item.jenis_permohonan || '-'}</td>
-                        <td class="small">${item.jenis_paspor || '-'}</td> 
-                        <td class="fw-bold text-secondary">${item.tujuan_paspor || '-'}</td>
-                        <td class="text-center"><span class="badge bg-info text-dark" style="font-size: 0.7rem;">${item.status_berkas}</span></td>
-                    </tr>`;
+                    html += `
+                        <tr>
+                            <td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td>
+                            <td>${item.nama}</td>
+                            <td class="text-center">${item.jenis_permohonan}</td>
+                            <td class="text-center">${item.jenis_paspor}</td>
+                            <td class="text-center">${item.tujuan_paspor || '-'}</td>
+                            <td class="text-center">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2">
+                                    ${item.status_berkas}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
                 });
+                document.getElementById('det_list_berkas').innerHTML = html;
+
+                // Munculkan Modal
+                var myModal = new bootstrap.Modal(document.getElementById('modalDetailBatch'));
+                myModal.show();
             } else {
-                html = '<tr><td colspan="6" class="text-center text-muted py-4">Data berkas tidak ditemukan.</td></tr>';
+                Swal.fire('Error', 'Gagal mengambil data detail.', 'error');
             }
-            $('#v_list_body').html(html);
-        }).fail(function() {
-            $('#v_list_body').html('<tr><td colspan="6" class="text-center text-danger py-4">Gagal terhubung ke server.</td></tr>');
+        })
+        .catch(err => {
+            Swal.close();
+            console.error(err);
+            Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
         });
-    });
-
-    /* 2. LOGIKA CETAK GLOBAL (Batch Terbaru) */
-    $('#btnCetakGlobal').on('click', function() {
-        let lastBatchId = "{{ $riwayat->first()->batch_id ?? '' }}";
-        if (lastBatchId !== "") {
-            window.open("/arsip/cetak-pengantar/" + lastBatchId, "_blank");
-        } else {
-            alert("Tidak ada riwayat untuk dicetak.");
-        }
-    });
-
-    /* 3. LOGIKA CETAK DARI DALAM MODAL */
-    $('#btnCetakDariModal').on('click', function() {
-        if (activeBatchId) {
-            window.open("/arsip/cetak-pengantar/" + activeBatchId, "_blank");
-        }
-    });
-});
+}
 </script>
 
 <style>
-    /* Styling agar modal terlihat lebih modern dan tabel bisa discroll */
-    .modal-content { border-radius: 12px; overflow: hidden; }
-    .table-responsive { max-height: 450px; overflow-y: auto; }
-    .table thead th { position: sticky; top: 0; z-index: 10; border-top: 0; }
-    .bg-light { background-color: #f8f9fa !important; }
-    .badge { padding: 0.5em 1em; font-weight: 600; }
+    /* Styling Tambahan */
+    .bg-info-subtle { background-color: #e0f2fe !important; }
+    .text-info { color: #0369a1 !important; }
+    .bg-secondary-subtle { background-color: #f1f5f9 !important; }
+    .bg-primary-subtle { background-color: #e0e7ff !important; }
+    .uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .table thead th { 
+        position: sticky; 
+        top: 0; 
+        background: #f8f9fa;
+        z-index: 10;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .modal-content { border-radius: 15px; }
+    .badge { padding: 0.5em 1em; }
 </style>
-@endpush
+@endsection

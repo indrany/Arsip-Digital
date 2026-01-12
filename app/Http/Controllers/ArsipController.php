@@ -49,20 +49,11 @@ class ArsipController extends Controller
     }
 
     // 3. RIWAYAT PENGIRIMAN
-public function pengirimanBerkas()
+    public function pengirimanBerkas()
 {
-    // Kita Join tabel pengiriman_batch dengan permohonan agar mendapatkan No. Permohonan di halaman depan
-    $riwayat = DB::table('permohonan')
-        ->join('pengiriman_batch', 'permohonan.no_pengirim', '=', 'pengiriman_batch.no_pengirim')
-        ->select(
-            'permohonan.no_permohonan', 
-            'permohonan.nama', 
-            'pengiriman_batch.asal_unit', 
-            'pengiriman_batch.tgl_pengirim', 
-            'pengiriman_batch.status',
-            'pengiriman_batch.no_pengirim as batch_id'
-        )
-        ->orderBy('pengiriman_batch.created_at', 'desc')
+    $riwayat = DB::table('pengiriman_batch')
+        ->select('no_pengirim', 'tgl_pengirim', 'jumlah_berkas', 'asal_unit', 'status')
+        ->orderBy('created_at', 'desc')
         ->get();
 
     return view('arsip.riwayat_pengiriman', [
@@ -70,37 +61,28 @@ public function pengirimanBerkas()
         'riwayat' => $riwayat
     ]);
 }
-
     // 4. PENERIMAAN BERKAS (ARSIP)
     public function penerimaanBerkas()
 {
     $user = Auth::user();
-
-    // Izinkan ADMIN dan TIKIM (Arsip lama)
     if (!$user || !in_array(strtoupper($user->role), ['ADMIN', 'TIKIM'])) {
-        return redirect()->route('dashboard')->with('error', 'Akses ditolak. Hanya Admin atau Tikim yang diizinkan.');
+        return redirect()->route('dashboard')->with('error', 'Akses ditolak.');
     }
 
-    // QUERY INI YANG HARUS DIUBAH (Tambahkan Join ke tabel permohonan)
-    $riwayat_batches = DB::table('permohonan')
-        ->join('pengiriman_batch', 'permohonan.no_pengirim', '=', 'pengiriman_batch.no_pengirim')
-        ->select(
-            'permohonan.no_permohonan', 
-            'permohonan.nama', 
-            'pengiriman_batch.asal_unit', 
-            'pengiriman_batch.tgl_pengirim', 
-            'pengiriman_batch.status',
-            'pengiriman_batch.no_pengirim as batch_id' // Simpan ID batch asli untuk tombol proses
-        )
-        ->orderBy('pengiriman_batch.created_at', 'desc')
+    // QUERY REVISI: Mengambil data per Batch (No Pengirim) yang statusnya masih 'Diajukan'
+    $antrean_batches = DB::table('pengiriman_batch')
+        ->select('no_pengirim', 'asal_unit', 'tgl_pengirim', 'status', 'jumlah_berkas')
+        ->where('status', 'Diajukan') // Menampilkan hanya yang belum diproses
+        ->orderBy('created_at', 'desc')
         ->get();
 
+    // Data pendukung lainnya tetap
     $list_semua = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
     $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA')->get();
 
     return view('arsip.penerimaan_berkas', [
         'current_page'    => 'penerimaan-berkas',
-        'riwayat_batches' => $riwayat_batches, // Sekarang sudah ada kolom no_permohonan
+        'antrean_batches' => $antrean_batches, // Data batch antrean
         'list_semua'      => $list_semua,
         'list_sudah_scan' => $list_sudah_scan 
     ]);
@@ -112,7 +94,12 @@ public function pengirimanBerkas()
         try {
             $batch = DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->first();
             $data = Permohonan::where('no_pengirim', $no_pengirim)->get();
-            return response()->json(['success' => true, 'batch' => $batch, 'data' => $data]);
+            
+            return response()->json([
+                'success' => true, 
+                'batch' => $batch, 
+                'data' => $data
+            ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -121,9 +108,14 @@ public function pengirimanBerkas()
     // 6. CETAK PENGANTAR
     public function cetakPengantar($no_pengirim)
     {
+        // 1. Ambil data batch pengirimannya
         $batch = DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->first();
         if (!$batch) abort(404);
-        $items = Permohonan::where('no_pengirim', $no_pengirim)->get();
+
+        // 2. Ambil SEMUA permohonan yang punya no_pengirim ini
+        $items = \App\Models\Permohonan::where('no_pengirim', $no_pengirim)->get();
+
+        // 3. Kirim ke view cetak
         return view('arsip.cetak_pengantar', compact('batch', 'items'));
     }
 
@@ -360,34 +352,38 @@ public function pengirimanBerkas()
 
     // 11. Simpan Data Rak Baru
     public function rakStore(Request $request)
-    {
-        $request->validate([
-            'no_lemari' => 'required',
-            'jumlah_rak' => 'required|numeric|min:1',
-            'kapasitas' => 'required|numeric|min:1',
-        ]);
+{
+    // 1. Validasi Input
+    $request->validate([
+        'no_lemari'   => 'required', // Sesuaikan dengan name="no_lemari" di Blade
+        'jumlah_rak'  => 'required|integer|min:1|max:20',
+        'kapasitas'   => 'required|integer|min:1'
+    ], [
+        'jumlah_rak.max' => 'Satu lemari maksimal berisi 20 rak.',
+    ]);
 
-        try {
-            $huruf = range('a', 'z');
-
-            for ($i = 0; $i < $request->jumlah_rak; $i++) {
-                $kodeRak = $request->no_lemari . $huruf[$i];
-
-                // Gunakan path lengkap \App\Models\RakLoker
-                \App\Models\RakLoker::create([
-                    'no_lemari' => $request->no_lemari,
-                    'kode_rak'  => $kodeRak,
-                    'kapasitas' => $request->kapasitas,
-                    'terisi'    => 0,
-                    'status'    => 'Tersedia'
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Data Rak berhasil ditambahkan.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+    try {
+        $jumlah = $request->jumlah_rak;
+        
+        for ($i = 0; $i < $jumlah; $i++) {
+            $huruf = chr(97 + $i); // Menghasilkan a, b, c...
+            
+            // GUNAKAN 'kode_rak' agar sesuai dengan Model & Database
+            \App\Models\RakLoker::create([
+                'no_lemari' => $request->no_lemari,
+                'kode_rak'  => strtoupper($request->no_lemari . $huruf), // Hasil: 1A, 1B, dst
+                'kapasitas' => $request->kapasitas,
+                'terisi'    => 0,
+                'status'    => 'Tersedia' // Gunakan 'Tersedia' (T besar) agar sama dengan pengecekan di dashboard
+            ]);
         }
+
+        return back()->with('success', 'Data Lemari dan ' . $jumlah . ' Rak berhasil dibuat.');
+
+    } catch (\Exception $e) {
+        return back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
     }
+}
 
     // 12. Hapus Rak
     public function rakDestroy($id)

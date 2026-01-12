@@ -18,12 +18,11 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Nomor Lemari</label>
                         <input type="text" name="no_lemari" class="form-control" placeholder="Contoh: 5" required>
-                        <div class="form-text" style="font-size: 11px;">Hanya angka/huruf utama lemari.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Jumlah Rak di Lemari Ini</label>
-                        <input type="number" name="jumlah_rak" class="form-control" placeholder="Contoh: 3" min="1" max="26" required>
-                        <div class="form-text" style="font-size: 11px;">Otomatis akan dibuatkan rak a, b, c, dst.</div>
+                        <input type="number" name="jumlah_rak" class="form-control" placeholder="Contoh: 3" max="20" required>
+                        <div class="form-text small text-muted">Otomatis akan dibuatkan rak a, b, c, dst. (Maksimal 20 rak)</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Kapasitas per Rak</label>

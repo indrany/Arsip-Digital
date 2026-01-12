@@ -17,15 +17,21 @@
             align-items: center;
         }
 
-        /* Lembar Kertas Formal */
-        .paper-container {
+        /* KUNCI: Pengaturan Ganti Kertas Otomatis */
+        .halaman-cetak {
+            page-break-after: always; /* Ganti kertas setelah elemen ini */
             background: white;
             width: 210mm; 
             min-height: 297mm;
             padding: 15mm 20mm;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            margin-bottom: 80px;
+            margin-bottom: 50px;
             font-size: 12pt; 
+        }
+
+        .halaman-cetak:last-child {
+            page-break-after: auto; /* Jangan ganti kertas di halaman terakhir */
+            margin-bottom: 0;
         }
 
         .kop-header {
@@ -37,15 +43,8 @@
             align-items: center;
         }
 
-        .kop-logo {
-            flex: 0 0 120px;
-            text-align: left;
-        }
-
-        .kop-logo img {
-            width: 110px;
-            height: auto;
-        }
+        .kop-logo { flex: 0 0 120px; text-align: left; }
+        .kop-logo img { width: 110px; height: auto; }
 
         .kop-instansi {
             flex: 1;
@@ -101,7 +100,6 @@
             display: inline-block;
         }
 
-        /* Tanda Tangan Sangat Rapi & Sejajar */
         .table-ttd {
             width: 100%;
             margin-top: 50px;
@@ -135,14 +133,16 @@
 
         @media print {
             body { background: white; padding: 0; }
-            .paper-container { box-shadow: none; width: 100%; margin: 0; padding: 10mm; }
+            .halaman-cetak { box-shadow: none; width: 100%; margin: 0; padding: 10mm; }
             .no-print { display: none !important; }
         }
     </style>
 </head>
 <body>
 
-    <div class="paper-container">
+    {{-- LOOPING MULAI DISINI - Satu perulangan untuk satu lembar kertas --}}
+    @foreach($items as $item)
+    <div class="halaman-cetak">
         <div class="kop-header">
             <div class="kop-logo">
                 <img src="{{ asset('images/v1_151.png') }}" alt="Logo">
@@ -164,7 +164,6 @@
         </div>
         
         @php
-            // Mengambil Nama Lengkap dari database
             $namaFinal = Auth::user()->nama_lengkap ?? Auth::user()->name;
         @endphp
 
@@ -172,13 +171,17 @@
             Pada hari ini, <b>{{ \Carbon\Carbon::parse($batch->tgl_pengirim)->locale('id')->isoFormat('dddd') }}</b> 
             tanggal <b>{{ \Carbon\Carbon::parse($batch->tgl_pengirim)->locale('id')->isoFormat('D MMMM Y') }}</b>, 
             Kami yang bertanda tangan di bawah ini menyatakan bahwa telah dilakukan pengiriman berkas oleh 
-            <b>{{ strtoupper($namaFinal) }}</b> dengan rincian sebagai berikut:
+            petugas divisi <b>{{ strtoupper($batch->asal_unit) }}</b> atas nama <b>{{ strtoupper($namaFinal) }}</b> dengan rincian sebagai berikut:
         </div>
 
         <ul class="batch-info-list">
-            <li><span class="label-list">Nomor Pengirim</span>: <b>{{ $batch->no_pengirim }}</b></li>
-            <li><span class="label-list">Tanggal Pengiriman</span>: <b>{{ \Carbon\Carbon::parse($batch->tgl_pengirim)->format('d-m-Y') }}</b></li>
-            <li><span class="label-list">Jumlah Berkas</span>: <b>{{ $batch->jumlah_berkas }} Berkas</b></li>
+            {{-- DATA INDIVIDU YANG BERBEDA TIAP HALAMAN --}}
+            <li><span class="label-list">Nomor Permohonan</span>: <b>{{ $item->no_permohonan }}</b></li>
+            <li><span class="label-list">Nama Pemohon</span>: <b>{{ strtoupper($item->nama) }}</b></li>
+            
+            {{-- DATA BATCH YANG SAMA --}}
+            <li><span class="label-list">ID Batch / No Pengirim</span>: {{ $batch->no_pengirim }}</li>
+            <li><span class="label-list">Tanggal Pengiriman</span>: {{ \Carbon\Carbon::parse($batch->tgl_pengirim)->format('d-m-Y') }}</li>
         </ul>
 
         <p style="font-size: 12pt; margin-bottom: 40px; text-indent: 40px;">Demikian surat pengantar ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
@@ -222,10 +225,11 @@
             </tr>
         </table>
     </div>
+    @endforeach
 
     <div class="print-control no-print">
         <button class="btn-print-action" onclick="window.print()">
-            CETAK DOKUMEN
+            CETAK SEMUA HALAMAN
         </button>
     </div>
 
