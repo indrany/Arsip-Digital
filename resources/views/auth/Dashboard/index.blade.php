@@ -53,8 +53,8 @@
                 </svg>
             </div>
             <div class="card-content-area">
-                <span class="card-value">70</span>
-                <span class="card-label">Data Pemohon</span>
+            <span class="card-value">{{ $totalPemohon ?? 0 }}</span> 
+            <span class="card-label">Data Pemohon</span>
             </div>
         </div>
     </a>
@@ -70,8 +70,8 @@
                 </svg>
             </div>
             <div class="card-content-area">
-                <span class="card-value">12</span>
-                <span class="card-label">Berkas Dipinjam</span>
+            <span class="card-value">{{ $totalDipinjam ?? 0 }}</span>
+            <span class="card-label">Berkas Dipinjam</span>
             </div>
         </div>
     </a>
@@ -79,13 +79,13 @@
     {{-- 2. Card Monitoring Rak (HANYA UNTUK ADMIN & TIKIM) --}}
     @if(in_array($roleUser, ['ADMIN', 'TIKIM']))
     <a href="{{ route('rak-loker.index') }}" class="card-link">
-        <div class="statistic-card aktif-card" style="background-color: #f0f9ff; border: 1px solid #b9e6fe;">
-            <div class="card-icon-container" style="background-color: #e0f2fe; color: #0284c7;">
+        <div class="statistic-card aktif-card" style= border: 1px solid #b9e6fe;">
+            <div class="card-icon-container" style="background-color: #F0FFDF; color: #75B06F;">
                 <i class="fas fa-boxes-stacked" style="font-size: 24px;"></i>
             </div>
             <div class="card-content-area">
-                <span class="card-value" style="color: #0369a1;">{{ $rakPenuhCount ?? 0 }}</span>
-                <span class="card-label" style="color: #0c4a6e;">Rak Sudah Penuh</span>
+                <span class="card-value">{{ $rakPenuhCount ?? 0 }}</span>
+                <span class="card-label">Rak Sudah Penuh</span>
             </div>
         </div>
     </a>

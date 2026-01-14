@@ -7,19 +7,14 @@
 <div class="container-fluid">
     <div class="card-custom">
         <div class="table-header-custom">
-            {{-- JUDUL DIPERKECHIL MENGGUNAKAN H6 --}}
             <h6 class="table-title-custom fw-bold m-0">Data Berkas yang dipinjam</h6>
-
-            {{-- AREA TOMBOL SEJAJAR --}}
             <div class="table-actions-custom" id="filterArea" style="display: flex; gap: 10px; align-items: center;">
                 @php $roleUser = strtoupper(auth()->user()->role); @endphp
-                
-                {{-- Tombol Pinjam --}}
+ 
                 <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam" style="white-space: nowrap;">
                     + Pinjam Berkas
                 </button>
 
-                {{-- Tombol Cari --}}
                 <button type="button" class="btn-filter-custom" onclick="toggleFilter()" style="white-space: nowrap;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
@@ -29,7 +24,6 @@
             </div>
         </div>
 
-        {{-- DROPDOWN FILTER --}}
         <div id="filterDropdown" class="filter-dropdown-custom shadow-lg">
             <form action="{{ route('pinjam-berkas.index') }}" method="GET">
                 <div class="filter-group-custom">
@@ -103,12 +97,11 @@
 
 {{-- MODAL PINJAM --}}
 <div class="modal fade" id="modalPinjam" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;"> 
-        <div class="modal-content p-4 shadow border-0" style="border-radius: 12px;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;"> 
+        <div class="modal-content p-4 shadow border-0" style="border-radius: 10px;">
             <h6 class="mb-3 fw-bold text-primary"><i class="fas fa-plus-circle me-2"></i>Pinjam Berkas Baru</h6>
             <form id="formPinjamBerkas" action="{{ route('pinjam-berkas.store') }}" method="POST">
                 @csrf
-                
                 {{-- Input Utama --}}
                 <div class="mb-4">
                     <label class="form-label fw-bold">Nomor Permohonan</label>

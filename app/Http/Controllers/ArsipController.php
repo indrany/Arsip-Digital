@@ -14,19 +14,17 @@ class ArsipController extends Controller
 {
     // 1. DASHBOARD
     public function dashboard() {
-        // Hitung Rak yang kapasitasnya sudah terisi > 80%
-        $rakKritis = \App\Models\RakLoker::whereRaw('terisi / kapasitas >= 0.8')
-            ->where('status', 'Tersedia')
-            ->get();
-
-        // Hitung Rak yang sudah Penuh 100%
+        // Menghitung data real dari database
+        $totalPemohon = \App\Models\Permohonan::count();
+        $totalDipinjam = \App\Models\PinjamBerkas::where('status', '!=', 'Selesai')->count();
         $rakPenuhCount = \App\Models\RakLoker::where('status', 'Penuh')->count();
-
+        
+        // Pastikan variabel dikirim ke view
         return view('auth.Dashboard.index', [ 
-            'userAktif' => User::where('is_active', 1)->count(),
-            'userNonAktif' => User::where('is_active', 0)->count(),
-            'rakKritis' => $rakKritis, // Data rak yang hampir penuh
-            'rakPenuhCount' => $rakPenuhCount, // Jumlah rak yang sudah penuh
+            'totalPemohon' => $totalPemohon,
+            'totalDipinjam' => $totalDipinjam,
+            'rakPenuhCount' => $rakPenuhCount,
+            'rakKritis' => \App\Models\RakLoker::whereRaw('terisi / kapasitas >= 0.8')->get(),
         ]);
     }
 
