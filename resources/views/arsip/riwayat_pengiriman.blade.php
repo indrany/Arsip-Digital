@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('page-title', 'Riwayat Pengiriman Berkas')
+{{-- Tambahkan baris subtitle di bawah ini --}}
+@section('page-subtitle', 'Daftar batch pengiriman berkas yang telah diajukan ke bagian arsip.')
 
 @section('content')
 <div class="container-fluid">
