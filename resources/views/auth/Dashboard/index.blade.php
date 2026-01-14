@@ -123,24 +123,20 @@
 @push('scripts')
 <script>
     let myChart; 
-    const dummyData = {
-        '2025': {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-            pemohon: [15, 20, 18, 25, 30, 20, 25, 28, 50, 20, 15, 40],
-            dipinjam: [10, 15, 12, 18, 20, 15, 18, 20, 17, 14, 11, 12]
-        },
-        '2026': {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-            pemohon: [5, 10, 15, 12, 18, 25, 20, 35, 30, 25, 20, 85],
-            dipinjam: [3, 8, 10, 8, 10, 12, 10, 15, 14, 12, 10, 15] 
-        }
-    };
+    // MENGAMBIL DATA REAL DARI CONTROLLER
+    const realData = @json($chartData); 
 
     function initializeChart(year) {
         if (myChart) { myChart.destroy(); }
-        const dataTahunIni = dummyData[year] || dummyData['2025'];
-        const ctx = document.getElementById('myLineChart'); 
         
+        // Gunakan data real, jika tahun tidak ada gunakan objek kosong agar tidak error
+        const dataTahunIni = realData[year] || {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+            pemohon: [0,0,0,0,0,0,0,0,0,0,0,0],
+            dipinjam: [0,0,0,0,0,0,0,0,0,0,0,0]
+        };
+
+        const ctx = document.getElementById('myLineChart'); 
         myChart = new Chart(ctx, { 
             type: 'line', 
             data: {
@@ -148,38 +144,55 @@
                 datasets: [{
                     label: 'Data Pemohon',
                     data: dataTahunIni.pemohon, 
-                    backgroundColor: 'rgba(98, 159, 244, 0.3)',
                     borderColor: 'rgba(98, 159, 244, 1)',
-                    borderWidth: 2, 
-                    fill: false,
+                    backgroundColor: 'rgba(98, 159, 244, 0.3)',
                     tension: 0.3,
-                    pointRadius: 5
+                    fill: false
                 },
                 {
                     label: 'Berkas Dipinjam',
                     data: dataTahunIni.dipinjam, 
-                    backgroundColor: 'rgba(243, 105, 96, 0.3)',
                     borderColor: 'rgba(243, 105, 96, 1)',
-                    borderWidth: 2,
-                    fill: false,
+                    backgroundColor: 'rgba(243, 105, 96, 0.3)',
                     tension: 0.3,
-                    pointRadius: 5
+                    fill: false
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false, 
-                plugins: { legend: { position: 'top' } },
-                scales: {
-                    x: { ticks: { padding: 5 } },
-                    y: { beginAtZero: true, suggestedMax: 100 }
+            responsive: true,
+            maintainAspectRatio: false, 
+            plugins: { legend: { position: 'top' } },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    ticks: {
+                        // INI KUNCINYA: Mengatur kelipatan 10
+                        stepSize: 10, 
+                        precision: 0 // Memastikan tidak ada angka desimal (0.5)
+                    },
+                    // suggestedMax membantu agar grafik punya ruang di atas jika data masih kecil
+                    suggestedMax: 50 
                 }
             }
+        }
         });
     }
 
-    function updateChartData(year) { initializeChart(year); }
+    // Fungsi otomatis mengisi dropdown tahun
+    document.addEventListener('DOMContentLoaded', function() {
+        const yearSelect = document.getElementById('tahun-filter');
+        const availableYears = Object.keys(realData).sort((a, b) => b - a);
+        
+        yearSelect.innerHTML = ''; // Kosongkan dulu
+        availableYears.forEach(year => {
+            const opt = document.createElement('option');
+            opt.value = opt.textContent = year;
+            yearSelect.appendChild(opt);
+        });
+        initializeChart(availableYears[0] || new Date().getFullYear());
+    });
 
+function updateChartData(year) { initializeChart(year); }
     document.addEventListener('DOMContentLoaded', function() {
         const yearSelect = document.getElementById('tahun-filter');
         const availableYears = Object.keys(dummyData).sort((a, b) => b - a);

@@ -14,20 +14,50 @@ class ArsipController extends Controller
 {
     // 1. DASHBOARD
     public function dashboard() {
-        // Menghitung data real dari database
-        $totalPemohon = \App\Models\Permohonan::count();
-        $totalDipinjam = \App\Models\PinjamBerkas::where('status', '!=', 'Selesai')->count();
+        // 1. Tentukan tahun mulai (2026) dan tahun saat ini
+        $tahunMulai = 2026;
+        $tahunSekarang = (int)date('Y');
+        $availableYears = range($tahunSekarang, $tahunMulai);
+
+        $chartData = [];
+        foreach ($availableYears as $year) {
+            $pemohon = [];
+            $dipinjam = [];
+            for ($m = 1; $m <= 12; $m++) {
+                // MENGHITUNG DATA PEMOHON
+                // Pastikan kolom 'created_at' atau 'tanggal_permohonan' memiliki data di Jan 2026
+                $pemohon[] = \App\Models\Permohonan::whereYear('created_at', $year)
+                    ->whereMonth('created_at', $m)
+                    ->count();
+                
+                // MENGHITUNG DATA PEMINJAMAN
+                $dipinjam[] = \App\Models\PinjamBerkas::whereYear('created_at', $year)
+                    ->whereMonth('created_at', $m)
+                    ->count();
+            }
+            $chartData[$year] = [
+                'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                'pemohon' => $pemohon,
+                'dipinjam' => $dipinjam
+            ];
+        }
+    
+        // 3. Ambil data statistik lainnya untuk Card
+        $rakKritis = \App\Models\RakLoker::whereRaw('terisi / kapasitas >= 0.8')
+            ->where('status', 'Tersedia')
+            ->get();
+    
         $rakPenuhCount = \App\Models\RakLoker::where('status', 'Penuh')->count();
-        
-        // Pastikan variabel dikirim ke view
+    
         return view('auth.Dashboard.index', [ 
-            'totalPemohon' => $totalPemohon,
-            'totalDipinjam' => $totalDipinjam,
+            'totalPemohon' => \App\Models\Permohonan::count(),
+            'totalDipinjam' => \App\Models\PinjamBerkas::where('status', '!=', 'Selesai')->count(),
+            'userAktif' => \App\Models\User::where('is_active', 1)->count(),
+            'rakKritis' => $rakKritis, 
             'rakPenuhCount' => $rakPenuhCount,
-            'rakKritis' => \App\Models\RakLoker::whereRaw('terisi / kapasitas >= 0.8')->get(),
+            'chartData' => $chartData, // Data grafik real dikirim ke sini
         ]);
     }
-
     // 2. HALAMAN TAMBAH PENGIRIMAN (LOKET)
     public function tambahPengiriman()
     {
