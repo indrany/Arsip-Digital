@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('title', 'Tambah Pengiriman Berkas')
+@section('page-title', 'Tambah Pengiriman Berkas')
+@section('page-subtitle', 'Proses verifikasi dan input batch pengiriman berkas fisik ke bagian arsip.')
 
 @section('content')
 <div class="container-fluid px-4 py-4">
@@ -16,7 +18,7 @@
                         <label class="form-label small fw-bold text-muted">Nomor Permohonan</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="fas fa-barcode"></i></span>
-                            <input type="text" id="input_no_permohonan" class="form-control form-control-lg fw-bold" placeholder="Scan atau Ketik Nomor..." autofocus>
+                            <input type="text" id="input_no_permohonan" class="form-control form-control-lg fw-bold" placeholder="Scan atau Ketik Nomor..." autofocus autocomplete="off">
                         </div>
                         <div id="loading-spinner" class="mt-1 d-none">
                             <small class="text-primary"><i class="fas fa-spinner fa-spin me-1"></i> Mencari data...</small>
@@ -46,7 +48,6 @@
                         </div>
                     </div>
 
-                    {{-- Tombol Tambah yang Lebih Ramping --}}
                     <div class="text-end">
                         <button type="button" class="btn btn-primary fw-bold py-2 px-4 shadow-sm rounded-3" id="btn-tambah-langsung">
                             <i class="fas fa-plus me-2"></i> TAMBAH
@@ -79,9 +80,7 @@
                                     <th class="fw-bold text-center" style="width: 20%;">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white">
-                                {{-- Data muncul di sini --}}
-                            </tbody>
+                            <tbody class="bg-white"></tbody>
                         </table>
                     </div>
 
@@ -116,57 +115,76 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
     let daftarBerkas = [];
+    const inputBarcode = $('#input_no_permohonan');
 
-    // FUNGSI 1: AUTO-SEARCH SAAT KETIK/SCAN
-    $('#input_no_permohonan').on('input', function() {
-        let no = $(this).val().trim();
-        if (no.length >= 16) { 
-            ambilDataOtomatis(no);
+    inputBarcode.focus();
+
+    // --- 1. LOGIKA AUTO-FILL (SAAT SCAN/KETIK) ---
+    inputBarcode.on('input', function() {
+        let no = $(this).val().replace(/[^a-zA-Z0-9]/g, '').trim();
+        
+        // Hanya cari jika nomor pas 16 karakter (atau sesuaikan panjang nomor Anda)
+        if (no.length === 16) { 
+            cariDataPemohon(no);
         }
     });
 
-    function ambilDataOtomatis(no) {
-        $('#loading-spinner').removeClass('d-none');
-        $.ajax({
-            url: "/get-permohonan-detail/" + no,
-            method: "GET",
-            success: function(res) {
-                $('#loading-spinner').addClass('d-none');
-                if (res.success) {
-                    $('#input_nama').val(res.data.nama);
-                    $('#input_tempat_lahir').val(res.data.tempat_lahir);
-                    $('#input_tgl_lahir').val(res.data.tanggal_lahir);
-                    $('#input_jenis_paspor').val(res.data.jenis_paspor);
-                    $('#btn-tambah-langsung').focus();
-                }
-            },
-            error: function() { $('#loading-spinner').addClass('d-none'); }
-        });
+    function cariDataPemohon(no) {
+    if (daftarBerkas.includes(no)) {
+        Swal.fire({ icon: 'warning', title: 'Sudah Ada!', text: 'Nomor ini sudah masuk dalam daftar.', timer: 2000, showConfirmButton: false });
+        resetInputHanyaNomor();
+        return;
     }
 
-    function clearInput() {
-        $('#input_no_permohonan').val('').focus();
-        $('#input_nama, #input_tempat_lahir, #input_tgl_lahir, #input_jenis_paspor').val('');
-    }
+    $('#loading-spinner').removeClass('d-none');
 
-    function updateUI() {
-        $('#count-info').text(daftarBerkas.length + " berkas siap dikirim");
-        $('#btn-cetak-semua').prop('disabled', daftarBerkas.length === 0);
-        if (daftarBerkas.length > 0) $('#empty-state').addClass('d-none');
-        else $('#empty-state').removeClass('d-none');
-    }
+    $.ajax({
+        url: "/get-permohonan-detail/" + no,
+        method: "GET",
+        success: function(res) {
+            $('#loading-spinner').addClass('d-none');
+            if (res.success) {
+                // ISI FORM jika alur sudah selesai
+                $('#input_nama').val(res.data.nama);
+                $('#input_tempat_lahir').val(res.data.tempat_lahir);
+                $('#input_tgl_lahir').val(res.data.tanggal_lahir);
+                $('#input_jenis_paspor').val(res.data.jenis_paspor);
+                $('#btn-tambah-langsung').focus();
+            } else {
+                // Tampilkan pesan error (Alur belum selesai / Sudah pernah dikirim)
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: res.message
+                });
+                resetInputHanyaNomor();
+                // Kosongkan form detail agar tidak bisa diklik 'Tambah'
+                $('#input_nama, #input_tempat_lahir, #input_tgl_lahir, #input_jenis_paspor').val('');
+            }
+        },
+        error: function() { 
+            $('#loading-spinner').addClass('d-none');
+            resetInputHanyaNomor();
+        }
+    });
+}
 
-    // FUNGSI 2: TAMBAH KE TABEL
+    // --- 2. LOGIKA PINDAH KE TABEL (KLIK TAMBAH / ENTER) ---
     $('#btn-tambah-langsung').on('click', function() {
-        let no = $('#input_no_permohonan').val().trim();
+        let no = inputBarcode.val().trim();
         let nama = $('#input_nama').val().trim();
 
-        if (!no || !nama) return alert("Data pemohon belum ditemukan!");
-        if (daftarBerkas.includes(no)) { alert("Nomor sudah ada di daftar!"); clearInput(); return; }
+        if (!no || !nama || nama === "") {
+            Swal.fire('Data Kosong', 'Cari nomor permohonan yang valid terlebih dahulu.', 'warning');
+            inputBarcode.focus();
+            return;
+        }
 
+        // Tambah ke daftar
         daftarBerkas.push(no);
         let safeId = no.replace(/[^a-z0-9]/gi, '-');
         
@@ -193,10 +211,45 @@ $(document).ready(function() {
         JsBarcode("#barcode-" + safeId, no, { format: "CODE128", width: 1.2, height: 35, displayValue: true, fontSize: 10 });
 
         updateUI();
-        clearInput();
+        resetSemuaInput();
     });
 
-    // FUNGSI 3: CETAK SINGLE BARCODE
+    // Handle tombol Enter
+    $(document).on('keypress', function(e) {
+        if (e.which === 13) {
+            // Jika fokus di input nomor dan nama sudah terisi, maka trigger Tambah
+            if ($('#input_nama').val() !== "") {
+                e.preventDefault();
+                $('#btn-tambah-langsung').click();
+            }
+        }
+    });
+
+    // --- 3. FUNGSI PENDUKUNG ---
+    function resetSemuaInput() {
+        inputBarcode.val('').focus();
+        $('#input_nama, #input_tempat_lahir, #input_tgl_lahir, #input_jenis_paspor').val('');
+    }
+
+    function resetInputHanyaNomor() {
+        inputBarcode.val('').focus();
+    }
+
+    window.hapusBaris = function(no) {
+        let safeId = no.replace(/[^a-z0-9]/gi, '-');
+        $(`#row-${safeId}`).remove();
+        daftarBerkas = daftarBerkas.filter(item => item !== no);
+        updateUI();
+    };
+
+    function updateUI() {
+        $('#count-info').text(daftarBerkas.length + " berkas siap dikirim");
+        $('#btn-cetak-semua').prop('disabled', daftarBerkas.length === 0);
+        if (daftarBerkas.length > 0) $('#empty-state').addClass('d-none');
+        else $('#empty-state').removeClass('d-none');
+    }
+
+    // Fungsi Cetak (Tetap sama)
     window.printSingleBarcode = function(safeId) {
         let content = document.getElementById('print-area-' + safeId).innerHTML;
         let win = window.open('', '_blank', 'width=400,height=300');
@@ -205,60 +258,25 @@ $(document).ready(function() {
         setTimeout(() => { win.print(); win.close(); }, 500);
     };
 
-    // FUNGSI 4: CETAK SEMUA BARCODE
-    $('#btn-cetak-semua').on('click', function() {
-        let win = window.open('', '_blank', 'width=800,height=600');
-        win.document.write('<html><head><style>body{font-family:sans-serif;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px;}.item{border:1px solid #eee;padding:10px;text-align:center;}svg{width:100%;height:auto;}</style></head><body>');
-        
-        $('#tabel-pengiriman tbody tr').each(function() {
-            let barcodeHtml = $(this).find('.barcode-container').html();
-            win.document.write('<div class="item">' + barcodeHtml + '</div>');
-        });
-        
-        win.document.write('</body></html>');
-        win.document.close();
-        setTimeout(() => { win.print(); win.close(); }, 500);
-    });
-
-    // FUNGSI 5: HAPUS BARIS
-    window.hapusBaris = function(no) {
-        let safeId = no.replace(/[^a-z0-9]/gi, '-');
-        $(`#row-${safeId}`).remove();
-        daftarBerkas = daftarBerkas.filter(item => item !== no);
-        updateUI();
-    };
-
-    // FUNGSI 6: SIMPAN KE DATABASE
+    // Fungsi Simpan (Tetap sama)
     $('#btn-simpan-pengiriman').on('click', function() {
-        if (daftarBerkas.length === 0) return alert("Daftar masih kosong!");
-        if (!confirm("Kirim " + daftarBerkas.length + " berkas ini ke Arsip?")) return;
-
-        const dataList = [];
-        $('#tabel-pengiriman tbody tr').each(function() {
-            dataList.push({
-                no_permohonan: $(this).find('td:eq(0)').text().trim(),
-                nama: $(this).find('td:eq(1)').text().trim()
-            });
-        });
-
-        $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
-        $.ajax({
-            url: "{{ route('pengiriman-berkas.store') }}",
-            method: "POST",
-            data: { _token: "{{ csrf_token() }}", nomor_permohonan_list: dataList },
-            success: function(res) { 
-                if(res.success) { alert("Berkas berhasil diajukan!"); window.location.href = "{{ route('pengiriman-berkas.index') }}"; }
-            },
-            error: function(xhr) { 
-                $('#btn-simpan-pengiriman').prop('disabled', false).text('Kirim ke Arsip');
-                alert("Gagal menyimpan data."); 
+        if (daftarBerkas.length === 0) return;
+        Swal.fire({ title: 'Kirim ke Arsip?', text: "Ajukan " + daftarBerkas.length + " berkas ini?", icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, Kirim!' }).then((result) => {
+            if (result.isConfirmed) {
+                const dataList = [];
+                $('#tabel-pengiriman tbody tr').each(function() {
+                    dataList.push({ no_permohonan: $(this).find('td:eq(0)').text().trim(), nama: $(this).find('td:eq(1)').text().trim() });
+                });
+                $.ajax({
+                    url: "{{ route('pengiriman-berkas.store') }}",
+                    method: "POST",
+                    data: { _token: "{{ csrf_token() }}", nomor_permohonan_list: dataList },
+                    success: function(res) { 
+                        if(res.success) { Swal.fire('Berhasil!', 'Data dikirim.', 'success').then(() => window.location.href = "{{ route('pengiriman-berkas.index') }}"); }
+                    }
+                });
             }
         });
-    });
-
-    // Enter di nomor permohonan
-    $('#input_no_permohonan').on('keypress', function(e) { 
-        if (e.which === 13) { let no = $(this).val().trim(); if (no) ambilDataOtomatis(no); }
     });
 });
 </script>

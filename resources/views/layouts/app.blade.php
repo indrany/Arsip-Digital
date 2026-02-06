@@ -11,9 +11,56 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/main.css') }}"> 
+    
+    <style>
+        /* Mencegah Double Scrollbar */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Scroll dikelola oleh container saja */
+        }
+
+        .main-container {
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar Tetap/Fixed */
+        .sidebar {
+            width: 250px; /* Sesuaikan dengan lebar di main.css kamu */
+            flex-shrink: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* Area Konten Utama */
+        .content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto; /* Scrollbar muncul di sini saja */
+            background-color: #f4f7fe;
+        }
+
+        .main-content {
+            flex: 1 0 auto; /* Menekan footer ke bawah */
+            padding-bottom: 2rem;
+        }
+
+        /* Footer Rapih & Menempel Sempurna */
+        .footer-siardig {
+            background-color: #ffffff;
+            border-top: 1px solid #e3e6f0;
+            padding: 20px 0;
+            width: 100%;
+            margin-top: auto;
+        }
+    </style>
 </head>
 <body>
-<div class="v1_203 main-container d-flex">
+<div class="v1_203 main-container">
     {{-- SIDEBAR --}}
     <div class="v1_204 sidebar" id="main-sidebar">
         <div>
@@ -25,14 +72,11 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    {{-- 1. Dashboard (Semua Role) --}}
                     <li class="{{ Request::routeIs('dashboard') ? 'active' : '' }}">
                         <a href="{{ route('dashboard') }}">
                             <div class="menu-icon"><i class="fas fa-home"></i></div> Dashboard
                         </a>
                     </li>
-            
-                    {{-- 2. Manajemen User (Hanya ADMIN) --}}
                     @if(strtoupper(Auth::user()->role) == 'ADMIN')
                     <li class="{{ Request::is('users*') ? 'active' : '' }}">
                         <a href="{{ route('users.index') }}">
@@ -40,8 +84,6 @@
                         </a>
                     </li>
                     @endif
-            
-                    {{-- 3. Master Rak Loker (ADMIN & TIKIM) --}}
                     @if(in_array(strtoupper(Auth::user()->role), ['ADMIN', 'TIKIM']))
                     <li class="{{ Request::is('rak-loker*') ? 'active' : '' }}">
                         <a href="{{ route('rak-loker.index') }}">
@@ -49,8 +91,6 @@
                         </a>
                     </li>
                     @endif
-            
-                    {{-- 4. Pengiriman Berkas (Semua KECUALI TIKIM) --}}
                     @if(strtoupper(Auth::user()->role) != 'TIKIM')
                     <li class="{{ Request::is('pengiriman-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('pengiriman-berkas.index') }}">
@@ -58,8 +98,6 @@
                         </a>
                     </li>
                     @endif
-            
-                    {{-- 5. Penerimaan Berkas (ADMIN & TIKIM) --}}
                     @if(in_array(strtoupper(Auth::user()->role), ['ADMIN', 'TIKIM']))
                     <li class="{{ Request::is('penerimaan-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('penerimaan-berkas.index') }}"> 
@@ -67,8 +105,6 @@
                         </a>
                     </li>
                     @endif
-            
-                    {{-- 6. Pencarian Berkas (HANYA ADMIN) --}}
                     @if(strtoupper(Auth::user()->role) == 'ADMIN')
                     <li class="{{ Request::is('pencarian-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('pencarian-berkas.index') }}">
@@ -76,8 +112,6 @@
                         </a>
                     </li>
                     @endif
-            
-                    {{-- 7. Pinjam Berkas (Semua Role) --}}
                     <li class="{{ Request::is('pinjam-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('pinjam-berkas.index') }}">
                             <div class="menu-icon"><i class="fas fa-file-signature"></i></div> Pinjam Berkas
@@ -96,7 +130,7 @@
     </div>
 
     {{-- CONTENT WRAPPER --}}
-    <div class="content-wrapper flex-grow-1">
+    <div class="content-wrapper">
         <div class="header-top">
             <div class="v1_221 header-background"></div>
             <div class="title-area">
@@ -111,11 +145,21 @@
                 </div>
             </div>
         </div>
+        
         <main class="main-content p-4">
             <div class="container-fluid">
                 @yield('content')
             </div>
         </main>
+
+        {{-- FOOTER RAPID --}}
+        <footer class="footer-siardig">
+            <div class="text-center">
+                <span class="text-muted small">
+                    &copy; 2026 <strong>SIARDIG</strong> - Sistem Arsip Digital | Kantor Imigrasi Kelas I TPI Tanjung Perak
+                </span>
+            </div>
+        </footer>
     </div>
 </div>
 

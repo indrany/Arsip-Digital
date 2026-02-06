@@ -14,27 +14,31 @@ class ArsipController extends Controller
 {
     // 1. DASHBOARD
     public function dashboard() {
-        // 1. Tentukan tahun mulai (2026) dan tahun saat ini
+        set_time_limit(120);
         $tahunMulai = 2026;
         $tahunSekarang = (int)date('Y');
         $availableYears = range($tahunSekarang, $tahunMulai);
-
+    
         $chartData = [];
         foreach ($availableYears as $year) {
+            $dataPemohon = \App\Models\Permohonan::whereYear('tanggal_permohonan', $year)
+                ->selectRaw('MONTH(tanggal_permohonan) as month, COUNT(*) as count')
+                ->groupBy('month')
+                ->pluck('count', 'month')->toArray();
+    
+            $dataDipinjam = \App\Models\PinjamBerkas::whereYear('tgl_pinjam', $year)
+                ->selectRaw('MONTH(tgl_pinjam) as month, COUNT(*) as count')
+                ->groupBy('month')
+                ->pluck('count', 'month')->toArray();
+    
             $pemohon = [];
             $dipinjam = [];
+    
             for ($m = 1; $m <= 12; $m++) {
-                // MENGHITUNG DATA PEMOHON
-                // Pastikan kolom 'created_at' atau 'tanggal_permohonan' memiliki data di Jan 2026
-                $pemohon[] = \App\Models\Permohonan::whereYear('created_at', $year)
-                    ->whereMonth('created_at', $m)
-                    ->count();
-                
-                // MENGHITUNG DATA PEMINJAMAN
-                $dipinjam[] = \App\Models\PinjamBerkas::whereYear('created_at', $year)
-                    ->whereMonth('created_at', $m)
-                    ->count();
+                $pemohon[] = $dataPemohon[$m] ?? 0;
+                $dipinjam[] = $dataDipinjam[$m] ?? 0;
             }
+    
             $chartData[$year] = [
                 'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
                 'pemohon' => $pemohon,
@@ -42,22 +46,14 @@ class ArsipController extends Controller
             ];
         }
     
-        // 3. Ambil data statistik lainnya untuk Card
-        $rakKritis = \App\Models\RakLoker::whereRaw('terisi / kapasitas >= 0.8')
-            ->where('status', 'Tersedia')
-            ->get();
-    
+        $totalPemohon = \App\Models\Permohonan::count();
+        $totalDipinjam = \App\Models\PinjamBerkas::where('status', '!=', 'Selesai')->count();
+        $rakKritis = \App\Models\RakLoker::whereRaw('terisi / kapasitas >= 0.8')->get();
         $rakPenuhCount = \App\Models\RakLoker::where('status', 'Penuh')->count();
     
-        return view('auth.Dashboard.index', [ 
-            'totalPemohon' => \App\Models\Permohonan::count(),
-            'totalDipinjam' => \App\Models\PinjamBerkas::where('status', '!=', 'Selesai')->count(),
-            'userAktif' => \App\Models\User::where('is_active', 1)->count(),
-            'rakKritis' => $rakKritis, 
-            'rakPenuhCount' => $rakPenuhCount,
-            'chartData' => $chartData, // Data grafik real dikirim ke sini
-        ]);
+        return view('auth.Dashboard.index', compact('chartData', 'totalPemohon', 'totalDipinjam', 'rakKritis', 'rakPenuhCount'));
     }
+
     // 2. HALAMAN TAMBAH PENGIRIMAN (LOKET)
     public function tambahPengiriman()
     {
@@ -78,43 +74,39 @@ class ArsipController extends Controller
 
     // 3. RIWAYAT PENGIRIMAN
     public function pengirimanBerkas()
-{
-    $riwayat = DB::table('pengiriman_batch')
-        ->select('no_pengirim', 'tgl_pengirim', 'jumlah_berkas', 'asal_unit', 'status')
-        ->orderBy('created_at', 'desc')
-        ->get();
+    {
+        $riwayat = DB::table('pengiriman_batch')
+            ->select('no_pengirim', 'tgl_pengirim', 'jumlah_berkas', 'asal_unit', 'status')
+            ->orderByRaw("CASE WHEN status = 'Diajukan' THEN 0 ELSE 1 END")
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    return view('arsip.riwayat_pengiriman', [
-        'current_page' => 'pengiriman-berkas',
-        'riwayat' => $riwayat
-    ]);
-}
-    // 4. PENERIMAAN BERKAS (ARSIP)
-    public function penerimaanBerkas()
-{
-    $user = Auth::user();
-    if (!$user || !in_array(strtoupper($user->role), ['ADMIN', 'TIKIM'])) {
-        return redirect()->route('dashboard')->with('error', 'Akses ditolak.');
+        return view('arsip.riwayat_pengiriman', [
+            'current_page' => 'pengiriman-berkas',
+            'riwayat' => $riwayat
+        ]);
     }
 
-    // QUERY REVISI: Mengambil data per Batch (No Pengirim) yang statusnya masih 'Diajukan'
-    $antrean_batches = DB::table('pengiriman_batch')
-        ->select('no_pengirim', 'asal_unit', 'tgl_pengirim', 'status', 'jumlah_berkas')
-        ->where('status', 'Diajukan') // Menampilkan hanya yang belum diproses
-        ->orderBy('created_at', 'desc')
-        ->get();
+    // 4. PENERIMAAN BERKAS (ARSIP)
+    public function penerimaanBerkas()
+    {
+        $user = Auth::user();
+        if (!$user || !in_array(strtoupper($user->role), ['ADMIN', 'TIKIM'])) {
+            return redirect()->route('dashboard')->with('error', 'Akses ditolak.');
+        }
 
-    // Data pendukung lainnya tetap
-    $list_semua = Permohonan::where('status_berkas', 'SIAP_DITERIMA')->get();
-    $list_sudah_scan = Permohonan::where('status_berkas', 'DITERIMA')->get();
+        $antrean_batches = DB::table('pengiriman_batch')
+            ->select('no_pengirim', 'asal_unit', 'tgl_pengirim', 'status', 'jumlah_berkas')
+            ->whereIn('status', ['Diajukan', 'DITERIMA OLEH ARSIP']) 
+            ->orderByRaw("FIELD(status, 'Diajukan') DESC")
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    return view('arsip.penerimaan_berkas', [
-        'current_page'    => 'penerimaan-berkas',
-        'antrean_batches' => $antrean_batches, // Data batch antrean
-        'list_semua'      => $list_semua,
-        'list_sudah_scan' => $list_sudah_scan 
-    ]);
-}
+        return view('arsip.penerimaan_berkas', [
+            'current_page'    => 'penerimaan-berkas',
+            'antrean_batches' => $antrean_batches
+        ]);
+    }
 
     // 5. AJAX LIST BERKAS
     public function listBerkas($no_pengirim)
@@ -136,110 +128,99 @@ class ArsipController extends Controller
     // 6. CETAK PENGANTAR
     public function cetakPengantar($no_pengirim)
     {
-        // 1. Ambil data batch pengirimannya
         $batch = DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->first();
         if (!$batch) abort(404);
 
-        // 2. Ambil SEMUA permohonan yang punya no_pengirim ini
         $items = \App\Models\Permohonan::where('no_pengirim', $no_pengirim)->get();
 
-        // 3. Kirim ke view cetak
         return view('arsip.cetak_pengantar', compact('batch', 'items'));
     }
 
     // 7. SCAN PERMOHONAN
     public function scanPermohonan(Request $request)
-{
-    $nomor = trim($request->nomor_permohonan);
-    
-    // Cari permohonan. Kita izinkan scan jika statusnya SIAP_DITERIMA 
-    // ATAU sudah DITERIMA (untuk kasus double scan/drafting)
-    $permohonan = Permohonan::where('no_permohonan', $nomor)
-                            ->whereIn('status_berkas', ['SIAP_DITERIMA', 'DITERIMA'])
-                            ->first();
+    {
+        $nomor = trim($request->nomor_permohonan);
+        
+        $permohonan = Permohonan::where('no_permohonan', $nomor)
+                                ->whereIn('status_berkas', ['SIAP_DITERIMA', 'DITERIMA'])
+                                ->first();
 
-    if (!$permohonan) {
+        if (!$permohonan) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Berkas tidak ditemukan atau alur belum diselesaikan oleh unit pengirim.'
+            ], 404);
+        }
+
+        if ($permohonan->status_berkas === 'SIAP_DITERIMA') {
+            $permohonan->update([
+                'status_berkas' => 'DITERIMA', 
+                'updated_at' => now()
+            ]);
+        }
+
         return response()->json([
-            'success' => false, 
-            'message' => 'Berkas tidak ditemukan atau bukan bagian dari pengiriman ini.'
-        ], 404);
-    }
-
-    // Update status berkas menjadi DITERIMA jika sebelumnya masih SIAP_DITERIMA
-    if ($permohonan->status_berkas === 'SIAP_DITERIMA') {
-        $permohonan->update([
-            'status_berkas' => 'DITERIMA', 
-            'updated_at' => now()
+            'success' => true, 
+            'data' => [
+                'no_permohonan' => $permohonan->no_permohonan, 
+                'nama' => $permohonan->nama
+            ]
         ]);
     }
-
-    return response()->json([
-        'success' => true, 
-        'data' => [
-            'no_permohonan' => $permohonan->no_permohonan, 
-            'nama' => $permohonan->nama
-        ]
-    ]);
-}
 
     // 8. KONFIRMASI BULK
     public function konfirmasiBulk(Request $request)
-{
-    $no_pengirim = $request->no_pengirim;
-    
-    DB::beginTransaction();
-    try {
-        // Ambil semua berkas yang sudah di-scan (status DITERIMA)
-        $berkasList = Permohonan::where('no_pengirim', $no_pengirim)
-                                ->where('status_berkas', 'DITERIMA')
-                                ->get();
+    {
+        $no_pengirim = $request->no_pengirim;
+        
+        DB::beginTransaction();
+        try {
+            $berkasList = Permohonan::where('no_pengirim', $no_pengirim)
+                                    ->where('status_berkas', 'DITERIMA')
+                                    ->get();
 
-        foreach ($berkasList as $berkas) {
-            // CARI RAK YANG MASIH MUAT (Status Tersedia & Terisi < Kapasitas)
-            $rak = \App\Models\RakLoker::where('status', 'Tersedia')
-                    ->whereColumn('terisi', '<', 'kapasitas')
-                    ->orderBy('id', 'asc')
-                    ->first();
+            foreach ($berkasList as $berkas) {
+                $rak = \App\Models\RakLoker::where('status', 'Tersedia')
+                        ->whereColumn('terisi', '<', 'kapasitas')
+                        ->orderBy('id', 'asc')
+                        ->first();
 
-            if (!$rak) {
-                return response()->json(['success' => false, 'message' => 'Semua Rak Penuh! Tambah rak di master data.'], 400);
+                if (!$rak) {
+                    return response()->json(['success' => false, 'message' => 'Semua Rak Penuh! Tambah rak di master data.'], 400);
+                }
+
+                $nomorUrutBaru = $rak->terisi + 1;
+
+                $berkas->update([
+                    'status_berkas' => 'DITERIMA OLEH ARSIP',
+                    'rak_id' => $rak->id,
+                    'no_urut_di_rak' => $nomorUrutBaru,
+                    'lokasi_arsip' => "Lemari " . $rak->no_lemari . " / Rak " . $rak->kode_rak . " / No. " . $nomorUrutBaru,
+                    'updated_at' => now()
+                ]);
+
+                $rak->terisi = $nomorUrutBaru;
+                if ($rak->terisi >= $rak->kapasitas) {
+                    $rak->status = 'Penuh';
+                }
+                $rak->save();
             }
 
-            // Hitung nomor urut baru di rak tersebut
-            $nomorUrutBaru = $rak->terisi + 1;
-
-            // Update data Permohonan dengan alamat loker
-            $berkas->update([
-                'status_berkas' => 'DITERIMA OLEH ARSIP',
-                'rak_id' => $rak->id,
-                'no_urut_di_rak' => $nomorUrutBaru,
-                'lokasi_arsip' => "Lemari " . $rak->no_lemari . " / Rak " . $rak->kode_rak . " / No. " . $nomorUrutBaru,
+            DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->update([
+                'status' => 'DITERIMA OLEH ARSIP',
+                'tgl_diterima' => now(),
                 'updated_at' => now()
             ]);
 
-            // Update Counter di tabel Rak
-            $rak->terisi = $nomorUrutBaru;
-            if ($rak->terisi >= $rak->kapasitas) {
-                $rak->status = 'Penuh';
-            }
-            $rak->save();
+            DB::commit();
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
-
-        // Update Status Batch Pengiriman
-        DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->update([
-            'status' => 'DITERIMA OLEH ARSIP',
-            'tgl_diterima' => now(),
-            'updated_at' => now()
-        ]);
-
-        DB::commit();
-        return response()->json(['success' => true]);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
-}
-    // 9. PENCARIAN
+
+    // 9. PENCARIAN & DETAIL
     public function pencarianBerkas() {
         return view('auth.Dashboard.pencarian_berkas', ['current_page' => 'pencarian-berkas', 'results' => null]);
     }
@@ -250,44 +231,75 @@ class ArsipController extends Controller
         return view('auth.Dashboard.pencarian_berkas', ['current_page' => 'pencarian-berkas', 'results' => $results]);
     }
 
+    // FIX: getPermohonanDetail
     public function getPermohonanDetail($nomor)
-    {
-        try {
-            // Cari data ke database datapaspor (Sesuai koneksi di fungsi store kamu)
-            $data = DB::table('datapaspor.datapaspor')
-                        ->where('nopermohonan', $nomor)
-                        ->first();
+{
+    try {
+        // 1. Cek di tabel lokal (Mencegah input nomor yang sudah dikirim ke arsip)
+        $cekLokal = \App\Models\Permohonan::where('no_permohonan', $nomor)->first();
+        $statusDilarang = ['SIAP_DITERIMA', 'DITERIMA', 'DITERIMA OLEH ARSIP'];
 
-            if ($data) {
+        if ($cekLokal && in_array(strtoupper(trim($cekLokal->status_berkas)), $statusDilarang)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nomor permohonan ini sudah dalam proses pengiriman atau sudah berada di Arsip.'
+            ]);
+        }
+
+        // 2. Ambil data dari database paspor eksternal
+        $dataPaspor = DB::table('datapaspor.datapaspor')->where('nopermohonan', $nomor)->first();
+
+        if ($dataPaspor) {
+            // FIX: Menggunakan nama kolom yang benar sesuai di phpMyAdmin kamu yaitu 'alurterakhir'
+            $rawStatus = $dataPaspor->alurterakhir ?? null;
+            
+            $currentAlur = $rawStatus ? strtoupper(trim($rawStatus)) : 'TIDAK DIKETAHUI'; 
+
+            // LOGIKA: Bandingkan. Jika isinya 'WAWANCARA' atau selain 'SELESAI', maka TOLAK.
+            if ($currentAlur !== 'SELESAI') {
                 return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'nama' => $data->nama,
-                        'tempat_lahir' => $data->tempatlahir,
-                        'tanggal_lahir' => $data->tanggallahir,
-                        'jenis_paspor' => $data->jenispaspor,
-                    ]
+                    'success' => false,
+                    'message' => 'Berkas ditolak. Status database: "' . $currentAlur . '". (Hanya status SELESAI yang diperbolehkan).'
                 ]);
             }
 
+            // Jika statusnya SELESAI, lanjut isi form otomatis
             return response()->json([
-                'success' => false, 
-                'message' => 'Nomor permohonan tidak ditemukan di database paspor.'
+                'success' => true,
+                'data' => [
+                    'nama' => $dataPaspor->nama,
+                    'tempat_lahir' => $dataPaspor->tempatlahir,
+                    'tanggal_lahir' => $dataPaspor->tanggallahir,
+                    'jenis_paspor' => $dataPaspor->jenispaspor,
+                ]
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false, 
-                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-            ], 500);
         }
-    }
 
+        return response()->json([
+            'success' => false, 
+            'message' => 'Nomor permohonan tidak ditemukan di database paspor.'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => 'Sistem Error: ' . $e->getMessage()], 500);
+    }
+}
+
+    // 10. STORE DATA
     public function store(Request $request) {
         $list = $request->nomor_permohonan_list;
         if (!$list) return response()->json(['success' => false, 'message' => 'Daftar berkas kosong'], 400);
     
+        $nomorList = collect($list)->pluck('no_permohonan')->toArray();
+        $cekDuplikat = Permohonan::whereIn('no_permohonan', $nomorList)
+                        ->where('status_berkas', '!=', 'DIAMBIL')
+                        ->exists();
+        
+        if ($cekDuplikat) {
+            return response()->json(['success' => false, 'message' => 'Salah satu nomor permohonan sudah pernah diinputkan sebelumnya.'], 422);
+        }
+    
         $user = Auth::user(); 
-
         DB::beginTransaction();
         try {
             $noBatch = 'B-' . time();
@@ -298,7 +310,7 @@ class ArsipController extends Controller
                 'jumlah_berkas' => count($list),
                 'status'        => 'Diajukan',
                 'asal_unit'     => $user->role ?? 'KANIM', 
-                'petugas_kirim' => $user->nama_lengkap ?? $user->name, // Ambil nama lengkap jika ada
+                'petugas_kirim' => $user->nama_lengkap ?? $user->name,
                 'created_at'    => now(),
                 'updated_at'    => now()
             ]);
@@ -340,37 +352,9 @@ class ArsipController extends Controller
         }
     }
 
-    // Fungsi baru untuk mengambil detail data permohonan
-    public function getDetail($nomor)
-    {
-        try {
-            // Cari data di tabel permohonan berdasarkan no_permohonan
-            $data = Permohonan::where('no_permohonan', $nomor)->first();
-
-            if ($data) {
-                return response()->json([
-                    'success' => true,
-                    'data'    => $data
-                ]);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan di database aplikasi.'
-            ], 404);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    // 10. Tampilan Daftar Rak
+    // 11. MODUL MASTER RAK LOKER
     public function rakIndex()
     {
-        // Gunakan path lengkap \App\Models\RakLoker
         $rak = \App\Models\RakLoker::orderBy('no_lemari', 'asc')->orderBy('kode_rak', 'asc')->get();
         return view('arsip.rak_loker', [
             'current_page' => 'rak-loker',
@@ -378,50 +362,53 @@ class ArsipController extends Controller
         ]);
     }
 
-    // 11. Simpan Data Rak Baru
     public function rakStore(Request $request)
-{
-    // 1. Validasi Input
-    $request->validate([
-        'no_lemari'   => 'required', // Sesuaikan dengan name="no_lemari" di Blade
-        'jumlah_rak'  => 'required|integer|min:1|max:20',
-        'kapasitas'   => 'required|integer|min:1'
-    ], [
-        'jumlah_rak.max' => 'Satu lemari maksimal berisi 20 rak.',
-    ]);
+    {
+        $request->validate([
+            'no_lemari'   => 'required',
+            'jumlah_rak'  => 'required|integer|min:1|max:20',
+            'kapasitas'   => 'required|integer|min:1'
+        ]);
 
-    try {
-        $jumlah = $request->jumlah_rak;
-        
-        for ($i = 0; $i < $jumlah; $i++) {
-            $huruf = chr(97 + $i); // Menghasilkan a, b, c...
-            
-            // GUNAKAN 'kode_rak' agar sesuai dengan Model & Database
-            \App\Models\RakLoker::create([
-                'no_lemari' => $request->no_lemari,
-                'kode_rak'  => strtoupper($request->no_lemari . $huruf), // Hasil: 1A, 1B, dst
-                'kapasitas' => $request->kapasitas,
-                'terisi'    => 0,
-                'status'    => 'Tersedia' // Gunakan 'Tersedia' (T besar) agar sama dengan pengecekan di dashboard
-            ]);
+        try {
+            $jumlah = $request->jumlah_rak;
+            for ($i = 0; $i < $jumlah; $i++) {
+                $huruf = chr(97 + $i);
+                \App\Models\RakLoker::create([
+                    'no_lemari' => $request->no_lemari,
+                    'kode_rak'  => strtoupper($request->no_lemari . $huruf),
+                    'kapasitas' => $request->kapasitas,
+                    'terisi'    => 0,
+                    'status'    => 'Tersedia'
+                ]);
+            }
+            return back()->with('success', 'Data Lemari berhasil dibuat.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
-
-        return back()->with('success', 'Data Lemari dan ' . $jumlah . ' Rak berhasil dibuat.');
-
-    } catch (\Exception $e) {
-        return back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
     }
-}
 
-    // 12. Hapus Rak
     public function rakDestroy($id)
     {
-        // Gunakan path lengkap \App\Models\RakLoker
         $rak = \App\Models\RakLoker::findOrFail($id);
         if ($rak->terisi > 0) {
             return redirect()->back()->with('error', 'Rak tidak bisa dihapus karena sudah berisi berkas!');
         }
         $rak->delete();
         return redirect()->back()->with('success', 'Rak berhasil dihapus.');
+    }
+
+    // Fungsi Detail Permohonan Aplikasi Lokal
+    public function getDetail($nomor)
+    {
+        try {
+            $data = Permohonan::where('no_permohonan', $nomor)->first();
+            if ($data) {
+                return response()->json(['success' => true, 'data' => $data]);
+            }
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }
