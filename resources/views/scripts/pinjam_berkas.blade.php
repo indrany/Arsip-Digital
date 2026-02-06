@@ -4,25 +4,22 @@
 @section('page-subtitle', 'Data berkas yang dipinjam dan status peminjaman.')
 
 @section('content')
-<div class="container-fluid">
-    <div class="card-custom">
-        <div class="table-header-custom">
-            <h6 class="table-title-custom fw-bold m-0">Data Berkas yang dipinjam</h6>
-            <div class="table-actions-custom" id="filterArea" style="display: flex; gap: 10px; align-items: center;">
-                @php $roleUser = strtoupper(auth()->user()->role); @endphp
+<div class="container-fluid p-0" style="margin-left: -35px;"> 
+    <div class="card-custom" style="width: 108%; margin-left: 0px;">
+    <div class="table-header-custom">
+    <h5 class="table-title-custom fw-bold m-0">Data Berkas yang dipinjam</h5>
+    <div class="table-actions-custom" id="filterArea" style="position: relative; display: flex; gap: 10px; align-items: center;">
+        @php $roleUser = strtoupper(auth()->user()->role); @endphp
  
-                <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam" style="white-space: nowrap;">
-                    + Pinjam Berkas
-                </button>
-
-                <button type="button" class="btn-filter-custom" onclick="toggleFilter()" style="white-space: nowrap;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-                    </svg>
-                    Cari
-                </button>
-            </div>
-        </div>
+        <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam" style="white-space: nowrap;">
+            + Pinjam Berkas
+        </button>
+        <button type="button" class="btn-filter-custom" onclick="toggleFilter(event)" style="white-space: nowrap;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+            </svg>
+            Cari
+        </button>
 
         <div id="filterDropdown" class="filter-dropdown-custom shadow-lg">
             <form action="{{ route('pinjam-berkas.index') }}" method="GET">
@@ -34,49 +31,89 @@
                 <a href="{{ route('pinjam-berkas.index') }}" class="btn-reset-filter">Reset</a>
             </form>
         </div>
-
+    </div>
+</div>
+        @if(request('no_permohonan'))
+            <div class="mb-3 d-flex align-items-center justify-content-between p-3 rounded" style="background-color: #F9FAFB; border: 1px solid #EAECF0;">
+                <span style="font-size: 13px; color: #475467;">
+                    Menampilkan hasil untuk: <strong>"{{ request('no_permohonan') }}"</strong>
+                </span>
+                <span class="badge rounded-pill" style="background-color: #1366D9; padding: 6px 12px; font-size: 11px;">
+                    {{ $dataPinjam->count() }} Berkas Ditemukan
+                </span>
+            </div>
+        @endif
         <div class="table-responsive">
             <table class="table-custom">
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">No. Permohonan</th>
-                        <th style="width: 15%;">Tanggal Permohonan</th>
-                        <th style="width: 15%;">Nama Pemohon</th>
-                        <th style="width: 12%;">Divisi Peminjam</th>
-                        <th style="width: 12%;">Tanggal Pinjam</th>
-                        <th style="width: 12%;">Tanggal Kembali</th>
-                        <th style="width: 10%; text-align: center;">Aksi</th>
-                        <th style="width: 9%;">Status</th>
-                    </tr>
-                </thead>
+            <thead>
+                <tr>
+                    <th style="width: 16%;">No. Permohonan</th> 
+                    <th style="width: 12%;">Tanggal Permohonan</th>
+                    <th style="width: 14%; text-align: left;">Nama Pemohon</th> 
+                    <th style="width: 16%;">Peminjam</th>
+                    <th style="width: 11%;">Tanggal Pinjam</th>
+                    <th style="width: 11%;">Tanggal Kembali</th>
+                    <th style="width: 15%; text-align: center;">Aksi</th>
+                    <th style="width: 9%;">Status</th>
+                </tr>
+            </thead>
                 <tbody>
                     @forelse($dataPinjam as $item)
                     <tr>
                         <td class="fw-bold">{{ $item->permohonan->no_permohonan ?? '-' }}</td>
                         <td>{{ $item->permohonan->tanggal_permohonan ?? '-' }}</td>
-                        <td>{{ $item->permohonan->nama ?? '-' }}</td>
-                        <td><span class="badge-divisi">{{ $item->nama_peminjam }}</span></td>
+                        <td>{{ $item->permohonan->nama ?? '-' }}</td>        
+                        <td style="padding: 10px; vertical-align: middle;">
+                            <div style="display: flex; align-items: center; gap: 10px;">                                
+                                <div>
+                                    {{-- Nama Orang --}}
+                                    <div style="font-size: 12px; font-weight: 500; color: #1F2937; margin-bottom: 2px;">
+                                        {{ $item->nama_personil }}
+                                    </div>
+                                    {{-- Label Divisi dengan Bullet Point --}}
+                                    <div style="font-size: 11px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
+                                        <span style="width: 6px; height: 6px; background: #10B981; border-radius: 50%;"></span>
+                                        {{ $item->nama_peminjam }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                         <td>{{ $item->tgl_pinjam }}</td>
                         <td>{{ $item->tgl_kembali ?? '-' }}</td>
-                        <td>
-                            <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
-                                <button type="button" onclick="showDetail({{ json_encode($item->permohonan) }})" class="btn-detail-blue">Detail</button>
+                        <td style="width: 15%; text-align: center;">
+                        <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
+                            <button type="button" onclick="showDetail({{ json_encode($item->permohonan) }})" class="btn-detail-blue">Detail</button>
+                            @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
+                                @if($item->status == 'Pengajuan')
+                                    <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
+                                        <button class="btn-check-custom" title="Setujui">✓</button>
+                                    </form>
+                                    <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" class="d-inline"> @csrf
+                                        <button class="btn-reject-custom" title="Tolak">✕</button>
+                                    </form>
 
-                                @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
-                                    @if($item->status == 'Pengajuan')
-                                        <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
-                                            <button class="btn-check-custom" title="Setujui">✓</button>
-                                        </form>
-                                        <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" class="d-inline"> @csrf
-                                            <button class="btn-reject-custom" title="Tolak">✕</button>
-                                        </form>
                                     @elseif($item->status == 'Disetujui')
-                                        <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" class="d-inline"> @csrf
-                                            <button class="btn-selesai">Selesai</button>
-                                        </form>
-                                    @endif
-                                @endif
-                            </div>
+                                {{-- LANGKAH 1: Tombol Cetak --}}
+                                <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
+                                class="btn-cetak" 
+                                title="Cetak Tanda Terima" 
+                                target="_blank" 
+                                onclick="aktifkanTombolSelesai('{{ $item->id }}')"> {{-- Gunakan fungsi ini --}}
+                                    <i class="fas fa-print"></i>
+                                </a>
+                                
+                                {{-- LANGKAH 2: Tombol Selesai (Pastikan ID-nya benar) --}}
+                                <form action="{{ route('pinjam-berkas.complete', $item->id) }}" 
+                                    method="POST" 
+                                    class="d-inline" 
+                                    id="form-selesai-{{ $item->id }}" {{-- Harus sama dengan ID di JavaScript --}}
+                                    style="display: none !important;"> {{-- Tambahkan !important agar tidak dipaksa muncul oleh CSS lain --}}
+                                    @csrf
+                                    <button class="btn-selesai" title="Kembalikan Berkas">Selesai</button>
+                                </form>
+                            @endif
+                            @endif
+                        </div>
                         </td>
                         <td>
                             @php
@@ -110,13 +147,10 @@
                         <input type="text" id="input_no_permohonan" name="no_permohonan" class="form-control border-primary" placeholder="Ketik nomor permohonan..." required autocomplete="off">
                     </div>
                 </div>
-
-                {{-- AREA DETAIL OTOMATIS (Lengkap 14 Field) --}}
         <div id="areaDetailOtomatis" class="p-3 bg-light rounded-3 mb-4 border" style="display: none; max-width: 600px; margin: 0 auto;">
             <h6 class="small fw-bold text-muted mb-3 text-uppercase text-center">Informasi Lengkap Berkas</h6>
             
             <div class="row g-2 justify-content-center">
-        {{-- Baris 1 --}}
         <div class="col-sm-5">
             <label class="small text-muted mb-1">Tanggal Permohonan</label>
             <input type="text" id="det_tgl_mohon" class="form-control form-control-sm bg-white" readonly>
@@ -125,14 +159,10 @@
             <label class="small text-muted mb-1">Tanggal Terbit</label>
             <input type="text" id="det_tgl_terbit" class="form-control form-control-sm bg-white" readonly>
         </div>
-        
-        {{-- Baris 2 --}}
         <div class="col-sm-10">
             <label class="small text-muted mb-1">Nama Lengkap</label>
             <input type="text" id="det_nama" class="form-control form-control-sm bg-white" readonly>
         </div>
-
-        {{-- Baris 3 --}}
         <div class="col-sm-5">
             <label class="small text-muted mb-1">Tempat Lahir</label>
             <input type="text" id="det_tempat_lahir" class="form-control form-control-sm bg-white" readonly>
@@ -141,8 +171,6 @@
             <label class="small text-muted mb-1">Tanggal Lahir</label>
             <input type="text" id="det_tgl_lahir" class="form-control form-control-sm bg-white" readonly>
         </div>
-
-        {{-- Baris 4 --}}
         <div class="col-sm-5">
             <label class="small text-muted mb-1">Jenis Kelamin</label>
             <input type="text" id="det_jk" class="form-control form-control-sm bg-white" readonly>
@@ -151,8 +179,6 @@
             <label class="small text-muted mb-1">No Telpon</label>
             <input type="text" id="det_telp" class="form-control form-control-sm bg-white" readonly>
         </div>
-
-        {{-- Baris 5 --}}
         <div class="col-sm-5">
             <label class="small text-muted mb-1">Jenis Permohonan</label>
             <input type="text" id="det_jns_mohon" class="form-control form-control-sm bg-white" readonly>
@@ -161,14 +187,10 @@
             <label class="small text-muted mb-1">Jenis Paspor</label>
             <input type="text" id="det_jns_paspor" class="form-control form-control-sm bg-white" readonly>
         </div>
-
-        {{-- Baris 6 --}}
         <div class="col-sm-10">
             <label class="small text-muted mb-1">Tujuan Paspor</label>
             <input type="text" id="det_tujuan" class="form-control form-control-sm bg-white" readonly>
         </div>
-
-        {{-- Baris 7 --}}
         <div class="col-sm-5">
             <label class="small text-muted mb-1">No Paspor</label>
             <input type="text" id="det_no_paspor" class="form-control form-control-sm bg-white" readonly>
@@ -177,18 +199,16 @@
             <label class="small text-muted mb-1">Alur Terakhir</label>
             <input type="text" id="det_alur" class="form-control form-control-sm bg-white" readonly>
         </div>
-
-        {{-- Baris 8 --}}
         <div class="col-sm-10">
             <label class="small text-muted mb-1">Lokasi Arsip</label>
             <input type="text" id="det_lokasi" class="form-control form-control-sm bg-white fw-bold text-success border-success" readonly>
         </div>
     </div>
 </div>
-
-                {{-- Input Peminjam --}}
                 <div class="mb-3">
                     <label class="form-label fw-bold small">Divisi Peminjam</label>
+                    @php $roleUser = strtoupper(auth()->user()->role); @endphp
+
                     @if(in_array($roleUser, ['ADMIN', 'KANIM']))
                         <select name="nama_peminjam" class="form-select" required>
                             <option value="" selected disabled>-- Pilih Divisi --</option>
@@ -202,7 +222,10 @@
                         <input type="hidden" name="nama_peminjam" value="{{ auth()->user()->role }}">
                     @endif
                 </div>
-
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Nama Peminjam (Personil)</label>
+                    <input type="text" name="nama_personil" class="form-control" placeholder="Masukkan nama orang yang meminjam" required>
+                </div>
                 <div class="d-flex gap-2 mt-4">
                     <button type="button" class="btn btn-light w-100 border" data-bs-dismiss="modal">Batal</button>
                     <button type="button" class="btn btn-primary w-100" onclick="handleSimpanPinjaman()">Simpan Peminjaman</button>
@@ -278,19 +301,120 @@
 .bg-disetujui { background-color: #34C759; }
 .bg-ditolak { background-color: #FF383C; }
 .bg-selesai { background-color: #0088FF; }
-.filter-dropdown-custom { display: none; position: absolute; background: white; padding: 20px; border-radius: 12px; width: 280px; z-index: 100; right: 20px; top: 120px; }
-.filter-dropdown-custom.show { display: block; }
 
-/* REVISI UKURAN JUDUL DI CSS */
+.filter-dropdown-custom {
+    display: none;
+    position: absolute;
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    width: 320px;
+    z-index: 1050; 
+    right: 0;      
+    top: 50px;
+    border: 1px solid #E4E7EC;
+    box-shadow: 0px 12px 16px -4px rgba(16, 24, 40, 0.08);
+}
+.filter-dropdown-custom.show {
+    display: block;
+}
+.filter-group-custom {
+    margin-bottom: 20px;
+}
+.filter-group-custom label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #344054;
+    margin-bottom: 8px;
+}
+.filter-group-custom input {
+    width: 100%;
+    padding: 10px 14px;
+    background: #FFFFFF;
+    border: 1px solid #D0D5DD;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #667085;
+    outline: none;
+    transition: all 0.2s;
+}
+.filter-group-custom input:focus {
+    border-color: #1366D9;
+    box-shadow: 0px 0px 0px 4px rgba(19, 102, 217, 0.1);
+}
+.btn-submit-filter {
+    width: 100%;
+    background: #1366D9;
+    color: #ffffff;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    transition: background 0.2s;
+}
+.btn-submit-filter:hover {
+    background: #0F52AE;
+}
+.btn-reset-filter {
+    display: block;
+    text-align: center;
+    width: 100%;
+    color: #667085;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+}
+.btn-reset-filter:hover {
+    color: #344054;
+}
+
 .table-title-custom {
     font-size: 15px !important; 
 }
+.table-custom th, .table-custom td {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}
+.table-custom td:nth-child(3) {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.btn-cetak {
+    background: #667085;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 12px;
+}
+.btn-cetak:hover {
+    background: #344054;
+    color: white;
+}
 </style>
-
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function toggleFilter(){ document.getElementById('filterDropdown').classList.toggle('show'); }
-
+function toggleFilter(event) {
+    if (event) event.stopPropagation(); 
+    document.getElementById('filterDropdown').classList.toggle('show');
+}
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('filterDropdown');
+    const area = document.getElementById('filterArea');
+    if (dropdown && dropdown.classList.contains('show') && area && !area.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
 function showDetail(item) {
     if(!item) return;
     document.getElementById('m_no_permohonan').value = item.no_permohonan || '-';
@@ -311,68 +435,95 @@ function showDetail(item) {
 }
 
 let debounceTimer;
+const inputPermohonan = document.getElementById('input_no_permohonan');
 
-document.getElementById('input_no_permohonan').addEventListener('input', function() {
-    const no = this.value;
-    const detailArea = document.getElementById('areaDetailOtomatis');
-    
-    clearTimeout(debounceTimer);
-    if (!no || no.length < 5) {
-        detailArea.style.display = 'none';
-        return;
-    }
-
-    debounceTimer = setTimeout(() => {
-        fetch(`/cari-permohonan/${no}`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.is_borrowed) {
-                        Swal.fire('Info', `Berkas sedang dipinjam oleh ${data.borrower_name}`, 'warning');
-                        this.value = '';
-                        detailArea.style.display = 'none';
+if (inputPermohonan) {
+    inputPermohonan.addEventListener('input', function() {
+        const no = this.value;
+        const detailArea = document.getElementById('areaDetailOtomatis');
+        
+        clearTimeout(debounceTimer);
+        if (!no || no.length < 5) {
+            detailArea.style.display = 'none';
+            return;
+        }
+        debounceTimer = setTimeout(() => {
+            fetch(`/cari-permohonan/${no}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.is_borrowed) {
+                                Swal.fire({
+                                    title: 'Info',
+                                    // Tampilan notifikasi baru: Nama Personil di atas, Divisi di bawah
+                                    html: `Berkas sedang dipinjam oleh: <br><strong>${data.personnel_name}</strong> <br><small>(Divisi: ${data.borrower_name})</small>`,
+                                    icon: 'warning',
+                                    confirmButtonColor: '#5D5FEF'
+                                });
+                                this.value = '';
+                                detailArea.style.display = 'none';
+                            }else {
+                            // Isi field detail secara otomatis
+                            document.getElementById('det_tgl_mohon').value = data.data.tanggal_permohonan || '-';
+                            document.getElementById('det_tgl_terbit').value = data.data.tanggal_terbit || '-';
+                            document.getElementById('det_nama').value = data.data.nama || '-';
+                            document.getElementById('det_tempat_lahir').value = data.data.tempat_lahir || '-';
+                            document.getElementById('det_tgl_lahir').value = data.data.tanggal_lahir || '-';
+                            document.getElementById('det_jk').value = data.data.jenis_kelamin || '-';
+                            document.getElementById('det_telp').value = data.data.no_telp || '-';
+                            document.getElementById('det_jns_mohon').value = data.data.jenis_permohonan || '-';
+                            document.getElementById('det_jns_paspor').value = data.data.jenis_paspor || '-';
+                            document.getElementById('det_tujuan').value = data.data.tujuan_paspor || '-';
+                            document.getElementById('det_no_paspor').value = data.data.no_paspor || '-';
+                            document.getElementById('det_alur').value = data.data.status_berkas || '-';
+                            document.getElementById('det_lokasi').value = data.data.lokasi_arsip || '-';
+                            detailArea.style.display = 'block';
+                        }
                     } else {
-                        // Isi 14 Field Lengkap
-                        document.getElementById('det_tgl_mohon').value = data.data.tanggal_permohonan || '-';
-                        document.getElementById('det_tgl_terbit').value = data.data.tanggal_terbit || '-';
-                        document.getElementById('det_nama').value = data.data.nama || '-';
-                        document.getElementById('det_tempat_lahir').value = data.data.tempat_lahir || '-';
-                        document.getElementById('det_tgl_lahir').value = data.data.tanggal_lahir || '-';
-                        document.getElementById('det_jk').value = data.data.jenis_kelamin || '-';
-                        document.getElementById('det_telp').value = data.data.no_telp || '-';
-                        document.getElementById('det_jns_mohon').value = data.data.jenis_permohonan || '-';
-                        document.getElementById('det_jns_paspor').value = data.data.jenis_paspor || '-';
-                        document.getElementById('det_tujuan').value = data.data.tujuan_paspor || '-';
-                        document.getElementById('det_no_paspor').value = data.data.no_paspor || '-';
-                        document.getElementById('det_alur').value = data.data.status_berkas || '-';
-                        document.getElementById('det_lokasi').value = data.data.lokasi_arsip || '-';
-                        
-                        detailArea.style.display = 'block';
+                        detailArea.style.display = 'none';
                     }
-                } else {
-                    detailArea.style.display = 'none';
-                }
-            });
-    }, 500); 
-});
+                });
+        }, 500); 
+    }); 
+}
 function handleSimpanPinjaman() {
     const no = document.getElementById('input_no_permohonan').value;
-    if(!no) { Swal.fire('Peringatan', 'Masukkan Nomor Permohonan', 'warning'); return; }
+    if(!no) { 
+        Swal.fire('Peringatan', 'Masukkan Nomor Permohonan', 'warning'); 
+        return; 
+    }
 
-    fetch(`/cari-permohonan/${no}`).then(r => r.json()).then(data => {
-        if(data.success && data.is_borrowed) {
-            Swal.fire({
-                title: 'Berkas Sedang Dipinjam!',
-                html: `Berkas ini sedang dipinjam oleh divisi <b>${data.borrower_name}</b>.<br>Selesaikan pengembalian berkas terlebih dahulu.`,
-                icon: 'error',
-                confirmButtonColor: '#F97066'
-            });
-        } else if(data.success) {
-            document.getElementById('formPinjamBerkas').submit();
+    fetch(`/cari-permohonan/${no}`)
+        .then(r => r.json())
+        .then(data => {
+            if(data.success && data.is_borrowed) {
+                Swal.fire({
+                    title: 'Berkas Sedang Dipinjam!',
+                    html: `Berkas ini sedang dipinjam oleh <b>${data.personnel_name}</b> dari divisi <b>${data.borrower_name}</b>.<br>Selesaikan pengembalian berkas terlebih dahulu.`,
+                    icon: 'error',
+                    confirmButtonColor: '#F97066'
+                });
+            }else if(data.success) {
+                document.getElementById('formPinjamBerkas').submit();
+            } else {
+                Swal.fire('Gagal', 'Nomor Permohonan tidak valid.', 'error');
+            }
+        });
+}
+function aktifkanTombolSelesai(id) {
+    // Memberikan jeda 1 detik agar tab cetak terbuka sempurna terlebih dahulu
+    setTimeout(() => {
+        // Mencari elemen form berdasarkan ID yang sudah diperbaiki
+        const formSelesai = document.getElementById('form-selesai-' + id);
+        
+        if (formSelesai) {
+            // Mengubah style display dari none menjadi inline-block
+            formSelesai.style.setProperty('display', 'inline-block', 'important');
+            console.log("Tombol Selesai untuk ID " + id + " sekarang muncul.");
         } else {
-            Swal.fire('Gagal', 'Nomor Permohonan tidak valid.', 'error');
+            console.error("Elemen form-selesai-" + id + " tidak ditemukan!");
         }
-    });
+    }, 1000); 
 }
 </script>
 @endsection

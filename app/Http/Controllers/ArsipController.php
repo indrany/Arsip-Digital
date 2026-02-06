@@ -14,30 +14,33 @@ class ArsipController extends Controller
 {
     // 1. DASHBOARD
     public function dashboard() {
+
         set_time_limit(120);
         $tahunMulai = 2026;
         $tahunSekarang = (int)date('Y');
         $availableYears = range($tahunSekarang, $tahunMulai);
-    
+        
         $chartData = [];
-        foreach ($availableYears as $year) {
+        foreach ($availableYears as $year) {  
+            // Optimasi: Ambil semua data tahun tersebut dalam satu kali query (Eager Loading)
             $dataPemohon = \App\Models\Permohonan::whereYear('tanggal_permohonan', $year)
                 ->selectRaw('MONTH(tanggal_permohonan) as month, COUNT(*) as count')
                 ->groupBy('month')
                 ->pluck('count', 'month')->toArray();
-    
             $dataDipinjam = \App\Models\PinjamBerkas::whereYear('tgl_pinjam', $year)
+                ->where('status', '!=', 'Ditolak') // Tambahkan filter ini
                 ->selectRaw('MONTH(tgl_pinjam) as month, COUNT(*) as count')
                 ->groupBy('month')
                 ->pluck('count', 'month')->toArray();
-    
             $pemohon = [];
             $dipinjam = [];
     
             for ($m = 1; $m <= 12; $m++) {
                 $pemohon[] = $dataPemohon[$m] ?? 0;
                 $dipinjam[] = $dataDipinjam[$m] ?? 0;
+               
             }
+    
     
             $chartData[$year] = [
                 'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],

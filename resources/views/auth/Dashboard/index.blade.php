@@ -167,11 +167,11 @@
                     beginAtZero: true,
                     ticks: {
                         // INI KUNCINYA: Mengatur kelipatan 10
-                        stepSize: 10, 
+                        stepSize: 500, 
                         precision: 0 // Memastikan tidak ada angka desimal (0.5)
                     },
                     // suggestedMax membantu agar grafik punya ruang di atas jika data masih kecil
-                    suggestedMax: 50 
+                    suggestedMax: 5000 
                 }
             }
         }

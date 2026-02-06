@@ -5,12 +5,14 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
-{  
-     public function up() {
-        Schema::table('pinjam_berkas', function (Blueprint $table) {
-            $table->softDeletes(); // Menambahkan kolom deleted_at
-        });
+{
+    public function up()
+    {
+    Schema::table('pinjam_berkas', function (Blueprint $table) {
+        $table->string('nama_personil')->nullable()->after('nama_peminjam');
+    });
     }
+
     public function down(): void
     {
         Schema::table('pinjam_berkas', function (Blueprint $table) {
