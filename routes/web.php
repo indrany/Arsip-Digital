@@ -63,5 +63,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/rak-loker/store', [ArsipController::class, 'rakStore'])->name('rak-loker.store');
     Route::delete('/rak-loker/{id}', [ArsipController::class, 'rakDestroy'])->name('rak-loker.destroy');
     
+    // --- MODUL PEMUSNAHAN ARSIP ---
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/pemusnahan-arsip', [ArsipController::class, 'pemusnahanIndex'])->name('pemusnahan.index');
+        Route::get('/pemusnahan-arsip/hitung', [ArsipController::class, 'hitungDokumen'])->name('pemusnahan.hitung');
+        Route::get('/pemusnahan-arsip/cetak/{id}', [ArsipController::class, 'cetakPemusnahan'])->name('pemusnahan.cetak');
+        
+        // Route untuk TIKIM (Simpan Data & Upload Susulan)
+        Route::post('/pemusnahan-arsip/simpan', [ArsipController::class, 'simpanPemusnahan'])->name('pemusnahan.store');
+        Route::post('/pemusnahan-arsip/upload/{id}', [ArsipController::class, 'uploadPDF'])->name('pemusnahan.upload');
+        
+        // Route untuk ADMIN (Persetujuan)
+        Route::post('/pemusnahan-arsip/setujui/{id}', [ArsipController::class, 'setujuiPemusnahan'])->name('pemusnahan.approve');
+    });
 });
 

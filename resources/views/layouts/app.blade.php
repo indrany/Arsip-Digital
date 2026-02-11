@@ -11,13 +11,14 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/main.css') }}"> 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     
     <style>
         /* Mencegah Double Scrollbar */
         html, body {
             height: 100%;
             margin: 0;
-            overflow: hidden; /* Scroll dikelola oleh container saja */
+            overflow: hidden; 
         }
 
         .main-container {
@@ -26,30 +27,27 @@
             overflow: hidden;
         }
 
-        /* Sidebar Tetap/Fixed */
         .sidebar {
-            width: 250px; /* Sesuaikan dengan lebar di main.css kamu */
+            width: 250px; 
             flex-shrink: 0;
             height: 100vh;
             overflow-y: auto;
         }
 
-        /* Area Konten Utama */
         .content-wrapper {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow-y: auto; /* Scrollbar muncul di sini saja */
+            overflow-y: auto; 
             background-color: #f4f7fe;
         }
 
         .main-content {
-            flex: 1 0 auto; /* Menekan footer ke bawah */
+            flex: 1 0 auto; 
             padding-bottom: 2rem;
         }
 
-        /* Footer Rapih & Menempel Sempurna */
         .footer-siardig {
             background-color: #ffffff;
             border-top: 1px solid #e3e6f0;
@@ -78,6 +76,7 @@
                             <div class="menu-icon"><i class="fas fa-home"></i></div> Dashboard
                         </a>
                     </li>
+                    
                     @if(strtoupper(Auth::user()->role) == 'ADMIN')
                     <li class="{{ Request::is('users*') ? 'active' : '' }}">
                         <a href="{{ route('users.index') }}">
@@ -85,6 +84,7 @@
                         </a>
                     </li>
                     @endif
+
                     @if(in_array(strtoupper(Auth::user()->role), ['ADMIN', 'TIKIM']))
                     <li class="{{ Request::is('rak-loker*') ? 'active' : '' }}">
                         <a href="{{ route('rak-loker.index') }}">
@@ -92,6 +92,7 @@
                         </a>
                     </li>
                     @endif
+
                     @if(strtoupper(Auth::user()->role) != 'TIKIM')
                     <li class="{{ Request::is('pengiriman-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('pengiriman-berkas.index') }}">
@@ -99,6 +100,7 @@
                         </a>
                     </li>
                     @endif
+
                     @if(in_array(strtoupper(Auth::user()->role), ['ADMIN', 'TIKIM']))
                     <li class="{{ Request::is('penerimaan-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('penerimaan-berkas.index') }}"> 
@@ -106,6 +108,7 @@
                         </a>
                     </li>
                     @endif
+
                     @if(strtoupper(Auth::user()->role) == 'ADMIN')
                     <li class="{{ Request::is('pencarian-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('pencarian-berkas.index') }}">
@@ -113,11 +116,21 @@
                         </a>
                     </li>
                     @endif
+
                     <li class="{{ Request::is('pinjam-berkas*') ? 'active' : '' }}">
                         <a href="{{ route('pinjam-berkas.index') }}">
                             <div class="menu-icon"><i class="fas fa-file-signature"></i></div> Pinjam Berkas
                         </a>
                     </li>
+
+                    {{-- MENU PEMUSNAHAN (SUDAH DIRAPIKAN MASUK KE DALAM UL) --}}
+                    @if(in_array(strtoupper(Auth::user()->role), ['ADMIN', 'TIKIM']))
+                    <li class="{{ Request::is('pemusnahan-arsip*') ? 'active' : '' }}">
+                        <a href="{{ route('pemusnahan.index') }}"> 
+                            <div class="menu-icon"><i class="fas fa-trash-alt"></i></div> Pemusnahan Arsip
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </nav>
         </div>
@@ -147,14 +160,12 @@
             </div>
         </div>
         
-        
         <main class="main-content p-4">
             <div class="container-fluid">
                 @yield('content')
             </div>
         </main>
 
-        {{-- FOOTER RAPID --}}
         <footer class="footer-siardig">
             <div class="text-center">
                 <span class="text-muted small">
@@ -165,10 +176,11 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     $.ajaxSetup({
@@ -177,6 +189,7 @@
         }
     });
 </script>
+
 @stack('scripts')
 </body>
 </html>

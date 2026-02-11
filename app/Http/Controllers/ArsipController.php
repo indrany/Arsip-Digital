@@ -414,4 +414,137 @@ class ArsipController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+    // Halaman Utama Pemusnahan
+    public function pemusnahanIndex() {
+        $riwayat = \App\Models\PemusnahanArsip::orderBy('created_at', 'desc')->get();
+        return view('arsip.pemusnahan', compact('riwayat'));
+    }
+
+    // Ajax untuk menghitung jumlah dokumen sebelum di-submit
+    public function hitungDokumen(Request $request) {
+        $jumlah = \App\Models\Permohonan::whereBetween('tanggal_permohonan', [$request->mulai, $request->selesai])
+                    ->where('status_berkas', 'DITERIMA OLEH ARSIP')
+                    ->count();
+        return response()->json(['jumlah' => $jumlah]);
+    }
+
+    // Simpan Pengajuan (Role: TIKIM)
+    public function simpanPemusnahan(Request $request) {
+        $request->validate([
+            'no_berita_acara' => 'required|unique:pemusnahan_arsip',
+            'file_pdf' => 'nullable|mimes:pdf|max:5000', // Diubah jadi nullable
+            'filter_mulai' => 'required|date',
+            'filter_selesai' => 'required|date',
+        ]);
+
+        // Ambil semua permohonan sesuai filter tanggal
+        $permohonans = \App\Models\Permohonan::whereBetween('tanggal_permohonan', [$request->filter_mulai, $request->filter_selesai])
+                        ->where('status_berkas', 'DITERIMA OLEH ARSIP')
+                        ->get();
+
+        if($permohonans->count() == 0) {
+            return back()->with('error', 'Tidak ada dokumen ditemukan pada periode tersebut.');
+        }
+
+        // Upload PDF hanya jika ada file yang dipilih
+        $fileName = null;
+        if ($request->hasFile('file_pdf')) {
+            $fileName = 'BA_' . time() . '.' . $request->file_pdf->extension();  
+            $request->file_pdf->move(public_path('uploads/pemusnahan'), $fileName);
+        }
+
+        \App\Models\PemusnahanArsip::create([
+            'no_berita_acara' => $request->no_berita_acara,
+            'tgl_pemusnahan' => now(),
+            'filter_mulai' => $request->filter_mulai,
+            'filter_selesai' => $request->filter_selesai,
+            'jumlah_dokumen' => $permohonans->count(),
+            'file_pdf' => $fileName,
+            'status' => 'Diajukan',
+            'daftar_id_permohonan' => $permohonans->pluck('id')->toArray()
+        ]);
+
+        return back()->with('success', 'Data Berita Acara berhasil disimpan! Silakan cetak lampiran dan upload PDF jika surat sudah ditandatangani.');
+    }
+
+    // FUNGSI BARU: Untuk upload PDF susulan
+    public function uploadPDF(Request $request, $id) {
+        $request->validate([
+            'file_pdf' => 'required|mimes:pdf|max:5000',
+        ]);
+
+        $ba = \App\Models\PemusnahanArsip::findOrFail($id);
+
+        if ($request->hasFile('file_pdf')) {
+            // Hapus file lama jika ada (opsional)
+            if ($ba->file_pdf && file_exists(public_path('uploads/pemusnahan/' . $ba->file_pdf))) {
+                unlink(public_path('uploads/pemusnahan/' . $ba->file_pdf));
+            }
+
+            $fileName = 'BA_' . time() . '.' . $request->file_pdf->extension();  
+            $request->file_pdf->move(public_path('uploads/pemusnahan'), $fileName);
+            
+            $ba->update(['file_pdf' => $fileName]);
+            return back()->with('success', 'File PDF Berita Acara berhasil diunggah!');
+        }
+
+        return back()->with('error', 'Gagal mengunggah file.');
+    }
+
+    public function setujuiPemusnahan($id) {
+        $ba = \App\Models\PemusnahanArsip::findOrFail($id);
+        
+        // Ambil daftar ID permohonan
+        $ids = is_array($ba->daftar_id_permohonan) ? $ba->daftar_id_permohonan : json_decode($ba->daftar_id_permohonan, true);
+    
+        if (!$ids) {
+            return back()->with('error', 'Daftar ID permohonan tidak ditemukan.');
+        }
+    
+        DB::beginTransaction(); // Tambahkan backslash jika tidak import DB
+        try {
+            foreach ($ids as $permohonanId) {
+                $p = \App\Models\Permohonan::find($permohonanId);
+                if ($p) {
+                    // 1. Kurangi isi Rak Loker (Decrement)
+                    if ($p->rak_id) {
+                        $rak = \App\Models\RakLoker::find($p->rak_id);
+                        if ($rak && $rak->terisi > 0) {
+                            $rak->decrement('terisi');
+                            
+                            // Jika sudah 0, pastikan status tersedia
+                            if($rak->terisi == 0) {
+                                $rak->update(['status' => 'Tersedia']);
+                            }
+                        }
+                    }
+    
+                    // 2. Tandai data permohonan sebagai Musnah
+                    $p->update([
+                        'status_berkas' => 'DIMUSNAHKAN',
+                        'rak_id' => null,
+                        'no_urut_di_rak' => null,
+                        'lokasi_arsip' => 'SUDAH DIMUSNAHKAN'
+                    ]);
+                }
+            }
+    
+            // 3. Update status berita acara
+            $ba->update(['status' => 'Disetujui']);
+    
+            DB::commit();
+            return back()->with('success', 'Pemusnahan Berhasil! Kapasitas rak telah diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi Kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function cetakPemusnahan($id) {
+        $ba = \App\Models\PemusnahanArsip::findOrFail($id);
+        $ids = is_array($ba->daftar_id_permohonan) ? $ba->daftar_id_permohonan : json_decode($ba->daftar_id_permohonan, true);
+        $permohonan = \App\Models\Permohonan::whereIn('id', $ids)->get();
+    
+        return view('arsip.cetak_ba', compact('ba', 'permohonan'));
+    }
 }
