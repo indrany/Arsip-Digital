@@ -6,23 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('pinjam_berkas', function (Blueprint $table) {
-            //
+            $table->string('no_peminjaman')->after('permohonan_id')->nullable();
+            $table->string('petugas_arsip')->after('nama_personil')->nullable();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('pinjam_berkas', function (Blueprint $table) {
-            //
+            $table->dropColumn(['no_peminjaman', 'petugas_arsip']);
         });
     }
 };
