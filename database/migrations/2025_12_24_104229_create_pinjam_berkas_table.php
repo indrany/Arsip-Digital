@@ -16,6 +16,7 @@ return new class extends Migration
             // Kabel penghubung ke tabel permohonan
             $table->foreignId('permohonan_id')->constrained('permohonan')->onDelete('cascade');
             $table->string('nama_peminjam');
+            $table->text('keterangan')->nullable();
             $table->date('tgl_pinjam');
             $table->date('tgl_kembali')->nullable();
             $table->string('status');

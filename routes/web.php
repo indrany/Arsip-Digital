@@ -54,6 +54,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/pinjam-berkas/complete/{id}', [PinjamBerkasController::class, 'complete'])->name('pinjam-berkas.complete');
     Route::get('/cari-permohonan/{no}', [PinjamBerkasController::class, 'cariPermohonan'])->name('pinjam-berkas.cari-permohonan');
     Route::get('/pinjam-berkas/cetak/{id}', [PinjamBerkasController::class, 'cetak'])->name('pinjam-berkas.cetak');
+    Route::get('/pinjam-berkas/cetak-kembali/{id}', [PinjamBerkasController::class, 'cetakKembali'])->name('pinjam-berkas.cetak-kembali');
+    
     // --- MANAJEMEN USER ---
     Route::resource('users', UserController::class)->except(['show']);
     Route::patch('/users/{user}/update-status', [UserController::class, 'updateStatus'])->name('users.update-status');

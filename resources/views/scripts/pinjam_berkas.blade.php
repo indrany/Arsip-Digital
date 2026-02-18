@@ -83,6 +83,7 @@
                         <td style="width: 15%; text-align: center;">
                         <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
                             <button type="button" onclick="showDetail({{ json_encode($item->permohonan) }})" class="btn-detail-blue">Detail</button>
+                            
                             @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
                                 @if($item->status == 'Pengajuan')
                                     <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
@@ -92,26 +93,28 @@
                                         <button class="btn-reject-custom" title="Tolak">✕</button>
                                     </form>
 
-                                    @elseif($item->status == 'Disetujui')
-                                {{-- LANGKAH 1: Tombol Cetak --}}
-                                <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
-                                class="btn-cetak" 
-                                title="Cetak Tanda Terima" 
-                                target="_blank" 
-                                onclick="aktifkanTombolSelesai('{{ $item->id }}')"> {{-- Gunakan fungsi ini --}}
-                                    <i class="fas fa-print"></i>
-                                </a>
-                                
-                                {{-- LANGKAH 2: Tombol Selesai (Pastikan ID-nya benar) --}}
-                                <form action="{{ route('pinjam-berkas.complete', $item->id) }}" 
-                                    method="POST" 
-                                    class="d-inline" 
-                                    id="form-selesai-{{ $item->id }}" {{-- Harus sama dengan ID di JavaScript --}}
-                                    style="display: none !important;"> {{-- Tambahkan !important agar tidak dipaksa muncul oleh CSS lain --}}
-                                    @csrf
-                                    <button class="btn-selesai" title="Kembalikan Berkas">Selesai</button>
-                                </form>
-                            @endif
+                                @elseif($item->status == 'Disetujui')
+                                    <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
+                                    class="btn-cetak" title="Cetak Tanda Terima" target="_blank" 
+                                    onclick="aktifkanTombolSelesai('{{ $item->id }}')">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                    
+                                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" 
+                                        method="POST" class="d-inline" id="form-selesai-{{ $item->id }}" 
+                                        style="display: none !important;">
+                                        @csrf
+                                        <button class="btn-selesai" title="Kembalikan Berkas">Selesai</button>
+                                    </form>
+
+                                {{-- TAMBAHKAN LOGIKA INI --}}
+                                @elseif($item->status == 'Selesai')
+                                    <a href="{{ route('pinjam-berkas.cetak-kembali', $item->id) }}" 
+                                    class="btn-cetak" style="background: #34C759;" 
+                                    title="Cetak Berita Acara Kembali" target="_blank">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </a>
+                                @endif
                             @endif
                         </div>
                         </td>
@@ -226,6 +229,14 @@
                     <label class="form-label fw-bold small">Nama Peminjam (Personil)</label>
                     <input type="text" name="nama_personil" class="form-control" placeholder="Masukkan nama orang yang meminjam" required>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Keterangan</label>
+                    <input type="text" name="keterangan" class="form-control" placeholder="Keterangan Meminjam" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Petugas Arsip (Yang Menyetujui)</label>
+                    <input type="text" name="petugas_arsip" class="form-control" placeholder="Nama Petugas Arsip" required>
+                </div>
                 <div class="d-flex gap-2 mt-4">
                     <button type="button" class="btn btn-light w-100 border" data-bs-dismiss="modal">Batal</button>
                     <button type="button" class="btn btn-primary w-100" onclick="handleSimpanPinjaman()">Simpan Peminjaman</button>
@@ -276,6 +287,15 @@
                 <div class="text-end mt-3 pt-2 border-top">
                     <button type="button" class="btn btn-danger btn-sm px-4 py-2 fw-bold" data-bs-dismiss="modal" style="background: #F97066; border: none; border-radius: 8px;">Tutup</button>
                 </div>
+                {{-- Tombol untuk menyelesaikan pinjaman --}}
+                @if($item->status == 'Disetujui')
+                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Yakin berkas sudah kembali?')">
+                            Selesai
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </div>
@@ -511,13 +531,10 @@ function handleSimpanPinjaman() {
         });
 }
 function aktifkanTombolSelesai(id) {
-    // Memberikan jeda 1 detik agar tab cetak terbuka sempurna terlebih dahulu
     setTimeout(() => {
-        // Mencari elemen form berdasarkan ID yang sudah diperbaiki
         const formSelesai = document.getElementById('form-selesai-' + id);
         
         if (formSelesai) {
-            // Mengubah style display dari none menjadi inline-block
             formSelesai.style.setProperty('display', 'inline-block', 'important');
             console.log("Tombol Selesai untuk ID " + id + " sekarang muncul.");
         } else {
@@ -526,4 +543,23 @@ function aktifkanTombolSelesai(id) {
     }, 1000); 
 }
 </script>
+{{-- Letakkan di bagian paling bawah script --}}
+@if(session('success_kembali'))
+<script>
+    Swal.fire({
+        title: "Berkas Kembali!",
+        text: "Status telah menjadi Selesai. Silakan cetak Berita Acara Pengembalian.",
+        icon: "success",
+        showCancelButton: true,
+        confirmButtonColor: "#34C759",
+        confirmButtonText: "Cetak Sekarang",
+        cancelButtonText: "Nanti Saja",
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.open("{{ route('pinjam-berkas.cetak-kembali', session('success_kembali')) }}", "_blank");
+        }
+    });
+</script>
+@endif
 @endsection

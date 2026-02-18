@@ -9,7 +9,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-
+use App\Models\PemusnahanArsip;    
+use App\Models\Rak;           
 class ArsipController extends Controller
 {
     // 1. DASHBOARD
@@ -19,7 +20,6 @@ class ArsipController extends Controller
         $tahunMulai = 2026;
         $tahunSekarang = (int)date('Y');
         $availableYears = range($tahunSekarang, $tahunMulai);
-        
         $chartData = [];
         foreach ($availableYears as $year) {  
             // Optimasi: Ambil semua data tahun tersebut dalam satu kali query (Eager Loading)
@@ -174,66 +174,115 @@ class ArsipController extends Controller
     // 8. KONFIRMASI BULK
     public function konfirmasiBulk(Request $request)
     {
-        $no_pengirim = $request->no_pengirim;
-        
-        DB::beginTransaction();
-        try {
-            $berkasList = Permohonan::where('no_pengirim', $no_pengirim)
-                                    ->where('status_berkas', 'DITERIMA')
-                                    ->get();
+    $no_pengirim = $request->no_pengirim;
+    
+    DB::beginTransaction();
+    try {
+        $berkasList = Permohonan::where('no_pengirim', $no_pengirim)
+                                ->where('status_berkas', 'DITERIMA')
+                                ->get();
 
-            foreach ($berkasList as $berkas) {
-                $rak = \App\Models\RakLoker::where('status', 'Tersedia')
-                        ->whereColumn('terisi', '<', 'kapasitas')
-                        ->orderBy('id', 'asc')
-                        ->first();
+        foreach ($berkasList as $berkas) {
+            // Logika pencarian rak kamu tetap sama
+            $rak = \App\Models\RakLoker::where('status', 'Tersedia')
+                    ->whereColumn('terisi', '<', 'kapasitas')
+                    ->orderBy('id', 'asc')
+                    ->first();
 
-                if (!$rak) {
-                    return response()->json(['success' => false, 'message' => 'Semua Rak Penuh! Tambah rak di master data.'], 400);
-                }
-
-                $nomorUrutBaru = $rak->terisi + 1;
-
-                $berkas->update([
-                    'status_berkas' => 'DITERIMA OLEH ARSIP',
-                    'rak_id' => $rak->id,
-                    'no_urut_di_rak' => $nomorUrutBaru,
-                    'lokasi_arsip' => "Lemari " . $rak->no_lemari . " / Rak " . $rak->kode_rak . " / No. " . $nomorUrutBaru,
-                    'updated_at' => now()
-                ]);
-
-                $rak->terisi = $nomorUrutBaru;
-                if ($rak->terisi >= $rak->kapasitas) {
-                    $rak->status = 'Penuh';
-                }
-                $rak->save();
+            if (!$rak) {
+                return response()->json(['success' => false, 'message' => 'Semua Rak Penuh! Tambah rak di master data.'], 400);
             }
 
-            DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->update([
-                'status' => 'DITERIMA OLEH ARSIP',
-                'tgl_diterima' => now(),
+            $nomorUrutBaru = $rak->terisi + 1;
+
+            // UPDATE BERKAS: Kita tambahkan 'rak_id' agar sinkron dengan pemusnahan
+            $berkas->update([
+                'status_berkas' => 'DITERIMA OLEH ARSIP',
+                'rak_id' => $rak->id, // <--- TAMBAHKAN INI (Sangat Penting)
+                'no_urut_di_rak' => $nomorUrutBaru,
+                'lokasi_arsip' => "Lemari " . $rak->no_lemari . " / Rak " . $rak->kode_rak . " / No. " . $nomorUrutBaru,
                 'updated_at' => now()
             ]);
 
-            DB::commit();
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            // Update counter di rak (Logika kamu tetap sama)
+            $rak->terisi = $nomorUrutBaru;
+            if ($rak->terisi >= $rak->kapasitas) {
+                $rak->status = 'Penuh';
+            }
+            $rak->save();
         }
+
+        DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->update([
+            'status' => 'DITERIMA OLEH ARSIP',
+            'tgl_diterima' => now(),
+            'updated_at' => now()
+        ]);
+
+        DB::commit();
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
     }
 
     // 9. PENCARIAN & DETAIL
     public function pencarianBerkas() {
-        return view('auth.Dashboard.pencarian_berkas', ['current_page' => 'pencarian-berkas', 'results' => null]);
-    }
+        $results = Permohonan::orderBy('created_at', 'desc')->get();
 
+        // Tempelkan nomor BA secara manual karena daftar_id_permohonan bertipe array/JSON
+        foreach ($results as $item) {
+            if ($item->status_berkas === 'DIMUSNAHKAN') {
+                $ba = PemusnahanArsip::where('daftar_id_permohonan', 'LIKE', '%"' . $item->id . '"%')
+                        ->orWhere('daftar_id_permohonan', 'LIKE', '%' . $item->id . '%')
+                        ->first();
+                $item->nomor_ba_arsip = $ba ? $ba->no_berita_acara : '-';
+            } else {
+                $item->nomor_ba_arsip = '-';
+            }
+        }
+        
+        return view('auth.Dashboard.pencarian_berkas', [
+            'current_page' => 'pencarian-berkas', 
+            'results' => $results
+        ]);
+    }
     public function searchAction(Request $request) {
         $q = $request->nomor_permohonan;
-        $results = Permohonan::where('no_permohonan', 'LIKE', "%$q%")->orWhere('nama', 'LIKE', "%$q%")->get();
-        return view('auth.Dashboard.pencarian_berkas', ['current_page' => 'pencarian-berkas', 'results' => $results]);
-    }
+        $start = $request->start_date;
+        $end = $request->end_date;
 
+        $query = Permohonan::query();
+
+        if ($q) {
+            $query->where(function($sub) use ($q) {
+                $sub->where('no_permohonan', 'LIKE', "%$q%")
+                    ->orWhere('nama', 'LIKE', "%$q%");
+            });
+        }
+
+        if ($start && $end) {
+            $query->whereBetween('created_at', [$start . ' 00:00:00', $end . ' 23:59:59']);
+        }
+
+        $results = $query->orderBy('created_at', 'desc')->get();
+
+        foreach ($results as $item) {
+            if ($item->status_berkas === 'DIMUSNAHKAN') {
+                $ba = PemusnahanArsip::where('daftar_id_permohonan', 'LIKE', '%"' . $item->id . '"%')
+                        ->orWhere('daftar_id_permohonan', 'LIKE', '%' . $item->id . '%')
+                        ->first();
+                $item->nomor_ba_arsip = $ba ? $ba->no_berita_acara : '-';
+            } else {
+                $item->nomor_ba_arsip = '-';
+            }
+        }
+
+        return view('auth.Dashboard.pencarian_berkas', [
+            'current_page' => 'pencarian-berkas', 
+            'results' => $results
+        ]);
+    }
     // FIX: getPermohonanDetail
     public function getPermohonanDetail($nomor)
 {
@@ -490,56 +539,64 @@ class ArsipController extends Controller
 
         return back()->with('error', 'Gagal mengunggah file.');
     }
+    public function setujuiPemusnahan($id)
+{
+    // 1. Ambil data Berita Acara
+    $ba = \App\Models\PemusnahanArsip::findOrFail($id);
+    
+    // 2. Gunakan Transaction agar data konsisten (tidak ada update setengah-setengah)
+    DB::beginTransaction();
 
-    public function setujuiPemusnahan($id) {
-        $ba = \App\Models\PemusnahanArsip::findOrFail($id);
-        
-        // Ambil daftar ID permohonan
-        $ids = is_array($ba->daftar_id_permohonan) ? $ba->daftar_id_permohonan : json_decode($ba->daftar_id_permohonan, true);
-    
-        if (!$ids) {
-            return back()->with('error', 'Daftar ID permohonan tidak ditemukan.');
+    try {
+        // Gabungkan query pencarian menggunakan whereIn untuk status berkas
+        $berkas = \App\Models\Permohonan::whereBetween('tanggal_permohonan', [
+            \Carbon\Carbon::parse($ba->filter_mulai)->startOfDay(), 
+            \Carbon\Carbon::parse($ba->filter_selesai)->endOfDay()
+        ])
+        ->whereIn('status_berkas', ['DITERIMA OLEH ARSIP', 'DITERIMA']) 
+        ->get();
+
+        if ($berkas->isEmpty()) {
+            return redirect()->back()->with('error', 'Gagal: Tidak ada berkas yang ditemukan untuk periode ini.');
         }
-    
-        DB::beginTransaction(); // Tambahkan backslash jika tidak import DB
-        try {
-            foreach ($ids as $permohonanId) {
-                $p = \App\Models\Permohonan::find($permohonanId);
-                if ($p) {
-                    // 1. Kurangi isi Rak Loker (Decrement)
-                    if ($p->rak_id) {
-                        $rak = \App\Models\RakLoker::find($p->rak_id);
-                        if ($rak && $rak->terisi > 0) {
-                            $rak->decrement('terisi');
-                            
-                            // Jika sudah 0, pastikan status tersedia
-                            if($rak->terisi == 0) {
-                                $rak->update(['status' => 'Tersedia']);
-                            }
-                        }
+
+        foreach ($berkas as $item) {
+            // 3. Update counter di Master Rak Loker
+            if ($item->rak_id) {
+                $rak = \App\Models\RakLoker::find($item->rak_id); 
+                
+                if ($rak) {
+                    $rak->decrement('terisi'); 
+                    
+                    // Gunakan data fresh untuk validasi status rak
+                    $rakBaru = $rak->fresh(); 
+                    if ($rakBaru->terisi < $rakBaru->kapasitas) {
+                        $rakBaru->update(['status' => 'Tersedia']);
                     }
-    
-                    // 2. Tandai data permohonan sebagai Musnah
-                    $p->update([
-                        'status_berkas' => 'DIMUSNAHKAN',
-                        'rak_id' => null,
-                        'no_urut_di_rak' => null,
-                        'lokasi_arsip' => 'SUDAH DIMUSNAHKAN'
-                    ]);
                 }
             }
-    
-            // 3. Update status berita acara
-            $ba->update(['status' => 'Disetujui']);
-    
-            DB::commit();
-            return back()->with('success', 'Pemusnahan Berhasil! Kapasitas rak telah diperbarui.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Terjadi Kesalahan: ' . $e->getMessage());
+        
+            // 4. Update status berkas menjadi DIMUSNAHKAN
+            // Data lokasi_arsip, rak_id, dan no_urut akan menjadi NULL
+            $item->update([
+                'status_berkas' => 'DIMUSNAHKAN',
+                'rak_id'        => null, // Menghilangkan relasi ke rak
+                'no_urut_di_rak' => null, // Mengosongkan nomor urut
+                'lokasi_arsip'  => 'SUDAH DIMUSNAHKAN'
+            ]);
         }
-    }
 
+        // 5. Update status Berita Acara menjadi disetujui
+        $ba->update(['status' => 'Disetujui']);
+
+        DB::commit();
+        return redirect()->back()->with('success', 'Berhasil: ' . $berkas->count() . ' berkas telah dimusnahkan dan rak telah dikosongkan.');
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    }
+}
     public function cetakPemusnahan($id) {
         $ba = \App\Models\PemusnahanArsip::findOrFail($id);
         $ids = is_array($ba->daftar_id_permohonan) ? $ba->daftar_id_permohonan : json_decode($ba->daftar_id_permohonan, true);

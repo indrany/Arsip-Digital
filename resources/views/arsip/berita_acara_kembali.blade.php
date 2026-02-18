@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Surat Tanda Terima - {{ $data->permohonan->no_permohonan }}</title>
+    <title>Berita Acara Pengembalian - {{ $data->permohonan->no_permohonan }}</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -15,6 +15,7 @@
             flex-direction: column;
             align-items: center;
         }
+
         .halaman-cetak {
             background: white;
             width: 210mm; 
@@ -23,6 +24,8 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             font-size: 12pt; 
         }
+
+        /* Kop Surat Sama Persis */
         .kop-header {
             width: 100%;
             border-bottom: 3px double #000;
@@ -34,6 +37,7 @@
 
         .kop-logo { flex: 0 0 120px; text-align: left; }
         .kop-logo img { width: 110px; height: auto; }
+
         .kop-instansi {
             flex: 1;
             text-align: center;
@@ -72,12 +76,21 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+
+        /* Narasi Berita Acara */
+        .content-area {
+            text-align: justify;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
         .data-info-list {
-            margin: 20px 0 40px 60px;
+            margin: 20px 0 20px 60px;
             list-style: none;
         }
+
         .data-info-list li {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             display: flex;
         }
 
@@ -138,46 +151,68 @@
                 <div class="instansi-sub">KANTOR IMIGRASI KELAS I TPI TANJUNG PERAK</div>
                 <div class="instansi-alamat">
                     Jalan Darmo Indah No. 21 Tandes, Surabaya 60186<br>
-                    Telepon(031)7315570 Faksimili(031)7329835
+                    Telepon(031)7315570 Faksimili(031)7329835<br>
                     Laman: tanjungperak.imigrasi.go.id; Email: kanim_tgperak@imigrasi.go.id
                 </div>
             </div>
         </div>
 
         <div class="doc-title-area">
-        <div class="doc-title">FORMULIR PEMINJAMAN ARSIP</div>
-        <div class="doc-number"><b>Nomor : {{ $data->no_peminjaman }}</b></div>
+            <div class="doc-title">BERITA ACARA PENGEMBALIAN ARSIP</div>
+            <div class="doc-number"><b>Nomor : {{ $no_kembali }}</b></div>
         </div>
+        <div class="content-area">
+            <p>Pada hari ini {{ \Carbon\Carbon::parse($data->tgl_kembali)->locale('id')->isoFormat('dddd') }} 
+               tanggal {{ \Carbon\Carbon::parse($data->tgl_kembali)->format('d') }} 
+               bulan {{ \Carbon\Carbon::parse($data->tgl_kembali)->locale('id')->isoFormat('MMMM') }} 
+               tahun {{ \Carbon\Carbon::parse($data->tgl_kembali)->format('Y') }}, 
+               yang bertanda tangan di bawah ini:</p>
 
-        <ul class="data-info-list">
-            <li><span class="label-list">Nama Peminjam</span>: {{ ($data->nama_personil) }}</li>
-            <li><span class="label-list">Divisi Peminjam</span>: {{ strtoupper($data->nama_peminjam) }}</li>
-            <li><span class="label-list">Nomor Permohonan</span>: {{ $data->permohonan->no_permohonan }}</li>
-            <li><span class="label-list">Tanggal Peminjaman</span>: {{ \Carbon\Carbon::parse($data->tgl_pinjam)->locale('id')->isoFormat('D MMMM Y') }}</li>
-            <li><span class="label-list">Keterangan</span>: {{ $data->keterangan ?? '-' }}</li>
-        </ul>
+            <table style="margin: 15px 0; border-collapse: collapse; font-size: 12pt; width: 100%;">
+                <tr>
+                    <td style="width: 180px; padding-bottom: 5px; vertical-align: top;">Nama</td>
+                    <td style="width: 20px; padding-bottom: 5px; vertical-align: top;">:</td>
+                    <td style="padding-bottom: 5px; vertical-align: top;">{{ $data->nama_personil }}</td>
+                </tr>
+                <tr>
+                    <td style="padding-bottom: 5px; vertical-align: top;">Jabatan</td>
+                    <td style="padding-bottom: 5px; vertical-align: top;">:</td>
+                    <td style="padding-bottom: 5px; vertical-align: top;">{{ strtoupper($data->nama_peminjam) }}</td>
+                </tr>
+                <tr>
+                    <td style="padding-bottom: 5px; vertical-align: top;">Nomor Permohonan</td>
+                    <td style="padding-bottom: 5px; vertical-align: top;">:</td>
+                    <td style="padding-bottom: 5px; vertical-align: top;">{{ $data->permohonan->no_permohonan }}</td>
+                </tr>
+            </table>
+
+            <p>Dengan ini mengajukan pengembalian arsip dengan nomor permohonan tersebut. Demikian surat permohonan ini saya buat dengan sebenar - benarnya. Apabila dikemudian hari saya terbukti memberikan data tidak benar dan atau menyalahgunakan arsip tersebut maka saya siap bertanggung jawab secara pribadi dan di proses sesuai dengan hukum Undang - undang Keimigrasian Republik Indonesia. Atas perhatiannya saya mengucapkan terima kasih.</p>
+        </div>
         <table class="table-ttd" style="width: 100%; margin-top: 50px; text-align:center">
-        <tr>
+            <tr>
                 <td colspan="2" style="padding-bottom: 20px; font-size: 12pt;">
                     Mengetahui / Menyetujui:
                 </td>
-        </tr>
-        <tr>
-            <td style="text-align: center; width: 50%;">
+            </tr>
+            <tr>
+                <td class="td-ttd" style="width: 50%;">    
                 <p>Peminjam</p>
-                <div style="height: 80px;"></div>
-                <p>( {{ ($data->nama_personil) }} )</b></p>
-            </td>
-            <td class="td-ttd" style="width: 50%;">
+                    <div style="height: 80px;"></div>
+                    <p>( {{ $data->nama_personil }} )</p>
+                </td>
+                <td class="td-ttd" style="width: 50%;">
                     <p>Arsip</p>
                     <div style="height: 80px;"></div>
                     {{-- Sekarang namanya otomatis sesuai yang diinput saat +pinjam --}}
                     <p>( {{ $data->petugas_arsip ?? '....................................' }} )</p>
-            </td>
-        </tr>
+                </td>
+            </tr>
         </table>
-        <div class="print-control no-print" style="text-align: center; width: 45%;">
-            <button class="btn-print-action" onclick="window.print()">CETAK FORMULIR</button>
-        </div>
+    </div>
+
+    <div class="print-control no-print">
+        <button class="btn-print-action" onclick="window.print()">CETAK FORMULIR</button>
+    </div>
+
 </body>
 </html>

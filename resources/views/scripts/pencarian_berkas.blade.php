@@ -523,9 +523,6 @@ function closeModal() {
             }
         }
     }
-
-    // Fungsi showDetail kamu yang sudah ada tetap di sini...
-
 </script>
 </body>
 </html>

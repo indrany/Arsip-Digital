@@ -14,6 +14,7 @@ class Permohonan extends Model
     // WAJIB mendaftarkan kolom baru di sini agar tidak ditolak sistem
     protected $fillable = [
         'no_permohonan', 
+        'rak_id',
         'no_pengirim', 
         'tanggal_permohonan', 
         'tanggal_terbit',

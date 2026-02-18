@@ -11,7 +11,6 @@
     <form action="{{ route('pencarian-berkas.search') }}" method="GET">
         <div class="d-flex align-items-center gap-2"
              style="max-width: 760px;">
-            
             <div class="input-group shadow-sm"
                  style="border-radius:8px; overflow:hidden; border:1px solid #dee2e6; width:100%;">
                 <span class="input-group-text bg-white border-0 text-muted">
@@ -145,7 +144,8 @@
                             'tujuan'       => 'Tujuan Paspor',
                             'no-paspor'    => 'No Paspor',
                             'alur'         => 'Alur Terakhir',
-                            'lokasi'       => 'Lokasi Arsip'
+                            'lokasi'       => 'Lokasi Arsip',
+                            'no-ba'        => 'Nomor Berita Acara'
                         ];
                     @endphp
                     @foreach($fields as $id => $label)
@@ -169,10 +169,10 @@
     </div>
 </div>
 @endsection
-
 @push('scripts')
 <script>
 function showDetail(item) {
+    // 1. Mengisi data dasar ke dalam Modal
     document.getElementById('det-nomor').value = item.no_permohonan || '-';
     document.getElementById('det-tgl-mohon').value = item.tanggal_permohonan || '-';
     document.getElementById('det-tgl-terbit').value = item.tanggal_terbit || '-';
@@ -188,7 +188,19 @@ function showDetail(item) {
     document.getElementById('det-alur').value = item.alur_terakhir || '-';
     document.getElementById('det-lokasi').value = item.lokasi_arsip || '-';
 
-    var modal = new bootstrap.Modal(document.getElementById('modalDetailBerkas'));
+    // 2. Menangani Nomor Berita Acara yang tadi strip merah
+    const noBAInput = document.getElementById('det-no-ba');
+    if (noBAInput) { 
+        noBAInput.value = item.nomor_ba_arsip || '-';
+        if (item.status_berkas === 'DIMUSNAHKAN') {
+            noBAInput.style.color = '#00000';
+        } else {
+            noBAInput.style.color = '#00000';
+            noBAInput.style.fontWeight = 'normal';
+        }
+    }
+    var modalElement = document.getElementById('modalDetailBerkas');
+    var modal = new bootstrap.Modal(modalElement);
     modal.show();
 }
 </script>

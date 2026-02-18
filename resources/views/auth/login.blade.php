@@ -28,7 +28,7 @@
         <!-- Bagian kanan -->
         <div class="login-box">
 
-            <img src="{{ asset('images/v1_151.png') }}" alt="Logo Imigrasi Kecil" class="login-logo-small">
+            <img src="{{ asset('images/v1_150.png') }}" alt="Logo Imigrasi Kecil" class="login-logo-small">
 
             <div class="login-header">
                 <h2 class="login-title">Masuk ke Akun Anda</h2>
