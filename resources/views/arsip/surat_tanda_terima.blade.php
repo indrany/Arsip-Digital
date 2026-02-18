@@ -138,8 +138,8 @@
                 <div class="instansi-sub">KANTOR IMIGRASI KELAS I TPI TANJUNG PERAK</div>
                 <div class="instansi-alamat">
                     Jalan Darmo Indah No. 21 Tandes, Surabaya 60186<br>
-                    Telepon(031)7315570 Faksimili(031)7329835
-                    Laman: tanjungperak.imigrasi.go.id; Email: kanim_tgperak@imigrasi.go.id
+                    Telepon (031)7315570 Faksmili (031)7329835<br>
+                    Laman: tanjungperak.imigrasi.go.id, E-mail: kanim_tgperak@imigrasi.go.id
                 </div>
             </div>
         </div>

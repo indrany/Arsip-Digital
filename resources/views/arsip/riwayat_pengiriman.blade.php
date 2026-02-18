@@ -24,12 +24,12 @@
                 <div class="col-md-3">
                     <select id="filterStatus" class="form-select form-select-sm bg-light fw-bold">
                         <option value="">-- Semua Status --</option>
-                        <option value="DIAJUKAN">⚠️ BELUM DITINDAKLANJUTI</option>
-                        <option value="DITERIMA OLEH ARSIP">✅ SUDAH DITERIMA</option>
+                        <option value="DIAJUKAN">⚠️ DIAJUKAN</option>
+                        <option value="DITERIMA OLEH ARSIP">✅ DITERIMA OLEH ARSIP</option>
                     </select>
                 </div>
 
-                {{-- SEARCH BAR --}}
+                {{-- SEARCH BAR UTAMA --}}
                 <div class="col-md-4">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
@@ -58,7 +58,6 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {{-- URUTKAN: 'Diajukan' paling atas, lalu 'created_at' terbaru --}}
                         @php
                             $sortedRiwayat = $riwayat->sortByDesc(function($item) {
                                 return $item->status === 'Diajukan' ? 1 : 0;
@@ -71,11 +70,7 @@
                             data-status="{{ strtoupper($row->status) }}">
                             
                             <td class="ps-4 fw-bold text-primary">{{ $row->no_pengirim }}</td>
-                            <td>
-                                <a href="#" class="text-decoration-none fw-bold text-dark" title="Klik untuk filter tanggal ini">
-                                    {{ \Carbon\Carbon::parse($row->tgl_pengirim)->format('d-m-Y') }}
-                                </a>
-                            </td>
+                            <td>{{ \Carbon\Carbon::parse($row->tgl_pengirim)->format('d-m-Y') }}</td>
                             <td class="text-center">
                                 <span class="badge bg-secondary-subtle text-secondary px-3 py-2" style="border-radius: 8px;">
                                     {{ $row->jumlah_berkas }} Berkas
@@ -121,7 +116,7 @@
     </div>
 </div>
 
-{{-- MODAL DETAIL BATCH (PASTE KODE MODAL ASLI ANDA DI SINI) --}}
+{{-- MODAL DETAIL BATCH --}}
 <div class="modal fade" id="modalDetailBatch" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content shadow border-0" style="border-radius: 12px;">
@@ -130,26 +125,40 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row bg-light p-3 rounded mb-4 g-3 border">
+                {{-- INFO BATCH --}}
+                <div class="row bg-light p-3 rounded mb-4 g-3 border mx-0">
                     <div class="col-md-4">
-                        <label class="d-block text-muted small fw-bold">ID Batch (No Pengirim)</label>
+                        <label class="d-block text-muted small fw-bold uppercase">ID Batch (No Pengirim)</label>
                         <span id="det_no_pengirim" class="fw-bold text-primary" style="font-size: 16px;">-</span>
                     </div>
                     <div class="col-md-4">
-                        <label class="d-block text-muted small fw-bold">Tanggal Pengiriman</label>
+                        <label class="d-block text-muted small fw-bold uppercase">Tanggal Pengiriman</label>
                         <span id="det_tgl_pengirim" class="fw-bold" style="font-size: 16px;">-</span>
                     </div>
                     <div class="col-md-4">
-                        <label class="d-block text-muted small fw-bold">Status Batch</label>
+                        <label class="d-block text-muted small fw-bold uppercase">Status Batch</label>
                         <div id="det_status_wrapper">
                              <span id="det_status" class="badge bg-warning text-dark">-</span>
                         </div>
                     </div>
                 </div>
-                <h6 class="fw-bold mb-3 d-flex align-items-center"><i class="fas fa-list-ul me-2 text-primary"></i>Daftar Berkas Terlampir</h6>
+
+                {{-- SEARCH BOX --}}
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-7">
+                        <h6 class="fw-bold m-0 d-flex align-items-center"><i class="fas fa-list-ul me-2 text-primary"></i>Daftar Berkas Terlampir</h6>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="searchDetailBerkas" class="form-control border-start-0 shadow-none" placeholder="Cari No. Permohonan atau Nama Pemohon...">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table table-sm table-bordered align-middle mb-0">
-                        <thead class="bg-dark text-white text-center" style="font-size: 12px;">
+                    <table class="table table-sm table-bordered align-middle mb-0" id="tableDetailBerkas">
+                        <thead class="bg-dark text-white text-center" style="font-size: 12px; position: sticky; top: 0; z-index: 5;">
                             <tr>
                                 <th class="py-2">No Permohonan</th>
                                 <th>Nama Pemohon</th>
@@ -159,7 +168,9 @@
                                 <th>Status Berkas</th>
                             </tr>
                         </thead>
-                        <tbody id="det_list_berkas" style="font-size: 12px;"></tbody>
+                        <tbody id="det_list_berkas" style="font-size: 12px;">
+                            {{-- Data akan diisi via AJAX --}}
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -170,12 +181,10 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    // FUNGSI KOMBINASI FILTER (SEARCH + TANGGAL + STATUS)
     function applyFilters() {
         var searchValue = $("#inputSearchRiwayat").val().toLowerCase();
         var filterDate = $("#filterTanggal").val();
@@ -190,40 +199,73 @@ $(document).ready(function() {
             var matchDate = (filterDate === "") || (rowDate === filterDate);
             var matchStatus = (filterStatus === "") || (rowStatus === filterStatus);
 
-            if (matchSearch && matchDate && matchStatus) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
+            $(this).toggle(matchSearch && matchDate && matchStatus);
         });
     }
 
     $("#inputSearchRiwayat").on("keyup", applyFilters);
     $("#filterTanggal, #filterStatus").on("change", applyFilters);
     
-    // Reset Button
     $("#btnResetFilter").on("click", function() {
         $("#inputSearchRiwayat, #filterTanggal, #filterStatus").val("");
         $("#tableRiwayat tbody tr").show();
     });
+
+    $("#searchDetailBerkas").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        $("#det_list_berkas tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
 });
 
-// FUNGSI DETAIL BATCH
 function lihatDetailBatch(noPengirim) {
-    Swal.fire({ title: 'Mengambil data...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+    document.getElementById('det_list_berkas').innerHTML = '<tr><td colspan="6" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Mengambil data...</td></tr>';
+    document.getElementById('searchDetailBerkas').value = "";
+
     fetch(`/arsip/list-berkas/${noPengirim}`)
         .then(response => response.json())
         .then(res => {
-            Swal.close();
             if(res.success) {
                 document.getElementById('det_no_pengirim').innerText = res.batch.no_pengirim;
                 document.getElementById('det_tgl_pengirim').innerText = res.batch.tgl_pengirim;
-                document.getElementById('det_status').innerText = res.batch.status;
+                
+                // --- LOGIKA WARNA STATUS BATCH (HEADER) ---
+                const elStatusBatch = document.getElementById('det_status');
+                const statusBatchText = res.batch.status ? res.batch.status.toUpperCase().trim() : '';
+                elStatusBatch.innerText = statusBatchText;
+
+                if (statusBatchText.includes('DITERIMA')) {
+                    elStatusBatch.className = 'badge bg-success text-white';
+                } else {
+                    elStatusBatch.className = 'badge bg-warning text-dark';
+                }
+                
                 let html = '';
                 res.data.forEach(item => {
-                    html += `<tr><td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td><td>${item.nama}</td><td class="text-center">${item.jenis_permohonan}</td><td class="text-center">${item.jenis_paspor}</td><td class="text-center">${item.tujuan_paspor || '-'}</td><td class="text-center"><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2">${item.status_berkas}</span></td></tr>`;
+                    let statusHtml = '';
+                    let statusInput = item.status_berkas ? item.status_berkas.trim().toUpperCase() : '';
+
+                    // LOGIKA WARNA STATUS BERKAS (TABEL)
+                    if (statusInput === 'DIMUSNAHKAN') {
+                        statusHtml = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2" style="font-size:9px;">DIMUSNAHKAN</span>`;
+                    } else if (statusInput.includes('DITERIMA')) {
+                        statusHtml = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2" style="font-size:9px;">DITERIMA OLEH ARSIP</span>`;
+                    } else {
+                        statusHtml = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2" style="font-size:9px;">${statusInput}</span>`;
+                    }
+
+                    html += `<tr>
+                        <td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td>
+                        <td>${item.nama}</td>
+                        <td class="text-center">${item.jenis_permohonan}</td>
+                        <td class="text-center">${item.jenis_paspor}</td>
+                        <td class="text-center">${item.tujuan_paspor || '-'}</td>
+                        <td class="text-center">${statusHtml}</td>
+                    </tr>`;
                 });
                 document.getElementById('det_list_berkas').innerHTML = html;
+                
                 var myModal = new bootstrap.Modal(document.getElementById('modalDetailBatch'));
                 myModal.show();
             }
@@ -232,54 +274,27 @@ function lihatDetailBatch(noPengirim) {
 </script>
 
 <style>
-    /* 1. MENGHILANGKAN GARIS HITAM & OUTLINE PADA SEARCH BAR */
-    .input-group, .form-control, .form-select, .btn {
-        outline: none !important;
-        box-shadow: none !important;
-        border-color: #f1f5f9; /* Warna border yang sangat halus */
-    }
-
-    .input-group-text {
-        border: none;
-    }
-
-    /* 2. BARIS PRIORITAS (BELUM TINDAK LANJUT) */
-    .priority-row { 
-        background-color: #fffbe6 !important; /* Kuning sangat muda agar tidak sakit mata */
-        transition: background-color 0.3s ease;
-    }
+    .form-control:focus, .form-select:focus { box-shadow: none !important; border-color: #3b82f6 !important; }
+    .priority-row { background-color: #fffbe6 !important; }
+    .priority-row:hover { background-color: #fff3bf !important; }
     
-    .priority-row:hover {
-        background-color: #fff3bf !important; /* Sedikit lebih gelap saat hover */
-    }
+    /* WARNA STATUS DINAMIS (SUBTLE) */
+    .bg-danger-subtle { background-color: #fee2e2 !important; color: #dc2626 !important; }
+    .border-danger-subtle { border-color: #fecaca !important; }
 
-    /* 3. STYLING TABEL & BADGE */
+    .bg-success-subtle { background-color: #dcfce7 !important; color: #16a34a !important; }
+    .border-success-subtle { border-color: #bbf7d0 !important; }
+
+    .bg-warning-subtle { background-color: #fef9c3 !important; color: #a16207 !important; }
+    .border-warning-subtle { border-color: #fef08a !important; }
+
     .bg-info-subtle { background-color: #e0f2fe !important; }
     .text-info { color: #0369a1 !important; }
     .bg-secondary-subtle { background-color: #f1f5f9 !important; }
     .bg-primary-subtle { background-color: #e0e7ff !important; }
     .uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .table thead th { 
-        position: sticky; 
-        top: 0; 
-        background: #f8f9fa; 
-        z-index: 10; 
-        border-bottom: 2px solid #dee2e6; 
-    }
-
-    .modal-content { border-radius: 15px; }
-    .badge { padding: 0.5em 1em; }
-
-    /* 4. MERAPIKAN INPUT DATE & SELECT */
-    input[type="date"], select {
-        cursor: pointer;
-    }
-
-    /* Menghilangkan border hitam bawaan browser saat focus */
-    .form-control:focus, .form-select:focus {
-        background-color: #fff !important;
-        border-color: #3b82f6 !important;
-    }
+    .table-responsive::-webkit-scrollbar { width: 6px; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 </style>
 @endsection
