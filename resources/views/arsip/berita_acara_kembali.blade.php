@@ -168,16 +168,18 @@
                tahun {{ \Carbon\Carbon::parse($data->tgl_kembali)->format('Y') }}, 
                yang bertanda tangan di bawah ini:</p>
 
-            <table style="margin: 15px 0; border-collapse: collapse; font-size: 12pt; width: 100%;">
+               <table style="margin: 15px 0; border-collapse: collapse; font-size: 12pt; width: 100%;">
                 <tr>
                     <td style="width: 180px; padding-bottom: 5px; vertical-align: top;">Nama</td>
                     <td style="width: 20px; padding-bottom: 5px; vertical-align: top;">:</td>
-                    <td style="padding-bottom: 5px; vertical-align: top;">{{ $data->nama_personil }}</td>
+                    {{-- GANTI $data->nama_personil JADI $data->nama_peminjam --}}
+                    <td style="padding-bottom: 5px; vertical-align: top;">{{ $data->nama_peminjam }}</td>
                 </tr>
                 <tr>
-                    <td style="padding-bottom: 5px; vertical-align: top;">Jabatan</td>
+                    <td style="padding-bottom: 5px; vertical-align: top;">Jabatan / Divisi</td>
                     <td style="padding-bottom: 5px; vertical-align: top;">:</td>
-                    <td style="padding-bottom: 5px; vertical-align: top;">{{ strtoupper($data->nama_peminjam) }}</td>
+                    {{-- GANTI $data->nama_peminjam JADI $data->divisi_peminjam --}}
+                    <td style="padding-bottom: 5px; vertical-align: top;">{{ strtoupper($data->divisi_peminjam) }}</td>
                 </tr>
                 <tr>
                     <td style="padding-bottom: 5px; vertical-align: top;">Nomor Permohonan</td>
@@ -196,9 +198,9 @@
             </tr>
             <tr>
                 <td class="td-ttd" style="width: 50%;">    
-                <p>Peminjam</p>
+                    <p>Peminjam</p>
                     <div style="height: 80px;"></div>
-                    <p>( {{ $data->nama_personil }} )</p>
+                    <p>( {{ $data->nama_peminjam }} )</p>
                 </td>
                 <td class="td-ttd" style="width: 50%;">
                     <p>Arsip</p>

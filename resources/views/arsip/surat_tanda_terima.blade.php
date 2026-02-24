@@ -150,8 +150,10 @@
         </div>
 
         <ul class="data-info-list">
-            <li><span class="label-list">Nama Peminjam</span>: {{ ($data->nama_personil) }}</li>
-            <li><span class="label-list">Divisi Peminjam</span>: {{ strtoupper($data->nama_peminjam) }}</li>
+            {{-- Label Nama Peminjam diisi NAMA ORANG --}}
+            <li><span class="label-list">Nama Peminjam</span>: {{ $data->nama_peminjam }}</li>
+            {{-- Label Divisi Peminjam diisi DIVISI --}}
+            <li><span class="label-list">Divisi Peminjam</span>: {{ strtoupper($data->divisi_peminjam) }}</li>
             <li><span class="label-list">Nomor Permohonan</span>: {{ $data->permohonan->no_permohonan }}</li>
             <li><span class="label-list">Tanggal Peminjaman</span>: {{ \Carbon\Carbon::parse($data->tgl_pinjam)->locale('id')->isoFormat('D MMMM Y') }}</li>
             <li><span class="label-list">Keterangan</span>: {{ $data->keterangan ?? '-' }}</li>
@@ -166,7 +168,7 @@
             <td style="text-align: center; width: 50%;">
                 <p>Peminjam</p>
                 <div style="height: 80px;"></div>
-                <p>( {{ ($data->nama_personil) }} )</b></p>
+                <p>( {{ $data->nama_peminjam }} )</p>
             </td>
             <td class="td-ttd" style="width: 50%;">
                     <p>Arsip</p>

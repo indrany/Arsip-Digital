@@ -1,0 +1,24 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up()
+{
+    Schema::table('pinjam_berkas', function (Blueprint $table) {
+        $table->renameColumn('nama_personil', 'divisi_peminjam');
+    });
+}
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('pinjam_berkas', function (Blueprint $table) {
+            //
+        });
+    }
+};

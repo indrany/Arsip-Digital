@@ -9,26 +9,27 @@ class Permohonan extends Model
 {
     use HasFactory;
 
-    protected $table = 'permohonan'; // Kembali ke tabel awal
+    protected $table = 'permohonan';
 
-    // WAJIB mendaftarkan kolom baru di sini agar tidak ditolak sistem
     protected $fillable = [
         'no_permohonan', 
         'rak_id',
         'no_pengirim', 
+        'tgl_pengirim', 
+        'asal_unit',
         'tanggal_permohonan', 
         'tanggal_terbit',
         'nama', 
-        'tempat_lahir',    // Ditambahkan
-        'tanggal_lahir',   // Ditambahkan
-        'jenis_kelamin',   // Ditambahkan
-        'no_telp',         // Ditambahkan
+        'tempat_lahir',
+        'tanggal_lahir',
+        'jenis_kelamin',
+        'no_telp',
         'jenis_permohonan', 
         'jenis_paspor', 
         'tujuan_paspor', 
-        'no_paspor',       // Ditambahkan
+        'no_paspor',
         'alur_terakhir', 
         'status_berkas',
-        'lokasi_arsip'     // Ditambahkan
+        'lokasi_arsip'
     ];
 }

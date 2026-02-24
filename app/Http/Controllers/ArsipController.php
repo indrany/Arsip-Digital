@@ -7,12 +7,13 @@ use App\Models\Permohonan;
 use App\Models\PinjamBerkas;
 use App\Models\User;
 use App\Models\RakLoker;
+use App\Models\PemusnahanArsip;
+use App\Models\Rak;             
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use App\Models\PemusnahanArsip;    
-use App\Models\Rak;           
-class ArsipController extends Controller
+
+class ArsipController extends Controller 
 {
     // 1. DASHBOARD
     public function dashboard() {
@@ -200,9 +201,23 @@ class ArsipController extends Controller
     }
 
     public function pencarianBerkas() {
-        $results = Permohonan::orderBy('created_at', 'desc')->get();
-
-        // Tempelkan nomor BA secara manual karena daftar_id_permohonan bertipe array/JSON
+        // JOIN ke database paspor untuk ambil status alur terbaru
+        $results = DB::table('permohonan')
+        ->leftJoin('datapaspor.datapaspor', function($join) {
+            $join->on(
+                'permohonan.no_permohonan', 
+                '=', 
+                // Kita paksa nopermohonan menggunakan collation yang sama dengan permohonan
+                DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci')
+            );
+        })
+        ->select(
+            'permohonan.*', 
+            'datapaspor.alurterakhir as alur_paspor_update'
+        )
+        ->orderBy('permohonan.created_at', 'desc')
+        ->get();
+    
         foreach ($results as $item) {
             if ($item->status_berkas === 'DIMUSNAHKAN') {
                 $ba = PemusnahanArsip::where('daftar_id_permohonan', 'LIKE', '%"' . $item->id . '"%')
@@ -221,37 +236,30 @@ class ArsipController extends Controller
     }
     public function searchAction(Request $request) {
         $q = $request->nomor_permohonan;
-        $start = $request->start_date;
-        $end = $request->end_date;
-
-        $query = Permohonan::query();
-
-        if ($q) {
-            $query->where(function($sub) use ($q) {
-                $sub->where('no_permohonan', 'LIKE', "%$q%")
-                    ->orWhere('nama', 'LIKE', "%$q%");
-            });
-        }
-
-        if ($start && $end) {
-            $query->whereBetween('created_at', [$start . ' 00:00:00', $end . ' 23:59:59']);
-        }
-
-        $results = $query->orderBy('created_at', 'desc')->get();
-
+        
+        $results = DB::table('permohonan')
+            ->leftJoin('datapaspor.datapaspor', 'permohonan.no_permohonan', '=', 'datapaspor.nopermohonan')
+            ->where(function($query) use ($q) {
+                $query->where('permohonan.no_permohonan', 'LIKE', "%$q%")
+                      ->orWhere('permohonan.nama', 'LIKE', "%$q%");
+            })
+            ->select(
+                'permohonan.*', 
+                'datapaspor.alurterakhir as alur_paspor_update'
+            )
+            ->get();
+    
+        // Jangan lupa tempelkan nomor BA di sini juga agar saat hasil cari muncul, BA-nya tidak hilang
         foreach ($results as $item) {
+            $item->nomor_ba_arsip = '-'; // Default
             if ($item->status_berkas === 'DIMUSNAHKAN') {
-                $ba = PemusnahanArsip::where('daftar_id_permohonan', 'LIKE', '%"' . $item->id . '"%')
-                        ->orWhere('daftar_id_permohonan', 'LIKE', '%' . $item->id . '%')
-                        ->first();
-                $item->nomor_ba_arsip = $ba ? $ba->no_berita_acara : '-';
-            } else {
-                $item->nomor_ba_arsip = '-';
+                 $ba = PemusnahanArsip::where('daftar_id_permohonan', 'LIKE', '%"' . $item->id . '"%')->first();
+                 $item->nomor_ba_arsip = $ba ? $ba->no_berita_acara : '-';
             }
         }
-
+    
         return view('auth.Dashboard.pencarian_berkas', [
-            'current_page' => 'pencarian-berkas', 
+            'current_page' => 'pencarian-berkas',
             'results' => $results
         ]);
     }
@@ -259,23 +267,31 @@ class ArsipController extends Controller
     public function getPermohonanDetail($nomor)
 {
     try {
+        // 1. CEK DULU DI DATABASE LOKAL (Pintu Gerbang)
         $cekLokal = Permohonan::where('no_permohonan', $nomor)->first();
-        if ($cekLokal && in_array(strtoupper(trim($cekLokal->status_berkas)), ['SIAP_DITERIMA', 'DITERIMA', 'DITERIMA OLEH ARSIP'])) {
-            return response()->json(['success' => false, 'message' => 'Nomor permohonan ini sudah dalam proses pengiriman atau sudah berada di Arsip.']);
+
+        if ($cekLokal) {
+            // Jika statusnya sudah diajukan, diterima, atau sudah di arsip, TOLAK.
+            $statusTerlarang = ['DIAJUKAN', 'DITERIMA', 'DITERIMA OLEH ARSIP', 'SIAP_DITERIMA'];
+            
+            if (in_array(strtoupper(trim($cekLokal->status_berkas)), $statusTerlarang)) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Gagal! Nomor permohonan ini sudah pernah dikirim/terdaftar dengan status: ' . $cekLokal->status_berkas
+                ]);
+            }
         }
 
+        // 2. JIKA TIDAK ADA DI LOKAL / STATUSNYA AMAN, BARU CARI KE DATABASE PASPOR
         $dataPaspor = DB::table('datapaspor.datapaspor')->where('nopermohonan', $nomor)->first();
 
         if ($dataPaspor) {
-            // Ambil status alur terakhir
-            $statusAlur = strtoupper(trim($dataPaspor->alurterakhir ?? 'BELUM DIKETAHUI'));
+            $statusAlur = strtoupper(trim($dataPaspor->alurterakhir ?? ''));
 
-            // Validasi: Harus SELESAI
             if ($statusAlur !== 'SELESAI') {
                 return response()->json([
                     'success' => false, 
-                    // Pesan diubah agar dinamis menyebutkan status alur terakhirnya
-                    'message' => 'Berkas belum bisa diproses karena alur belum SELESAI (Status saat ini: ' . $statusAlur . ').'
+                    'message' => 'Berkas belum bisa diproses karena alur belum SELESAI (Status: ' . $statusAlur . ').'
                 ]);
             }
 
@@ -290,30 +306,88 @@ class ArsipController extends Controller
             ]);
         }
 
-        return response()->json(['success' => false, 'message' => 'Nomor permohonan tidak ditemukan pada Database Paspor.']);
+        return response()->json(['success' => false, 'message' => 'Nomor permohonan tidak ditemukan.']);
     } catch (\Exception $e) { 
-        return response()->json(['success' => false, 'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()], 500); 
+        return response()->json(['success' => false, 'message' => 'Kesalahan sistem: ' . $e->getMessage()], 500); 
     }
 }
 
-    public function store(Request $request) {
-        $list = $request->nomor_permohonan_list;
-        if (!$list) return response()->json(['success' => false, 'message' => 'Data kosong'], 400);
-        $user = Auth::user(); 
-        DB::beginTransaction();
-        try {
-            $noBatch = 'B-' . time();
-            DB::table('pengiriman_batch')->insert(['no_pengirim' => $noBatch, 'tgl_pengirim' => now()->format('Y-m-d'), 'jumlah_berkas' => count($list), 'status' => 'Diajukan', 'asal_unit' => $user->role ?? 'KANIM', 'petugas_kirim' => $user->nama_lengkap ?? $user->name, 'created_at' => now(), 'updated_at' => now()]);
-            foreach ($list as $item) {
-                $asalData = DB::table('datapaspor.datapaspor')->where('nopermohonan', $item['no_permohonan'])->first();
-                if ($asalData) {
-                    $tglMohon = ($asalData->tglpermohonan_datetime && $asalData->tglpermohonan_datetime != '0000-00-00 00:00:00') ? Carbon::parse($asalData->tglpermohonan_datetime)->format('Y-m-d') : now()->format('Y-m-d');
-                    Permohonan::updateOrCreate(['no_permohonan' => $item['no_permohonan']], ['no_pengirim' => $noBatch, 'nama' => $asalData->nama, 'tempat_lahir' => $asalData->tempatlahir, 'tanggal_lahir' => $asalData->tanggallahir, 'jenis_kelamin' => $asalData->jeniskelamin, 'no_telp' => $asalData->notelepon, 'jenis_permohonan' => $asalData->jenispermohonan, 'jenis_paspor' => $asalData->jenispaspor, 'tujuan_paspor' => $asalData->tujuanpaspor, 'no_paspor' => $asalData->nopaspor, 'tanggal_permohonan' => $tglMohon, 'status_berkas' => 'DIAJUKAN', 'alur_terakhir' => 'Loket Pengiriman', 'updated_at' => now()]);
-                }
-            }
-            DB::commit(); return response()->json(['success' => true]);
-        } catch (\Exception $e) { DB::rollBack(); return response()->json(['success' => false, 'message' => $e->getMessage()], 500); }
+public function store(Request $request) {
+    $list = $request->nomor_permohonan_list;
+    if (!$list || count($list) == 0) {
+        return response()->json(['success' => false, 'message' => 'Daftar permohonan kosong'], 400);
     }
+
+    $user = Auth::user(); 
+    $waktuSekarang = now();
+    
+    DB::beginTransaction();
+    try {
+        $noBatch = 'B-' . time();
+        
+        // LOGIKA PENENTUAN UNIT PENGIRIM (Anti-Null)
+        // Cek input form dulu, kalau kosong cek role user, kalau masih kosong isi 'UMUM'
+        $unitAsal = $request->asal_unit ?? ($user->role ?? 'UMUM');
+
+        // 1. SIMPAN KE TABEL pengiriman_batch
+        // PASTIKAN: Nama kolom di phpMyAdmin kamu adalah 'tgl_pengirim' (bukan tgl_pengiriman)
+        DB::table('pengiriman_batch')->insert([
+            'no_pengirim'   => $noBatch, 
+            'tgl_pengirim'  => $waktuSekarang->format('Y-m-d'), // Simpan sebagai tanggal
+            'jumlah_berkas' => count($list), 
+            'status'        => 'Diajukan', 
+            'asal_unit'     => strtoupper($unitAsal), 
+            'petugas_kirim' => $user->nama_lengkap ?? ($user->name ?? 'Petugas'), 
+            'created_at'    => $waktuSekarang, 
+            'updated_at'    => $waktuSekarang
+        ]);
+
+        // 2. SIMPAN/UPDATE KE TABEL permohonan
+        foreach ($list as $item) {
+            // Deteksi apakah $item berupa array atau string (dari barcode scanner)
+            $noPermohonan = is_array($item) ? ($item['no_permohonan'] ?? null) : $item;
+
+            if (!$noPermohonan) continue;
+
+            $asalData = DB::table('datapaspor.datapaspor')->where('nopermohonan', $noPermohonan)->first();
+            
+            if ($asalData) {
+                // Handling format tanggal agar tidak 0000-00-00
+                $tglMohon = ($asalData->tglpermohonan_datetime && $asalData->tglpermohonan_datetime != '0000-00-00 00:00:00') 
+                            ? Carbon::parse($asalData->tglpermohonan_datetime)->format('Y-m-d') 
+                            : $waktuSekarang->format('Y-m-d');
+
+                Permohonan::updateOrCreate(
+                    ['no_permohonan' => $noPermohonan], 
+                    [
+                        'no_pengirim'        => $noBatch, 
+                        'tgl_pengirim'       => $waktuSekarang->format('Y-m-d'), 
+                        'asal_unit'          => strtoupper($unitAsal),
+                        'nama'               => $asalData->nama, 
+                        'tempat_lahir'       => $asalData->tempatlahir, 
+                        'tanggal_lahir'      => $asalData->tanggallahir, 
+                        'jenis_kelamin'      => $asalData->jeniskelamin, 
+                        'no_telp'            => $asalData->notelepon, 
+                        'jenis_permohonan'   => $asalData->jenispermohonan, 
+                        'jenis_paspor'       => $asalData->jenispaspor, 
+                        'tujuan_paspor'      => $asalData->tujuanpaspor, 
+                        'no_paspor'          => $asalData->nopaspor, 
+                        'tanggal_permohonan' => $tglMohon, 
+                        'status_berkas'      => 'DIAJUKAN', 
+                        'alur_terakhir'      => 'SELESAI (' . strtoupper($unitAsal) . ')',
+                        'updated_at'         => $waktuSekarang
+                    ]
+                );
+            }
+        }
+        
+        DB::commit(); 
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) { 
+        DB::rollBack(); 
+        return response()->json(['success' => false, 'message' => 'Gagal: ' . $e->getMessage()], 500); 
+    }
+}
 
     public function rakIndex() {
         $rak = RakLoker::orderBy('no_lemari', 'asc')->orderBy('kode_rak', 'asc')->get();
@@ -365,15 +439,31 @@ class ArsipController extends Controller
     }
 
     public function uploadPDF(Request $request, $id) {
-        $request->validate(['file_pdf' => 'required|mimes:pdf|max:5000']);
+        // Validasi: Kita izinkan sampai 20MB karena file dari pusat biasanya lengkap/besar
+        $request->validate([
+            'file_pdf' => 'required|mimes:pdf|max:20480' 
+        ]);
+    
         $ba = PemusnahanArsip::findOrFail($id);
+    
         if ($request->hasFile('file_pdf')) {
-            $fileName = 'BA_' . time() . '.' . $request->file_pdf->extension();  
-            $request->file_pdf->move(public_path('uploads/pemusnahan'), $fileName);
-            $ba->update(['file_pdf' => $fileName]);
-            return back()->with('success', 'Berhasil upload PDF.');
+            $file = $request->file('file_pdf');
+            $path = public_path('uploads/pemusnahan');
+    
+            if (!file_exists($path)) {
+                mkdir($path, 0777, true);
+            }
+    
+            // Nama file dibuat lebih umum: DOC_[waktu]_[id].pdf
+            $fileName = 'DOC_' . time() . '_' . $id . '.pdf'; 
+    
+            if ($file->move($path, $fileName)) {
+                $ba->update(['file_pdf' => $fileName]);
+                return back()->with('success', 'Dokumen berhasil diunggah dan dilampirkan.');
+            }
         }
-        return back()->with('error', 'Gagal.');
+        
+        return back()->with('error', 'Gagal mengunggah dokumen.');
     }
     public function setujuiPemusnahan($id)
 {

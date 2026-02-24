@@ -128,29 +128,43 @@
                                     </td>
                                     <td class="col-aksi">
                                         <div class="d-flex justify-content-center gap-2">
-                                            {{-- BALIK KE ICON SAJA --}}
+                                            {{-- Tombol Lihat Detail --}}
                                             <button type="button" class="btn btn-action btn-outline-primary shadow-sm" onclick="lihatDetailPemusnahan('{{ $row->id }}')" title="Detail">
                                                 <i class="fas fa-eye"></i>
                                             </button>
+                                    
+                                            {{-- Tombol Cetak --}}
                                             <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" class="btn btn-action btn-success text-white shadow-sm" title="Cetak BA">
                                                 <i class="fas fa-download"></i>
                                             </a>
+                                    
+                                            {{-- PERBAIKAN TOMBOL UPLOAD --}}
                                             @if(in_array(strtoupper(Auth::user()->role), ['TIKIM', 'ADMIN']))
-                                            <button type="button" class="btn btn-action btn-info text-white shadow-sm" onclick="document.getElementById('upload-{{$row->id}}').click()" title="Upload Scan">
-                                                <i class="fas fa-upload"></i>
-                                            </button>
-                                            <form action="{{ route('pemusnahan.upload', $row->id) }}" method="POST" enctype="multipart/form-data" id="form-upload-{{$row->id}}" class="d-none">
-                                                @csrf
-                                                <input type="file" name="file_pdf" id="upload-{{$row->id}}" onchange="document.getElementById('form-upload-{{$row->id}}').submit()">
-                                            </form>
-                                            @endif
+                                                <form action="{{ route('pemusnahan.upload', $row->id) }}" method="POST" enctype="multipart/form-data" class="d-inline">
+                                                    @csrf
+                                                    <div style="position: relative; width: 35px; height: 35px; display: inline-block; vertical-align: middle;">
+                                                        {{-- Visual Tombol --}}
+                                                        <button type="button" class="btn btn-action btn-info text-white shadow-sm" style="position: absolute; top:0; left:0; width: 100%; height: 100%; z-index: 1;">
+                                                            <i class="fas fa-file-upload"></i>
+                                                        </button>
+                                                        
+                                                        {{-- Input File --}}
+                                                        <input type="file" name="file_pdf" 
+                                                            onchange="this.form.submit()" 
+                                                            accept="application/pdf"
+                                                            style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;" 
+                                                            title="Klik untuk unggah dokumen lampiran/pusat">
+                                                    </div>
+                                                </form>
+                                            @endif  
+                                            {{-- Tombol Approve (Hanya Admin) --}}
                                             @if(strtoupper(Auth::user()->role) == 'ADMIN' && $row->status == 'Diajukan')
-                                            <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">
-                                                    SETUJUI
-                                                </button>
-                                            </form>
+                                                <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">
+                                                        SETUJUI
+                                                    </button>
+                                                </form>
                                             @endif
                                         </div>
                                     </td>

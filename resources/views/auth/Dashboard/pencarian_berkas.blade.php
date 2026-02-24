@@ -185,20 +185,36 @@ function showDetail(item) {
     document.getElementById('det-jenis-paspor').value = item.jenis_paspor || '-';
     document.getElementById('det-tujuan').value = item.tujuan_paspor || '-';
     document.getElementById('det-no-paspor').value = item.no_paspor || '-';
-    document.getElementById('det-alur').value = item.alur_terakhir || '-';
     document.getElementById('det-lokasi').value = item.lokasi_arsip || '-';
 
-    // 2. Menangani Nomor Berita Acara yang tadi strip merah
+    // 2. PERBAIKAN LOGIKA ALUR TERAKHIR
+    // Kita ambil alur_paspor_update (dari join database) jika ada, jika tidak pakai alur_terakhir (lokal)
+    let alurTerupdate = item.alur_paspor_update ? item.alur_paspor_update.toUpperCase() : (item.alur_terakhir || '-');
+    
+    const alurInput = document.getElementById('det-alur');
+    alurInput.value = alurTerupdate;
+
+    // 3. MEMBERIKAN WARNA HIJAU JIKA STATUSNYA SELESAI
+    if (alurTerupdate === 'SELESAI') {
+        alurInput.style.backgroundColor = '#d1e7dd'; // Hijau muda sukses
+        alurInput.style.color = '#0f5132';           // Teks hijau tua
+        alurInput.style.fontWeight = 'bold';
+        alurInput.style.borderColor = '#badbcc';
+    } else {
+        alurInput.style.backgroundColor = '#f8f9fa'; // Warna standar
+        alurInput.style.color = '#344054';
+        alurInput.style.fontWeight = 'normal';
+        alurInput.style.borderColor = '#D0D5DD';
+    }
+
+    // 4. Menangani Nomor Berita Acara
     const noBAInput = document.getElementById('det-no-ba');
     if (noBAInput) { 
         noBAInput.value = item.nomor_ba_arsip || '-';
-        if (item.status_berkas === 'DIMUSNAHKAN') {
-            noBAInput.style.color = '#00000';
-        } else {
-            noBAInput.style.color = '#00000';
-            noBAInput.style.fontWeight = 'normal';
-        }
+        noBAInput.style.color = '#344054';
     }
+
+    // 5. Tampilkan Modal
     var modalElement = document.getElementById('modalDetailBerkas');
     var modal = new bootstrap.Modal(modalElement);
     modal.show();
