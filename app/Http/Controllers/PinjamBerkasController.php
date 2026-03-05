@@ -11,31 +11,34 @@ use Illuminate\Support\Facades\DB;
 class PinjamBerkasController extends Controller
 {
     public function index(Request $request)
-    {
-        $query = PinjamBerkas::with('permohonan')
-            ->join('permohonan', 'pinjam_berkas.permohonan_id', '=', 'permohonan.id')
-            ->leftJoin('datapaspor.datapaspor', function($join) {
-                $join->on('permohonan.no_permohonan', '=', DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci'));
-            });
+{
+    $query = PinjamBerkas::with('permohonan')
+        ->join('permohonan', 'pinjam_berkas.permohonan_id', '=', 'permohonan.id')
+        ->leftJoin('datapaspor.datapaspor', function($join) {
+            $join->on('permohonan.no_permohonan', '=', DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci'));
+        });
 
-        if ($request->filled('no_permohonan')) {
-            $query->where('permohonan.no_permohonan', 'like', '%' . $request->no_permohonan . '%');
-        }
-        
-        $dataPinjam = $query->select(
-                'pinjam_berkas.*',
-                'permohonan.no_permohonan',
-                'permohonan.nama',
-                'permohonan.tanggal_permohonan',
-                'pinjam_berkas.id as id',
-                'pinjam_berkas.status as status',
-                'datapaspor.alurterakhir as alur_paspor_update'
-            )
-            ->orderBy('pinjam_berkas.created_at', 'desc')
-            ->get();
-
-        return view('scripts.pinjam_berkas', compact('dataPinjam'));
+    if ($request->filled('no_permohonan')) {
+        $query->where('permohonan.no_permohonan', 'like', '%' . $request->no_permohonan . '%');
     }
+    
+    $dataPinjam = $query->select(
+            'pinjam_berkas.*',
+            'permohonan.no_permohonan',
+            'permohonan.nama',
+            'permohonan.tanggal_permohonan',
+            'pinjam_berkas.id as id',
+            'pinjam_berkas.status as status',
+            'datapaspor.alurterakhir as alur_paspor_update'
+        )
+        ->orderBy('pinjam_berkas.created_at', 'desc')
+        ->paginate(10); // <--- UBAH DISINI (Tadinya ->get())
+
+    // Agar kata kunci pencarian nempel terus di link pagination
+    $dataPinjam->appends($request->query());
+
+    return view('scripts.pinjam_berkas', compact('dataPinjam'));
+}
 
     public function store(Request $request)
     {

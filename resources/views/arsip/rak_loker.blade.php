@@ -97,6 +97,12 @@
                         </tbody>
                     </table>
                 </div>
+                {{-- NAVIGASI HALAMAN - TARUH DISINI MAANG! --}}
+                @if(isset($rak) && method_exists($rak, 'links'))
+                    <div class="px-4 py-3 border-top">
+                        @include('components.pagination-footer', ['data' => $rak])
+                    </div>
+                @endif
             </div>
         </div>
     </div>

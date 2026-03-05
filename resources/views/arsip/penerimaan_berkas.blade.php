@@ -31,7 +31,7 @@
     .text-scanned { color: #198754; font-weight: 700; font-size: 11px; letter-spacing: 0.5px; }
 </style>
 
-{{-- INPUT SCAN BARCODE (AUTO FOCUS LOGIC) --}}
+{{-- INPUT SCAN BARCODE --}}
 <div style="position: absolute; left: -9999px; top: 0;">
     <input type="text" id="input-barcode-permohonan" autofocus autocomplete="off">
 </div>
@@ -92,10 +92,15 @@
                     </tbody>
                 </table>
             </div>
+            {{-- Pagination Utama (Jika ada) --}}
+            @if(method_exists($antrean_batches, 'links'))
+                @include('components.pagination-footer', ['data' => $antrean_batches])
+            @endif
         </div>
     </div>
 </div>
 
+{{-- SECTION PROSES SCAN --}}
 <div id="section-proses-scan" style="display: none;">
     <div class="mb-4 text-start">
         <button class="btn btn-sm btn-outline-secondary btn-back-riwayat shadow-sm px-3" style="border-radius: 20px;"><i class="fas fa-arrow-left me-2"></i> Kembali ke Antrean</button>
@@ -130,7 +135,7 @@
     </div>
 </div>
 
-{{-- MODAL DETAIL --}}
+{{-- MODAL DETAIL BATCH --}}
 <div class="modal fade" id="modalDetailBatch" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content shadow border-0" style="border-radius: 12px;">
@@ -162,14 +167,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <div class="table-responsive">
                     <table class="table table-sm table-bordered align-middle mb-0">
-                        <thead class="bg-dark text-white text-center" style="font-size: 12px; position: sticky; top: 0; z-index: 5;">
+                        <thead class="bg-dark text-white text-center" style="font-size: 12px;">
                             <tr><th>No Permohonan</th><th>Nama Pemohon</th><th>Jenis Permohonan</th><th>Tujuan</th><th>Lokasi Rak</th><th>Status Berkas</th></tr>
                         </thead>
                         <tbody id="det_list_berkas_riwayat" style="font-size: 12px;"></tbody>
                     </table>
                 </div>
+                {{-- KOMPONEN PAGINATION JS --}}
+                @include('components.pagination-footer')
             </div>
             <div class="modal-footer border-0 p-3"><button type="button" class="btn btn-secondary px-4 fw-bold shadow-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button></div>
         </div>
@@ -199,6 +206,11 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// VARIABEL GLOBAL UNTUK PAGINATION MODAL
+let allDetailData = []; 
+let currentPageDetail = 1;
+const rowsPerPageDetail = 10;
+
 window.fetchAndShowDetail = function(nomor) {
     $.get(`/penerimaan-berkas/get-detail/${nomor}`, function(res) {
         if (res.success) {
@@ -226,24 +238,86 @@ function lihatDetailBatch(noPengirim) {
     document.getElementById('det_list_berkas_riwayat').innerHTML = '<tr><td colspan="6" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Mengambil data...</td></tr>';
     fetch(`/arsip/list-berkas/${noPengirim}`).then(response => response.json()).then(res => {
         if(res.success) {
+            allDetailData = res.data;
+            currentPageDetail = 1;
+            
             document.getElementById('det_no_pengirim').innerText = res.batch.no_pengirim;
             document.getElementById('det_tgl_pengirim').innerText = res.batch.tgl_pengirim;
+            
             const elStatusBatch = document.getElementById('det_status');
             const statusBatchText = res.batch.status.toUpperCase().trim();
             elStatusBatch.innerText = statusBatchText;
             elStatusBatch.className = statusBatchText.includes('DITERIMA') ? 'badge bg-success text-white' : 'badge bg-warning text-dark';
-            let html = '';
-            res.data.forEach(item => {
-                let statusHtml = ''; let statusInput = item.status_berkas ? item.status_berkas.trim().toUpperCase() : '';
-                if (statusInput === 'DIMUSNAHKAN') { statusHtml = `<span class="badge bg-danger-subtle text-danger px-2" style="font-size:9px;">DIMUSNAHKAN</span>`; } 
-                else if (statusInput.includes('DITERIMA')) { statusHtml = `<span class="badge bg-success-subtle text-success px-2" style="font-size:9px;">DITERIMA OLEH ARSIP</span>`; } 
-                else { statusHtml = `<span class="badge bg-warning-subtle text-warning px-2" style="font-size:9px;">${statusInput}</span>`; }
-                html += `<tr><td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td><td class="text-start">${item.nama}</td><td class="text-center">${item.jenis_permohonan || '-'}</td><td class="text-center">${item.tujuan_paspor || '-'}</td><td class="text-center"><span class="badge bg-light text-dark border">${item.lokasi_arsip || '-'}</span></td><td class="text-center">${statusHtml}</td></tr>`;
-            });
-            document.getElementById('det_list_berkas_riwayat').innerHTML = html;
+            
+            renderDetailPagination();
             new bootstrap.Modal(document.getElementById('modalDetailBatch')).show();
         }
     });
+}
+
+// FUNGSI RENDER TABEL DETAIL DENGAN PAGINATION JS (VERSI FIX)
+function renderDetailPagination() {
+    let searchValue = document.getElementById('searchDetailBerkas').value.toLowerCase();
+    
+    // 1. Filter Berdasarkan Search
+    let filteredData = allDetailData.filter(item => 
+        (item.no_permohonan && item.no_permohonan.toLowerCase().includes(searchValue)) || 
+        (item.nama && item.nama.toLowerCase().includes(searchValue))
+    );
+
+    let total = filteredData.length;
+    let totalPages = Math.ceil(total / rowsPerPageDetail);
+    
+    // 2. LOGIKA SLICING (INI YANG TADI KURANG, MAANG!)
+    let startIdx = (currentPageDetail - 1) * rowsPerPageDetail;
+    let endIdx = Math.min(startIdx + rowsPerPageDetail, total);
+    let paginatedData = filteredData.slice(startIdx, endIdx); // Ambil data per halaman
+
+    let html = '';
+    paginatedData.forEach(item => {
+        let statusHtml = ''; 
+        let statusInput = item.status_berkas ? item.status_berkas.trim().toUpperCase() : '';
+        if (statusInput === 'DIMUSNAHKAN') { 
+            statusHtml = `<span class="badge bg-danger-subtle text-danger px-2" style="font-size:9px;">DIMUSNAHKAN</span>`; 
+        } else if (statusInput.includes('DITERIMA')) { 
+            statusHtml = `<span class="badge bg-success-subtle text-success px-2" style="font-size:9px;">DITERIMA OLEH ARSIP</span>`; 
+        } else { 
+            statusHtml = `<span class="badge bg-warning-subtle text-warning px-2" style="font-size:9px;">${statusInput}</span>`; 
+        }
+        
+        html += `<tr>
+            <td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td>
+            <td class="text-start">${item.nama}</td>
+            <td class="text-center">${item.jenis_permohonan || '-'}</td>
+            <td class="text-center">${item.tujuan_paspor || '-'}</td>
+            <td class="text-center"><span class="badge bg-light text-dark border">${item.lokasi_arsip || '-'}</span></td>
+            <td class="text-center">${statusHtml}</td>
+        </tr>`;
+    });
+
+    document.getElementById('det_list_berkas_riwayat').innerHTML = html || '<tr><td colspan="6" class="text-center py-4 text-muted">Data tidak ditemukan</td></tr>';
+
+    // 3. Kalkulasi Info Untuk Pagination Footer (Manusiawi dimulai dari 1)
+    let startInfo = total > 0 ? startIdx + 1 : 0;
+    
+    // 4. PANGGIL FUNGSI DARI KOMPONEN
+    if(typeof renderJSNav === "function") {
+        renderJSNav(
+            'det_pagination_links', 
+            currentPageDetail, 
+            totalPages, 
+            'det_pagination_info', 
+            startInfo, 
+            endIdx, 
+            total
+        );
+    }
+}
+
+// Fungsi Pindah Halaman
+function changeDetailPage(page) {
+    currentPageDetail = page;
+    renderDetailPagination();
 }
 
 $(document).ready(function() {
@@ -251,37 +325,21 @@ $(document).ready(function() {
     const inputBarcode = $('#input-barcode-permohonan');
     let currentBatchID = '';
 
-    // --- REVISI LOGIKA PENGUNCI FOKUS ---
     inputBarcode.focus();
     
     $(document).on('click', function(e) {
-        // JANGAN curi fokus jika user sedang mengklik elemen input, select, atau dalam modal
-        if ($(e.target).closest('#select-loker-bulk, .modal-content, input, select').length) {
-            return; 
-        }
-        
-        // Kembalikan fokus ke scanner jika modal tidak terbuka
-        if (!$('.modal').is(':visible')) {
-            inputBarcode.focus();
-        }
+        if ($(e.target).closest('#select-loker-bulk, .modal-content, input, select').length) return; 
+        if (!$('.modal').is(':visible')) inputBarcode.focus();
     });
 
-    // Kembalikan fokus setelah modal tutup (dengan delay agar stabil)
     $('.modal').on('hidden.bs.modal', function () {
         setTimeout(() => inputBarcode.focus(), 300);
     });
 
-    // Tambahan khusus untuk Select Loker agar dropdown tidak hilang
-    $('#select-loker-bulk').on('mousedown', function() {
-        $(document).off('click.autoFocus'); // Matikan sementara
-    }).on('change blur', function() {
-        setTimeout(() => inputBarcode.focus(), 500); // Aktifkan lagi setelah milih
-    });
-
-
+    // SEARCH DETAIL DALAM MODAL
     $("#searchDetailBerkas").on("keyup", function() {
-        var value = $(this).val().toLowerCase();
-        $("#det_list_berkas_riwayat tr").filter(function() { $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1) });
+        currentPageDetail = 1;
+        renderDetailPagination();
     });
 
     $('.btn-proses-batch').on('click', function() {
@@ -330,24 +388,20 @@ $(document).ready(function() {
 
     $(document).on('click', '#btn-simpan-batch', function() {
         const adaLoker = {{ $adaLoker ? 'true' : 'false' }};
-
         if (!adaLoker) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Master Rak Belum Terisi',
-                text: 'Data rak loker pada sistem arsip masih kosong. Mohon tambahkan data master rak loker terlebih dahulu.',
+                text: 'Data rak loker pada sistem arsip masih kosong.',
                 confirmButtonText: 'Buka Master Rak',
-                showCancelButton: true,
-                cancelButtonText: 'Kembali'
-            }).then((result) => {
-                if (result.isConfirmed) { window.location.href = "{{ route('rak-loker.index') }}"; }
-            });
+                showCancelButton: true
+            }).then((result) => { if (result.isConfirmed) window.location.href = "{{ route('rak-loker.index') }}"; });
             return;
         }
 
         Swal.fire({
             title: 'Konfirmasi Simpan?',
-            text: "Berkas akan didaftarkan ke rak loker secara otomatis oleh sistem.",
+            text: "Berkas akan didaftarkan ke rak loker secara otomatis.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Ya, Selesaikan',
@@ -359,10 +413,8 @@ $(document).ready(function() {
                     _token: "{{ csrf_token() }}",
                     no_pengirim: currentBatchID 
                 }, function(res) {
-                    if(res.success) {
-                        Swal.fire('Berhasil!', 'Berkas telah diterima dan masuk rak.', 'success').then(() => window.location.reload());
-                    }
-                }).fail(err => Swal.fire('Error', err.responseJSON.message || 'Gagal memproses data', 'error'));
+                    if(res.success) Swal.fire('Berhasil!', 'Berkas telah diterima.', 'success').then(() => window.location.reload());
+                }).fail(err => Swal.fire('Error', 'Gagal memproses data', 'error'));
             }
         });
     });

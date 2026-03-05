@@ -6,57 +6,59 @@
 @section('content')
 <div class="container-fluid p-0" style="margin-left: -35px;"> 
     <div class="card-custom" style="width: 108%; margin-left: 0px;">
-    <div class="table-header-custom">
-    <h5 class="table-title-custom fw-bold m-0">Data Berkas yang dipinjam</h5>
-    <div class="table-actions-custom" id="filterArea" style="position: relative; display: flex; gap: 10px; align-items: center;">
-        @php $roleUser = strtoupper(auth()->user()->role); @endphp
- 
-        <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam" style="white-space: nowrap;">
-            + Pinjam Berkas
-        </button>
-        <button type="button" class="btn-filter-custom" onclick="toggleFilter(event)" style="white-space: nowrap;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-            </svg>
-            Cari
-        </button>
+        <div class="table-header-custom">
+            <h5 class="table-title-custom fw-bold m-0">Data Berkas yang dipinjam</h5>
+            <div class="table-actions-custom" id="filterArea" style="position: relative; display: flex; gap: 10px; align-items: center;">
+                @php $roleUser = strtoupper(auth()->user()->role); @endphp
+         
+                <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam" style="white-space: nowrap;">
+                    + Pinjam Berkas
+                </button>
+                <button type="button" class="btn-filter-custom" onclick="toggleFilter(event)" style="white-space: nowrap;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                    </svg>
+                    Cari
+                </button>
 
-        <div id="filterDropdown" class="filter-dropdown-custom shadow-lg">
-            <form action="{{ route('pinjam-berkas.index') }}" method="GET">
-                <div class="filter-group-custom">
-                    <label>No Permohonan</label>
-                    <input type="text" name="no_permohonan" value="{{ request('no_permohonan') }}" placeholder="Masukkan No Permohonan">
+                <div id="filterDropdown" class="filter-dropdown-custom shadow-lg">
+                    <form action="{{ route('pinjam-berkas.index') }}" method="GET">
+                        <div class="filter-group-custom">
+                            <label>No Permohonan</label>
+                            <input type="text" name="no_permohonan" value="{{ request('no_permohomean') }}" placeholder="Masukkan No Permohonan">
+                        </div>
+                        <button type="submit" class="btn-submit-filter">Cari</button>
+                        <a href="{{ route('pinjam-berkas.index') }}" class="btn-reset-filter">Reset</a>
+                    </form>
                 </div>
-                <button type="submit" class="btn-submit-filter">Cari</button>
-                <a href="{{ route('pinjam-berkas.index') }}" class="btn-reset-filter">Reset</a>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
+
         @if(request('no_permohonan'))
             <div class="mb-3 d-flex align-items-center justify-content-between p-3 rounded" style="background-color: #F9FAFB; border: 1px solid #EAECF0;">
                 <span style="font-size: 13px; color: #475467;">
                     Menampilkan hasil untuk: <strong>"{{ request('no_permohonan') }}"</strong>
                 </span>
                 <span class="badge rounded-pill" style="background-color: #1366D9; padding: 6px 12px; font-size: 11px;">
-                    {{ $dataPinjam->count() }} Berkas Ditemukan
+                    {{ $dataPinjam->total() }} Berkas Ditemukan
                 </span>
             </div>
         @endif
+
         <div class="table-responsive">
             <table class="table-custom">
-            <thead>
-                <tr>
-                    <th style="width: 16%;">No. Permohonan</th> 
-                    <th style="width: 12%;">Tanggal Permohonan</th>
-                    <th style="width: 14%; text-align: left;">Nama Pemohon</th> 
-                    <th style="width: 16%;">Peminjam</th>
-                    <th style="width: 11%;">Tanggal Pinjam</th>
-                    <th style="width: 11%;">Tanggal Kembali</th>
-                    <th style="width: 15%; text-align: center;">Aksi</th>
-                    <th style="width: 9%;">Status</th>
-                </tr>
-            </thead>
+                <thead>
+                    <tr>
+                        <th style="width: 16%;">No. Permohonan</th> 
+                        <th style="width: 12%;">Tanggal Permohonan</th>
+                        <th style="width: 14%; text-align: left;">Nama Pemohon</th> 
+                        <th style="width: 16%;">Peminjam</th>
+                        <th style="width: 11%;">Tanggal Pinjam</th>
+                        <th style="width: 11%;">Tanggal Kembali</th>
+                        <th style="width: 15%; text-align: center;">Aksi</th>
+                        <th style="width: 9%;">Status</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @forelse($dataPinjam as $item)
                     <tr>
@@ -66,11 +68,9 @@
                         <td style="padding: 10px; vertical-align: middle;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <div>
-                                    {{-- NAMA ORANG (Ambil dari kolom nama_peminjam) --}}
                                     <div style="font-size: 12px; font-weight: 500; color: #1F2937; margin-bottom: 2px;">
                                         {{ $item->nama_peminjam }}
                                     </div>
-                                    {{-- DIVISI (Ambil dari kolom divisi_peminjam) --}}
                                     <div style="font-size: 11px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
                                         <span style="width: 6px; height: 6px; background: #10B981; border-radius: 50%;"></span>
                                         {{ $item->divisi_peminjam }}
@@ -81,44 +81,41 @@
                         <td>{{ $item->tgl_pinjam }}</td>
                         <td>{{ $item->tgl_kembali ?? '-' }}</td>
                         <td style="width: 15%; text-align: center;">
-                        <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
-                            {{-- PERBAIKAN DI SINI: Kirim paket lengkap $item --}}
-                            <button type="button" 
-                                onclick="showDetail({{ json_encode($item) }})" 
-                                class="btn-detail-blue">
-                                Detail
-                            </button> 
+                            <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
+                                <button type="button" 
+                                    onclick="showDetail({{ json_encode($item) }})" 
+                                    class="btn-detail-blue">
+                                    Detail
+                                </button> 
 
-                            @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
-                                @if($item->status == 'Pengajuan')
-                                    <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
-                                        <button class="btn-check-custom" title="Setujui">✓</button>
-                                    </form>
-                                    <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" class="d-inline"> @csrf
-                                        <button class="btn-reject-custom" title="Tolak">✕</button>
-                                    </form>
-
-                                @elseif($item->status == 'Disetujui')
-                                    <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
-                                    class="btn-cetak" title="Cetak Tanda Terima" target="_blank">
-                                        <i class="fas fa-print"></i>
-                                    </a>
-                                    
-                                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn-selesai" onclick="return confirm('Yakin berkas sudah kembali?')">
-                                            Selesai
-                                        </button>
-                                    </form>
-                                @elseif($item->status == 'Selesai')
-                                    <a href="{{ route('pinjam-berkas.cetak-kembali', $item->id) }}" 
-                                    class="btn-cetak" style="background: #34C759;" 
-                                    title="Cetak Berita Acara Kembali" target="_blank">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </a>
+                                @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
+                                    @if($item->status == 'Pengajuan')
+                                        <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
+                                            <button class="btn-check-custom" title="Setujui">✓</button>
+                                        </form>
+                                        <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" class="d-inline"> @csrf
+                                            <button class="btn-reject-custom" title="Tolak">✕</button>
+                                        </form>
+                                    @elseif($item->status == 'Disetujui')
+                                        <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
+                                        class="btn-cetak" title="Cetak Tanda Terima" target="_blank">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                        <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn-selesai" onclick="return confirm('Yakin berkas sudah kembali?')">
+                                                Selesai
+                                            </button>
+                                        </form>
+                                    @elseif($item->status == 'Selesai')
+                                        <a href="{{ route('pinjam-berkas.cetak-kembali', $item->id) }}" 
+                                        class="btn-cetak" style="background: #34C759;" 
+                                        title="Cetak Berita Acara Kembali" target="_blank">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                    @endif
                                 @endif
-                            @endif
-                        </div>
+                            </div>
                         </td>
                         <td>
                             @php
@@ -134,6 +131,13 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- PAGINATION FOOTER - TARUH DISINI AGAR MASUK KE DALAM CARD --}}
+        @if(isset($dataPinjam) && method_exists($dataPinjam, 'links'))
+            <div class="mt-4 px-2">
+                @include('components.pagination-footer', ['data' => $dataPinjam])
+            </div>
+        @endif
     </div>
 </div>
 
@@ -151,63 +155,63 @@
                         <input type="text" id="input_no_permohonan" name="no_permohonan" class="form-control border-primary" placeholder="Ketik nomor permohonan..." required autocomplete="off">
                     </div>
                 </div>
-        <div id="areaDetailOtomatis" class="p-3 bg-light rounded-3 mb-4 border" style="display: none; max-width: 600px; margin: 0 auto;">
-            <h6 class="small fw-bold text-muted mb-3 text-uppercase text-center">Informasi Lengkap Berkas</h6>
-            <div class="row g-2 justify-content-center">
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Tanggal Permohonan</label>
-                    <input type="text" id="det_tgl_mohon" class="form-control form-control-sm bg-white" readonly>
+                <div id="areaDetailOtomatis" class="p-3 bg-light rounded-3 mb-4 border" style="display: none; max-width: 600px; margin: 0 auto;">
+                    <h6 class="small fw-bold text-muted mb-3 text-uppercase text-center">Informasi Lengkap Berkas</h6>
+                    <div class="row g-2 justify-content-center">
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Tanggal Permohonan</label>
+                            <input type="text" id="det_tgl_mohon" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Tanggal Terbit</label>
+                            <input type="text" id="det_tgl_terbit" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-10">
+                            <label class="small text-muted mb-1">Nama Lengkap</label>
+                            <input type="text" id="det_nama" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Tempat Lahir</label>
+                            <input type="text" id="det_tempat_lahir" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Tanggal Lahir</label>
+                            <input type="text" id="det_tgl_lahir" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Jenis Kelamin</label>
+                            <input type="text" id="det_jk" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">No Telpon</label>
+                            <input type="text" id="det_telp" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Jenis Permohonan</label>
+                            <input type="text" id="det_jns_mohon" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Jenis Paspor</label>
+                            <input type="text" id="det_jns_paspor" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-10">
+                            <label class="small text-muted mb-1">Tujuan Paspor</label>
+                            <input type="text" id="det_tujuan" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">No Paspor</label>
+                            <input type="text" id="det_no_paspor" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="small text-muted mb-1">Alur Terakhir</label>
+                            <input type="text" id="det_alur" class="form-control form-control-sm bg-white" readonly>
+                        </div>
+                        <div class="col-sm-10">
+                            <label class="small text-muted mb-1">Lokasi Arsip</label>
+                            <input type="text" id="det_lokasi" class="form-control form-control-sm bg-white fw-bold text-success border-success" readonly>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Tanggal Terbit</label>
-                    <input type="text" id="det_tgl_terbit" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-10">
-                    <label class="small text-muted mb-1">Nama Lengkap</label>
-                    <input type="text" id="det_nama" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Tempat Lahir</label>
-                    <input type="text" id="det_tempat_lahir" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Tanggal Lahir</label>
-                    <input type="text" id="det_tgl_lahir" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Jenis Kelamin</label>
-                    <input type="text" id="det_jk" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">No Telpon</label>
-                    <input type="text" id="det_telp" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Jenis Permohonan</label>
-                    <input type="text" id="det_jns_mohon" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Jenis Paspor</label>
-                    <input type="text" id="det_jns_paspor" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-10">
-                    <label class="small text-muted mb-1">Tujuan Paspor</label>
-                    <input type="text" id="det_tujuan" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">No Paspor</label>
-                    <input type="text" id="det_no_paspor" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-5">
-                    <label class="small text-muted mb-1">Alur Terakhir</label>
-                    <input type="text" id="det_alur" class="form-control form-control-sm bg-white" readonly>
-                </div>
-                <div class="col-sm-10">
-                    <label class="small text-muted mb-1">Lokasi Arsip</label>
-                    <input type="text" id="det_lokasi" class="form-control form-control-sm bg-white fw-bold text-success border-success" readonly>
-                </div>
-            </div>
-        </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold small">Divisi Peminjam</label>
                     @if(in_array($roleUser, ['ADMIN', 'KANIM']))
@@ -328,14 +332,9 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// PERBAIKAN FUNGSI DETAIL: Menampilkan SELESAI + Warna Hijau
 function showDetail(item) {
     if(!item) return;
-
-    // Ambil data permohonan dari paket item
     const permohonan = item.permohonan;
-
-    // 1. Isi field modal detail
     document.getElementById('m_no_permohonan').value = permohonan.no_permohonan || '-';
     document.getElementById('m_tgl_permohonan').value = permohonan.tanggal_permohonan || '-';
     document.getElementById('m_tgl_terbit').value = permohonan.tanggal_terbit || '-';
@@ -350,14 +349,10 @@ function showDetail(item) {
     document.getElementById('m_no_paspor').value = permohonan.no_paspor || '-';
     document.getElementById('m_lokasi').value = permohonan.lokasi_arsip || '-';
 
-    // 2. LOGIKA ALUR TERAKHIR (Sinkronisasi dengan SELESAI)
     const alurInput = document.getElementById('m_alur');
-    
-    // Ambil alur_paspor_update (hasil join di controller)
     let alurTerupdate = item.alur_paspor_update ? item.alur_paspor_update.toUpperCase() : (permohonan.status_berkas || '-');
     alurInput.value = alurTerupdate;
 
-    // 3. MEMBERIKAN WARNA HIJAU JIKA STATUSNYA SELESAI
     if (alurTerupdate === 'SELESAI') {
         alurInput.style.backgroundColor = '#d1e7dd'; 
         alurInput.style.color = '#0f5132';           
@@ -369,13 +364,11 @@ function showDetail(item) {
         alurInput.style.fontWeight = 'normal';
         alurInput.style.borderColor = '#ced4da';
     }
-
     new bootstrap.Modal(document.getElementById('modalDetailBerkas')).show();
 }
 
 let debounceTimer;
 const inputPermohonan = document.getElementById('input_no_permohonan');
-
 if (inputPermohonan) {
     inputPermohonan.addEventListener('input', function() {
         const no = this.value;
@@ -440,7 +433,6 @@ function handleSimpanPinjaman() {
 }
 </script>
 
-{{-- Toast Pengembalian Selesai --}}
 @if(session('success_kembali'))
 <script>
     Swal.fire({
@@ -450,7 +442,6 @@ function handleSimpanPinjaman() {
         showCancelButton: true,
         confirmButtonColor: "#34C759",
         confirmButtonText: "Cetak Sekarang",
-        cancelButtonText: "Nanti Saja",
         reverseButtons: true
     }).then((result) => {
         if (result.isConfirmed) {

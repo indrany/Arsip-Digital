@@ -25,7 +25,7 @@
         cursor: pointer;
     }
 
-    /* Badge & Button Styling (BALIK KE ASLI) */
+    /* Badge & Button Styling */
     .badge { padding: 6px 12px; font-weight: 600; border-radius: 8px; }
     .btn-action { border-radius: 8px; width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -109,7 +109,6 @@
                                 <tr>
                                     <td class="col-ba fw-bold text-primary">{{ $row->no_berita_acara }}</td>
                                     <td class="col-periode">
-                                        {{-- PERIODE SEJAJAR --}}
                                         <div class="d-flex align-items-center gap-1 small fw-bold">
                                             <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_mulai)->format('d/m/Y') }}</span>
                                             <span class="text-muted fw-normal">s/d</span>
@@ -128,42 +127,27 @@
                                     </td>
                                     <td class="col-aksi">
                                         <div class="d-flex justify-content-center gap-2">
-                                            {{-- Tombol Lihat Detail --}}
                                             <button type="button" class="btn btn-action btn-outline-primary shadow-sm" onclick="lihatDetailPemusnahan('{{ $row->id }}')" title="Detail">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                    
-                                            {{-- Tombol Cetak --}}
                                             <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" class="btn btn-action btn-success text-white shadow-sm" title="Cetak BA">
                                                 <i class="fas fa-download"></i>
                                             </a>
-                                    
-                                            {{-- PERBAIKAN TOMBOL UPLOAD --}}
                                             @if(in_array(strtoupper(Auth::user()->role), ['TIKIM', 'ADMIN']))
                                                 <form action="{{ route('pemusnahan.upload', $row->id) }}" method="POST" enctype="multipart/form-data" class="d-inline">
                                                     @csrf
                                                     <div style="position: relative; width: 35px; height: 35px; display: inline-block; vertical-align: middle;">
-                                                        {{-- Visual Tombol --}}
                                                         <button type="button" class="btn btn-action btn-info text-white shadow-sm" style="position: absolute; top:0; left:0; width: 100%; height: 100%; z-index: 1;">
                                                             <i class="fas fa-file-upload"></i>
                                                         </button>
-                                                        
-                                                        {{-- Input File --}}
-                                                        <input type="file" name="file_pdf" 
-                                                            onchange="this.form.submit()" 
-                                                            accept="application/pdf"
-                                                            style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;" 
-                                                            title="Klik untuk unggah dokumen lampiran/pusat">
+                                                        <input type="file" name="file_pdf" onchange="this.form.submit()" accept="application/pdf" style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;">
                                                     </div>
                                                 </form>
                                             @endif  
-                                            {{-- Tombol Approve (Hanya Admin) --}}
                                             @if(strtoupper(Auth::user()->role) == 'ADMIN' && $row->status == 'Diajukan')
                                                 <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
                                                     @csrf
-                                                    <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">
-                                                        SETUJUI
-                                                    </button>
+                                                    <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">SETUJUI</button>
                                                 </form>
                                             @endif
                                         </div>
@@ -173,13 +157,20 @@
                             </tbody>
                         </table>
                     </div>
+
+                    {{-- PAGINATION FOOTER - TARUH DISINI MAANG! --}}
+                    @if(isset($riwayat) && method_exists($riwayat, 'links'))
+                        <div class="px-4 py-3 border-top bg-light-subtle">
+                            @include('components.pagination-footer', ['data' => $riwayat])
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- MODAL DETAIL --}}
+{{-- MODAL DETAIL TETAP SAMA --}}
 <div class="modal fade" id="modalDetailPemusnahan" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content shadow border-0">

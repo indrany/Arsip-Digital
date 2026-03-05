@@ -15,12 +15,10 @@
                     </a>
                 </div>
 
-                {{-- FILTER TANGGAL --}}
                 <div class="col-md-2">
                     <input type="date" id="filterTanggal" class="form-control form-control-sm bg-light" title="Filter Tanggal Kirim">
                 </div>
 
-                {{-- FILTER STATUS --}}
                 <div class="col-md-3">
                     <select id="filterStatus" class="form-select form-select-sm bg-light fw-bold">
                         <option value="">-- Semua Status --</option>
@@ -29,7 +27,6 @@
                     </select>
                 </div>
 
-                {{-- SEARCH BAR UTAMA --}}
                 <div class="col-md-4">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
@@ -112,6 +109,10 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- --- PAGINATION TABEL UTAMA --- --}}
+            @include('components.pagination-footer', ['data' => $riwayat])
+
         </div>
     </div>
 </div>
@@ -125,10 +126,9 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                {{-- INFO BATCH --}}
                 <div class="row bg-light p-3 rounded mb-4 g-3 border mx-0">
                     <div class="col-md-4">
-                        <label class="d-block text-muted small fw-bold uppercase">ID Batch (No Pengirim)</label>
+                        <label class="d-block text-muted small fw-bold uppercase">ID Batch</label>
                         <span id="det_no_pengirim" class="fw-bold text-primary" style="font-size: 16px;">-</span>
                     </div>
                     <div class="col-md-4">
@@ -143,20 +143,7 @@
                     </div>
                 </div>
 
-                {{-- SEARCH BOX --}}
-                <div class="row mb-3 align-items-center">
-                    <div class="col-md-7">
-                        <h6 class="fw-bold m-0 d-flex align-items-center"><i class="fas fa-list-ul me-2 text-primary"></i>Daftar Berkas Terlampir</h6>
-                    </div>
-                    <div class="col-md-5">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" id="searchDetailBerkas" class="form-control border-start-0 shadow-none" placeholder="Cari No. Permohonan atau Nama Pemohon...">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-sm table-bordered align-middle mb-0" id="tableDetailBerkas">
                         <thead class="bg-dark text-white text-center" style="font-size: 12px; position: sticky; top: 0; z-index: 5;">
                             <tr>
@@ -168,11 +155,13 @@
                                 <th>Status Berkas</th>
                             </tr>
                         </thead>
-                        <tbody id="det_list_berkas" style="font-size: 12px;">
-                            {{-- Data akan diisi via AJAX --}}
-                        </tbody>
+                        <tbody id="det_list_berkas" style="font-size: 12px;"></tbody>
                     </table>
                 </div>
+
+                {{-- --- PAGINATION MODAL (MANGGIL KOMPONEN) --- --}}
+                @include('components.pagination-footer')
+
             </div>
             <div class="modal-footer border-0 p-3">
                 <button type="button" class="btn btn-secondary px-4 fw-bold shadow-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button>
@@ -182,8 +171,12 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 <script>
+// DATA GLOBAL MODAL
+let currentDetailData = []; 
+let rowsPerPageDetail = 10;
+let currentPageDetail = 1;
+
 $(document).ready(function() {
     function applyFilters() {
         var searchValue = $("#inputSearchRiwayat").val().toLowerCase();
@@ -210,91 +203,84 @@ $(document).ready(function() {
         $("#inputSearchRiwayat, #filterTanggal, #filterStatus").val("");
         $("#tableRiwayat tbody tr").show();
     });
-
-    $("#searchDetailBerkas").on("keyup", function() {
-        var value = $(this).val().toLowerCase();
-        $("#det_list_berkas tr").filter(function() {
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-        });
-    });
 });
 
 function lihatDetailBatch(noPengirim) {
     document.getElementById('det_list_berkas').innerHTML = '<tr><td colspan="6" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Mengambil data...</td></tr>';
-    document.getElementById('searchDetailBerkas').value = "";
-
+    
     fetch(`/arsip/list-berkas/${noPengirim}`)
         .then(response => response.json())
         .then(res => {
             if(res.success) {
+                currentDetailData = res.data;
+                currentPageDetail = 1;
+
                 document.getElementById('det_no_pengirim').innerText = res.batch.no_pengirim;
                 document.getElementById('det_tgl_pengirim').innerText = res.batch.tgl_pengirim;
                 
-                // --- LOGIKA WARNA STATUS BATCH (HEADER) ---
                 const elStatusBatch = document.getElementById('det_status');
                 const statusBatchText = res.batch.status ? res.batch.status.toUpperCase().trim() : '';
                 elStatusBatch.innerText = statusBatchText;
-
-                if (statusBatchText.includes('DITERIMA')) {
-                    elStatusBatch.className = 'badge bg-success text-white';
-                } else {
-                    elStatusBatch.className = 'badge bg-warning text-dark';
-                }
+                elStatusBatch.className = statusBatchText.includes('DITERIMA') ? 'badge bg-success text-white' : 'badge bg-warning text-dark';
                 
-                let html = '';
-                res.data.forEach(item => {
-                    let statusHtml = '';
-                    let statusInput = item.status_berkas ? item.status_berkas.trim().toUpperCase() : '';
-
-                    // LOGIKA WARNA STATUS BERKAS (TABEL)
-                    if (statusInput === 'DIMUSNAHKAN') {
-                        statusHtml = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2" style="font-size:9px;">DIMUSNAHKAN</span>`;
-                    } else if (statusInput.includes('DITERIMA')) {
-                        statusHtml = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2" style="font-size:9px;">DITERIMA OLEH ARSIP</span>`;
-                    } else {
-                        statusHtml = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2" style="font-size:9px;">${statusInput}</span>`;
-                    }
-
-                    html += `<tr>
-                        <td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td>
-                        <td>${item.nama}</td>
-                        <td class="text-center">${item.jenis_permohonan}</td>
-                        <td class="text-center">${item.jenis_paspor}</td>
-                        <td class="text-center">${item.tujuan_paspor || '-'}</td>
-                        <td class="text-center">${statusHtml}</td>
-                    </tr>`;
-                });
-                document.getElementById('det_list_berkas').innerHTML = html;
-                
-                var myModal = new bootstrap.Modal(document.getElementById('modalDetailBatch'));
-                myModal.show();
+                renderTableDetail();
+                new bootstrap.Modal(document.getElementById('modalDetailBatch')).show();
             }
         });
+}
+
+function renderTableDetail() {
+    let start = (currentPageDetail - 1) * rowsPerPageDetail;
+    let end = start + rowsPerPageDetail;
+    let paginatedItems = currentDetailData.slice(start, end);
+    
+    let html = '';
+    paginatedItems.forEach(item => {
+        let statusInput = (item.status_berkas || '').trim().toUpperCase();
+        let statusHtml = statusInput === 'DIMUSNAHKAN' ? `<span class="badge bg-danger-subtle text-danger border px-2" style="font-size:9px;">DIMUSNAHKAN</span>` : 
+                         statusInput.includes('DITERIMA') ? `<span class="badge bg-success-subtle text-success border px-2" style="font-size:9px;">DITERIMA OLEH ARSIP</span>` : 
+                         `<span class="badge bg-warning-subtle text-warning border px-2" style="font-size:9px;">${statusInput}</span>`;
+
+        html += `<tr>
+            <td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td>
+            <td>${item.nama}</td>
+            <td class="text-center">${item.jenis_permohonan}</td>
+            <td class="text-center">${item.jenis_paspor}</td>
+            <td class="text-center">${item.tujuan_paspor || '-'}</td>
+            <td class="text-center">${statusHtml}</td>
+        </tr>`;
+    });
+    
+    document.getElementById('det_list_berkas').innerHTML = html || '<tr><td colspan="6" class="text-center py-3">Data Kosong</td></tr>';
+    
+    // HITUNG INFO RESULT MODAL
+    let totalPages = Math.ceil(currentDetailData.length / rowsPerPageDetail);
+    let startInfo = currentDetailData.length > 0 ? ((currentPageDetail - 1) * rowsPerPageDetail) + 1 : 0;
+    let endInfo = Math.min(currentPageDetail * rowsPerPageDetail, currentDetailData.length);
+    let totalInfo = currentDetailData.length;
+    let infoText = `RESULT <b>${startInfo} - ${endInfo}</b> OF <b>${totalInfo}</b>`;
+
+    // PANGGIL FUNGSI DARI KOMPONEN
+    if (typeof renderJSNav === "function") {
+        renderJSNav('det_pagination_links', currentPageDetail, totalPages, 'det_pagination_info', infoText);
+    }
+}
+
+function changeDetailPage(page) {
+    let totalPages = Math.ceil(currentDetailData.length / rowsPerPageDetail);
+    if (page < 1 || page > totalPages) return;
+    currentPageDetail = page;
+    renderTableDetail();
 }
 </script>
 
 <style>
-    .form-control:focus, .form-select:focus { box-shadow: none !important; border-color: #3b82f6 !important; }
     .priority-row { background-color: #fffbe6 !important; }
-    .priority-row:hover { background-color: #fff3bf !important; }
-    
-    /* WARNA STATUS DINAMIS (SUBTLE) */
-    .bg-danger-subtle { background-color: #fee2e2 !important; color: #dc2626 !important; }
-    .border-danger-subtle { border-color: #fecaca !important; }
-
-    .bg-success-subtle { background-color: #dcfce7 !important; color: #16a34a !important; }
-    .border-success-subtle { border-color: #bbf7d0 !important; }
-
-    .bg-warning-subtle { background-color: #fef9c3 !important; color: #a16207 !important; }
-    .border-warning-subtle { border-color: #fef08a !important; }
-
-    .bg-info-subtle { background-color: #e0f2fe !important; }
-    .text-info { color: #0369a1 !important; }
-    .bg-secondary-subtle { background-color: #f1f5f9 !important; }
-    .bg-primary-subtle { background-color: #e0e7ff !important; }
     .uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .table-responsive::-webkit-scrollbar { width: 6px; }
-    .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .bg-danger-subtle { background-color: #fee2e2 !important; color: #dc2626 !important; }
+    .bg-success-subtle { background-color: #dcfce7 !important; color: #16a34a !important; }
+    .bg-warning-subtle { background-color: #fef9c3 !important; color: #a16207 !important; }
+    .bg-secondary-subtle { background-color: #f1f5f9 !important; }
+    .bg-info-subtle { background-color: #e0f2fe !important; color: #0369a1 !important; }
 </style>
 @endsection
