@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator; // Pastikan ini ada
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -11,7 +12,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Kosongkan saja jika belum ada layanan yang didaftarkan
     }
 
     /**
@@ -19,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Cukup tulis ini satu kali saja Maang
+        Paginator::useBootstrapFive();
     }
 }

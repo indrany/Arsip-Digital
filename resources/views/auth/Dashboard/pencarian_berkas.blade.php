@@ -6,31 +6,24 @@
 @section('content')
 <div class="container-fluid px-4">
 
-{{-- SEARCH BAR SEJAJAR HASIL --}}
-<div class="mb-3">
-    <form action="{{ route('pencarian-berkas.search') }}" method="GET">
-        <div class="d-flex align-items-center gap-2"
-             style="max-width: 760px;">
-            <div class="input-group shadow-sm"
-                 style="border-radius:8px; overflow:hidden; border:1px solid #dee2e6; width:100%;">
-                <span class="input-group-text bg-white border-0 text-muted">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text"
-                       name="nomor_permohonan"
-                       class="form-control border-0"
-                       placeholder="Nomor permohonan atau nama pemohon"
-                       value="{{ request('nomor_permohonan') }}"
-                       style="font-size:13.5px; box-shadow:none;">
+    {{-- SEARCH BAR SEJAJAR HASIL --}}
+    <div class="mb-3">
+        <form action="{{ route('pencarian-berkas.search') }}" method="GET">
+            <div class="d-flex align-items-center gap-2" style="max-width: 760px;">
+                <div class="input-group shadow-sm" style="border-radius:8px; overflow:hidden; border:1px solid #dee2e6; width:100%;">
+                    <span class="input-group-text bg-white border-0 text-muted">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="nomor_permohonan" class="form-control border-0" 
+                           placeholder="Nomor permohonan atau nama pemohon" 
+                           value="{{ request('nomor_permohonan') }}" style="font-size:13.5px; box-shadow:none;">
+                </div>
+                <button class="btn btn-primary fw-semibold" style="height:38px; padding:0 24px; font-size:13px;">
+                    Cari
+                </button>
             </div>
-
-            <button class="btn btn-primary fw-semibold"
-                    style="height:38px; padding:0 24px; font-size:13px;">
-                Cari
-            </button>
-        </div>
-    </form>
-</div>
+        </form>
+    </div>
 
     {{-- HASIL PENCARIAN --}}
     <div class="card shadow-sm border-0 mt-2" style="border-radius:12px;">
@@ -40,31 +33,26 @@
             </h6>
 
             <div class="dropdown">
-                <button class="btn btn-light btn-sm border d-flex align-items-center gap-2"
-                        type="button"
-                        data-bs-toggle="dropdown"
-                        style="border-radius:6px; font-size:12px;">
+                <button class="btn btn-light btn-sm border d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="border-radius:6px; font-size:12px;">
                     <i class="fas fa-filter text-primary"></i> Filters
                 </button>
-                <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0"
-                     style="width:280px; border-radius:10px;">
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0" style="width:280px; border-radius:10px;">
                     <form action="{{ route('pencarian-berkas.search') }}" method="GET">
+                        {{-- Hidden input agar saat filter tanggal, kata kunci search tidak hilang --}}
                         <input type="hidden" name="nomor_permohonan" value="{{ request('nomor_permohonan') }}">
+                        
                         <label class="form-label small fw-bold text-muted mb-2">RANGE TANGGAL</label>
                         <div class="row g-2">
                             <div class="col-6">
-                                <input type="date" name="start_date" class="form-control form-control-sm"
-                                       value="{{ request('start_date') }}">
+                                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
                             </div>
                             <div class="col-6">
-                                <input type="date" name="end_date" class="form-control form-control-sm"
-                                       value="{{ request('end_date') }}">
+                                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
                             </div>
                         </div>
                         <div class="d-grid gap-2 mt-3">
                             <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-                            <a href="{{ route('pencarian-berkas.index') }}"
-                               class="btn btn-light btn-sm border">Reset</a>
+                            <a href="{{ route('pencarian-berkas.index') }}" class="btn btn-light btn-sm border">Reset</a>
                         </div>
                     </form>
                 </div>
@@ -82,17 +70,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse(collect($results ?? []) as $item)
+                        @forelse($results as $item)
                         <tr>
-                            <td class="ps-4 py-2 fw-bold text-primary">
-                                {{ $item->no_permohonan }}
-                            </td>
-                            <td class="text-dark">
-                                {{ strtoupper($item->nama ?? '-') }}
-                            </td>
+                            <td class="ps-4 py-2 fw-bold text-primary">{{ $item->no_permohonan }}</td>
+                            <td class="text-dark">{{ strtoupper($item->nama ?? '-') }}</td>
                             <td class="text-center py-2">
-                                <button type="button"
-                                        class="btn btn-primary btn-sm px-3"
+                                <button type="button" class="btn btn-primary btn-sm px-3" 
                                         onclick="showDetail(JSON.parse(atob('{{ base64_encode(json_encode($item)) }}')))"
                                         style="font-size:11px; border-radius:6px;">
                                     Detail
@@ -102,30 +85,32 @@
                         @empty
                         <tr>
                             <td colspan="3" class="text-center py-5">
-                                <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png"
-                                     width="60"
-                                     class="opacity-25 mb-2"
-                                     style="filter:grayscale(1);">
-                                <p class="text-muted small mb-0">
-                                    Data tidak ditemukan atau silakan masukkan nomor permohonan atau nama pemohon.
-                                </p>
+                                <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="60" class="opacity-25 mb-2" style="filter:grayscale(1);">
+                                <p class="text-muted small mb-0">Data tidak ditemukan atau masukkan parameter pencarian.</p>
                             </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
+
+            {{-- PAGINATION FOOTER - Letak di bawah table-responsive --}}
+            @if(isset($results) && method_exists($results, 'links'))
+                <div class="mt-2">
+                    @include('components.pagination-footer', ['data' => $results])
+                </div>
+            @endif
         </div>
     </div>
 </div>
 
-{{-- MODAL DETAIL (Didesain Ramping & Profesional) --}}
+{{-- MODAL DETAIL --}}
 <div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg border-0" style="border-radius: 12px; width: 420px; margin: auto;">
             <div class="modal-header border-0 pb-0 pt-3 px-4" style="display: flex; justify-content: space-between; align-items: center;">
                 <h6 class="modal-title fw-bold text-secondary" style="font-size: 16px; margin: 0;">Detail Permohonan</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 10px;"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 10px;"></button>
             </div>
             <div class="modal-body pt-3 pb-2 px-4">
                 <form id="form-detail-pop">
@@ -169,10 +154,10 @@
     </div>
 </div>
 @endsection
+
 @push('scripts')
 <script>
 function showDetail(item) {
-    // 1. Mengisi data dasar ke dalam Modal
     document.getElementById('det-nomor').value = item.no_permohonan || '-';
     document.getElementById('det-tgl-mohon').value = item.tanggal_permohonan || '-';
     document.getElementById('det-tgl-terbit').value = item.tanggal_terbit || '-';
@@ -187,36 +172,24 @@ function showDetail(item) {
     document.getElementById('det-no-paspor').value = item.no_paspor || '-';
     document.getElementById('det-lokasi').value = item.lokasi_arsip || '-';
 
-    // 2. PERBAIKAN LOGIKA ALUR TERAKHIR
-    // Kita ambil alur_paspor_update (dari join database) jika ada, jika tidak pakai alur_terakhir (lokal)
     let alurTerupdate = item.alur_paspor_update ? item.alur_paspor_update.toUpperCase() : (item.alur_terakhir || '-');
-    
     const alurInput = document.getElementById('det-alur');
     alurInput.value = alurTerupdate;
 
-    // 3. MEMBERIKAN WARNA HIJAU JIKA STATUSNYA SELESAI
     if (alurTerupdate === 'SELESAI') {
-        alurInput.style.backgroundColor = '#d1e7dd'; // Hijau muda sukses
-        alurInput.style.color = '#0f5132';           // Teks hijau tua
+        alurInput.style.backgroundColor = '#d1e7dd';
+        alurInput.style.color = '#0f5132';
         alurInput.style.fontWeight = 'bold';
-        alurInput.style.borderColor = '#badbcc';
     } else {
-        alurInput.style.backgroundColor = '#f8f9fa'; // Warna standar
+        alurInput.style.backgroundColor = '#fff';
         alurInput.style.color = '#344054';
         alurInput.style.fontWeight = 'normal';
-        alurInput.style.borderColor = '#D0D5DD';
     }
 
-    // 4. Menangani Nomor Berita Acara
     const noBAInput = document.getElementById('det-no-ba');
-    if (noBAInput) { 
-        noBAInput.value = item.nomor_ba_arsip || '-';
-        noBAInput.style.color = '#344054';
-    }
+    if (noBAInput) noBAInput.value = item.nomor_ba_arsip || '-';
 
-    // 5. Tampilkan Modal
-    var modalElement = document.getElementById('modalDetailBerkas');
-    var modal = new bootstrap.Modal(modalElement);
+    var modal = new bootstrap.Modal(document.getElementById('modalDetailBerkas'));
     modal.show();
 }
 </script>

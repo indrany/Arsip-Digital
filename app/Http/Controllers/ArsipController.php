@@ -75,15 +75,13 @@ class ArsipController extends Controller
     // 3. RIWAYAT PENGIRIMAN
     public function pengirimanBerkas()
     {
+        // PASTIIN PAKAI paginate() atau simplePaginate(), JANGAN pakai get()
         $riwayat = DB::table('pengiriman_batch')
-            ->select('no_pengirim', 'tgl_pengirim', 'jumlah_berkas', 'asal_unit', 'status')
             ->orderByRaw("CASE WHEN status = 'Diajukan' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        return view('arsip.riwayat_pengiriman', [
-            'current_page' => 'pengiriman-berkas',
-            'riwayat' => $riwayat
-        ]);
+            ->paginate(10); // <--- INI KUNCINYA, Maang!
+    
+        return view('arsip.riwayat_pengiriman', compact('riwayat'));
     }
 
     // 4. PENERIMAAN BERKAS (ARSIP) - UPDATE LOGIKA RAK
@@ -201,13 +199,13 @@ class ArsipController extends Controller
     }
 
     public function pencarianBerkas() {
-        // JOIN ke database paspor untuk ambil status alur terbaru
+        // JOIN ke database paspor dengan paksaan COLLATE agar tidak error Illegal Mix
         $results = DB::table('permohonan')
         ->leftJoin('datapaspor.datapaspor', function($join) {
             $join->on(
                 'permohonan.no_permohonan', 
                 '=', 
-                // Kita paksa nopermohonan menggunakan collation yang sama dengan permohonan
+                // KUNCINYA DISINI: Paksa datapaspor ikuti collation permohonan
                 DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci')
             );
         })
@@ -216,7 +214,7 @@ class ArsipController extends Controller
             'datapaspor.alurterakhir as alur_paspor_update'
         )
         ->orderBy('permohonan.created_at', 'desc')
-        ->get();
+        ->paginate(10);
     
         foreach ($results as $item) {
             if ($item->status_berkas === 'DIMUSNAHKAN') {
@@ -234,12 +232,21 @@ class ArsipController extends Controller
             'results' => $results
         ]);
     }
+
     public function searchAction(Request $request) {
         $q = $request->nomor_permohonan;
         
         $results = DB::table('permohonan')
-            ->leftJoin('datapaspor.datapaspor', 'permohonan.no_permohonan', '=', 'datapaspor.nopermohonan')
+            ->leftJoin('datapaspor.datapaspor', function($join) {
+                $join->on(
+                    'permohonan.no_permohonan', 
+                    '=', 
+                    // Paksa datapaspor ikuti collation permohonan agar tidak error 1267
+                    DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci')
+                );
+            })
             ->where(function($query) use ($q) {
+                // Gunakan nama tabel spesifik untuk kolom nama agar tidak ambiguous
                 $query->where('permohonan.no_permohonan', 'LIKE', "%$q%")
                       ->orWhere('permohonan.nama', 'LIKE', "%$q%");
             })
@@ -247,17 +254,19 @@ class ArsipController extends Controller
                 'permohonan.*', 
                 'datapaspor.alurterakhir as alur_paspor_update'
             )
-            ->get();
-    
-        // Jangan lupa tempelkan nomor BA di sini juga agar saat hasil cari muncul, BA-nya tidak hilang
+            ->paginate(10);
+
+        // Biar keyword search tidak hilang pas pindah page
+        $results->appends(['nomor_permohonan' => $q]);
+
         foreach ($results as $item) {
-            $item->nomor_ba_arsip = '-'; // Default
+            $item->nomor_ba_arsip = '-'; 
             if ($item->status_berkas === 'DIMUSNAHKAN') {
                  $ba = PemusnahanArsip::where('daftar_id_permohonan', 'LIKE', '%"' . $item->id . '"%')->first();
                  $item->nomor_ba_arsip = $ba ? $ba->no_berita_acara : '-';
             }
         }
-    
+
         return view('auth.Dashboard.pencarian_berkas', [
             'current_page' => 'pencarian-berkas',
             'results' => $results
@@ -389,10 +398,16 @@ public function store(Request $request) {
     }
 }
 
-    public function rakIndex() {
-        $rak = RakLoker::orderBy('no_lemari', 'asc')->orderBy('kode_rak', 'asc')->get();
-        return view('arsip.rak_loker', ['current_page' => 'rak-loker', 'rak' => $rak]);
-    }
+public function rakIndex() {
+    $rak = RakLoker::orderBy('no_lemari', 'asc')
+                   ->orderBy('kode_rak', 'asc')
+                   ->paginate(10);
+                   
+    return view('arsip.rak_loker', [
+        'current_page' => 'rak-loker', 
+        'rak' => $rak
+    ]);
+}
 
     public function rakStore(Request $request) {
         $request->validate(['no_lemari' => 'required', 'jumlah_rak' => 'required|integer|min:1', 'kapasitas' => 'required|integer']);
@@ -426,7 +441,8 @@ public function store(Request $request) {
     if ($request->filled('status')) {
         $query->where('status', $request->status);
     }
-    $riwayat = $query->orderBy('created_at', 'desc')->get();
+    $riwayat = $query->orderBy('created_at', 'desc')->paginate(10); 
+        
     return view('arsip.pemusnahan', compact('riwayat'));
 }
     public function hitungDokumen(Request $request) {

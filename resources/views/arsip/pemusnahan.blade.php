@@ -25,7 +25,7 @@
         cursor: pointer;
     }
 
-    /* Badge & Button Styling (BALIK KE ASLI) */
+    /* Badge & Button Styling */
     .badge { padding: 6px 12px; font-weight: 600; border-radius: 8px; }
     .btn-action { border-radius: 8px; width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -229,7 +229,7 @@
     </div>
 </div>
 
-{{-- MODAL DETAIL --}}
+{{-- MODAL DETAIL TETAP SAMA --}}
 <div class="modal fade" id="modalDetailPemusnahan" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content shadow border-0">
