@@ -44,138 +44,188 @@
     <div class="row g-4">
         {{-- BAGIAN INPUT: Hanya TIKIM --}}
         @if(strtoupper(Auth::user()->role) == 'TIKIM')
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-white py-3">
-                    <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-file-invoice me-2"></i>Input Berita Acara</h6>
+<div class="col-lg-4">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-file-invoice me-2"></i>Input Berita Acara</h6>
+        </div>
+        <div class="card-body">
+            <form action="{{ route('pemusnahan.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                
+                {{-- 1. MASUKKAN NO BERITA ACARA --}}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">1. Nomor Berita Acara</label>
+                    <input type="text" name="no_berita_acara" class="form-control shadow-none border-primary" placeholder="Contoh: BA/2026/001" required>
                 </div>
-                <div class="card-body">
-                    <form action="{{ route('pemusnahan.store') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Nomor Berita Acara</label>
-                            <input type="text" name="no_berita_acara" class="form-control shadow-none" placeholder="Contoh: BA/2026/001" required>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <label class="form-label small fw-bold">Dari Tanggal</label>
-                                <input type="date" name="filter_mulai" id="filter_mulai" class="form-control date-calc shadow-none" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-bold">Sampai Tanggal</label>
-                                <input type="date" name="filter_selesai" id="filter_selesai" class="form-control date-calc shadow-none" required>
-                            </div>
-                        </div>
+
+                {{-- 2. PILIH TANGGAL --}}
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">2. Dari Tanggal</label>
+                        <input type="date" name="filter_mulai" id="filter_mulai" class="form-control date-calc shadow-none" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Sampai Tanggal</label>
+                        <input type="date" name="filter_selesai" id="filter_selesai" class="form-control date-calc shadow-none" required>
+                    </div>
+                </div>
+                
+                {{-- 3. DOKUMEN TERHITUNG --}}
+                <div class="p-3 bg-light rounded-3 mb-3 text-center border">
+                    <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">3. Kalkulasi Dokumen:</small>
+                    <h3 class="fw-bold text-primary mb-0" id="label-jumlah">0</h3>
+                    <small class="text-muted small">Berkas Fisik Terdeteksi</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">4. Upload Scan Berita Acara (PDF)</label>
+                    <input type="file" name="file_pdf" id="fileBeritaAcaraUtama" class="form-control shadow-none" accept="application/pdf">
+                    <div class="form-text" style="font-size: 11px;">*File ini otomatis digunakan saat klik tombol biru di tabel.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" id="btn-submit" disabled>
+                    <i class="fas fa-paper-plane me-2"></i> AJUKAN PEMUSNAHAN
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+        {{-- BAGIAN TABEL RIWAYAT --}}
+<div class="{{ strtoupper(Auth::user()->role) == 'TIKIM' ? 'col-lg-8' : 'col-lg-12' }}">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Riwayat Pemusnahan</h6>
+            
+            {{-- TOMBOL FILTER IDENTIK PENCARIAN --}}
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm border d-flex align-items-center gap-2"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        style="border-radius:6px; font-size:12px;">
+                    <i class="fas fa-filter text-primary"></i> Filters
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0" style="width:320px; border-radius:10px;">
+                    <form action="{{ route('pemusnahan.index') }}" method="GET">
                         
-                        <div class="p-3 bg-light rounded-3 mb-3 text-center border">
-                            <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">Kalkulasi Dokumen:</small>
-                            <h3 class="fw-bold text-primary mb-0" id="label-jumlah">0</h3>
-                            <small class="text-muted small">Berkas Fisik Terdeteksi</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Upload Scan Berita Acara (PDF)</label>
-                            <input type="file" name="file_pdf" class="form-control shadow-none" accept="application/pdf">
+                        <label class="form-label small fw-bold text-muted mb-2">RANGE TANGGAL PENGAJUAN</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                            <input type="date" name="start_date" class="form-control form-control-sm" 
+                                   value="{{ request('start_date') }}" style="font-size: 12px;">
+                            <input type="date" name="end_date" class="form-control form-control-sm" 
+                                   value="{{ request('end_date') }}" style="font-size: 12px;">
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" id="btn-submit" disabled>
-                            <i class="fas fa-paper-plane me-2"></i> AJUKAN PEMUSNAHAN
-                        </button>
+                        <label class="form-label small fw-bold text-muted mb-2">STATUS</label>
+                        <select name="status" class="form-select form-select-sm mb-3" style="font-size: 12px;">
+                            <option value="">Semua Status</option>
+                            <option value="Diajukan" {{ request('status') == 'Diajukan' ? 'selected' : '' }}>Diajukan</option>
+                            <option value="Disetujui" {{ request('status') == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
+                        </select>
+
+                        <div class="d-grid gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary btn-sm fw-bold">Apply</button>
+                            <a href="{{ route('pemusnahan.index') }}" class="btn btn-light btn-sm border fw-bold">Reset</a>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
+
+        {{-- BADGE INFO FILTER AKTIF (Identik Badge Pinjam Berkas) --}}
+        @if(request('start_date') || request('status'))
+        <div class="px-4 py-2 bg-light border-bottom d-flex align-items-center justify-content-between">
+            <span class="small text-muted">
+                Menampilkan hasil: 
+                @if(request('start_date')) <strong>{{ request('start_date') }} s/d {{ request('end_date') }}</strong> @endif
+                @if(request('status')) <span class="badge bg-info text-dark ms-1">{{ strtoupper(request('status')) }}</span> @endif
+            </span>
+            <a href="{{ route('pemusnahan.index') }}" class="badge rounded-pill bg-primary text-decoration-none" style="font-size:11px; color: white;">
+                {{ $riwayat->count() }} Data (Reset)
+            </a>
+        </div>
         @endif
 
-        {{-- BAGIAN TABEL RIWAYAT --}}
-        <div class="{{ strtoupper(Auth::user()->role) == 'TIKIM' ? 'col-lg-8' : 'col-lg-12' }}">
-            <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-white py-3">
-                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Riwayat Pemusnahan</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0" id="tablePemusnahan" style="font-size: 13px;">
-                            <thead class="bg-light text-muted uppercase">
-                                <tr>
-                                    <th class="col-ba">No. Berita Acara</th>
-                                    <th class="col-periode">Periode Berkas</th>
-                                    <th class="col-jumlah">Jumlah</th>
-                                    <th class="col-status">Status</th>
-                                    <th class="col-aksi">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($riwayat as $row)
-                                <tr>
-                                    <td class="col-ba fw-bold text-primary">{{ $row->no_berita_acara }}</td>
-                                    <td class="col-periode">
-                                        {{-- PERIODE SEJAJAR --}}
-                                        <div class="d-flex align-items-center gap-1 small fw-bold">
-                                            <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_mulai)->format('d/m/Y') }}</span>
-                                            <span class="text-muted fw-normal">s/d</span>
-                                            <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_selesai)->format('d/m/Y') }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="col-jumlah">
-                                        <span class="badge bg-secondary-subtle text-secondary px-3">{{ $row->jumlah_dokumen }} Berkas</span>
-                                    </td>
-                                    <td class="col-status">
-                                        @if($row->status == 'Disetujui')
-                                            <span class="badge bg-success text-white px-3">DISETUJUI</span>
-                                        @else
-                                            <span class="badge bg-warning text-dark px-3">DIAJUKAN</span>
-                                        @endif
-                                    </td>
-                                    <td class="col-aksi">
-                                        <div class="d-flex justify-content-center gap-2">
-                                            {{-- Tombol Lihat Detail --}}
-                                            <button type="button" class="btn btn-action btn-outline-primary shadow-sm" onclick="lihatDetailPemusnahan('{{ $row->id }}')" title="Detail">
-                                                <i class="fas fa-eye"></i>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablePemusnahan" style="font-size: 13px;">
+                    <thead class="bg-light text-muted uppercase">
+                        <tr>
+                            <th class="col-ba">No. Berita Acara</th>
+                            <th class="col-periode">Periode Berkas</th>
+                            <th class="col-jumlah">Jumlah</th>
+                            <th class="col-status">Status</th>
+                            <th class="col-aksi">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($riwayat as $row)
+                        <tr>
+                            <td class="col-ba fw-bold text-primary">{{ $row->no_berita_acara }}</td>
+                            <td class="col-periode">
+                                <div class="d-flex align-items-center gap-1 small fw-bold">
+                                    <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_mulai)->format('d/m/Y') }}</span>
+                                    <span class="text-muted fw-normal">s/d</span>
+                                    <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_selesai)->format('d/m/Y') }}</span>
+                                </div>
+                            </td>
+                            <td class="col-jumlah">
+                                <span class="badge bg-secondary-subtle text-secondary px-3">{{ $row->jumlah_dokumen }} Berkas</span>
+                            </td>
+                            <td class="col-status text-center">
+                                @php $status = strtoupper($row->status); @endphp
+                                @if($status == 'DISETUJUI')
+                                    <span class="badge bg-success text-white px-3">DISETUJUI</span>
+                                @elseif($status == 'DITOLAK')
+                                    <span class="badge bg-danger text-white px-3" style="background-color: #dc3545 !important;">DITOLAK</span>
+                                @else
+                                    <span class="badge bg-warning text-dark px-3">DIAJUKAN</span>
+                                @endif
+                            </td>
+                            <td class="col-aksi">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button type="button" class="btn btn-action btn-outline-primary shadow-sm" onclick="lihatDetailPemusnahan('{{ $row->id }}')" title="Detail">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" class="btn btn-action btn-success text-white shadow-sm" title="Cetak BA">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    @if(in_array(strtoupper(Auth::user()->role), ['TIKIM', 'ADMIN']))
+                                    <button type="button" 
+                                            class="btn btn-action btn-info text-white shadow-sm btn-upload-langsung" 
+                                            data-id="{{ $row->id }}">
+                                        <i class="fas fa-file-upload"></i>
+                                    </button>
+                                    @endif
+                                    @if(strtoupper(Auth::user()->role) == 'ADMIN' && $row->status == 'Diajukan')
+                                        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">
+                                                SETUJUI
                                             </button>
-                                    
-                                            {{-- Tombol Cetak --}}
-                                            <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" class="btn btn-action btn-success text-white shadow-sm" title="Cetak BA">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                    
-                                            {{-- PERBAIKAN TOMBOL UPLOAD --}}
-                                            @if(in_array(strtoupper(Auth::user()->role), ['TIKIM', 'ADMIN']))
-                                                <form action="{{ route('pemusnahan.upload', $row->id) }}" method="POST" enctype="multipart/form-data" class="d-inline">
-                                                    @csrf
-                                                    <div style="position: relative; width: 35px; height: 35px; display: inline-block; vertical-align: middle;">
-                                                        {{-- Visual Tombol --}}
-                                                        <button type="button" class="btn btn-action btn-info text-white shadow-sm" style="position: absolute; top:0; left:0; width: 100%; height: 100%; z-index: 1;">
-                                                            <i class="fas fa-file-upload"></i>
-                                                        </button>
-                                                        
-                                                        {{-- Input File --}}
-                                                        <input type="file" name="file_pdf" 
-                                                            onchange="this.form.submit()" 
-                                                            accept="application/pdf"
-                                                            style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;" 
-                                                            title="Klik untuk unggah dokumen lampiran/pusat">
-                                                    </div>
-                                                </form>
-                                            @endif  
-                                            {{-- Tombol Approve (Hanya Admin) --}}
-                                            @if(strtoupper(Auth::user()->role) == 'ADMIN' && $row->status == 'Diajukan')
-                                                <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">
-                                                        SETUJUI
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                        </form>
+                                        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm">
+                                            ✕
+                                        </button>
+                                    </form>
+                                    </div>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">Data riwayat tidak ditemukan</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
+</div>
     </div>
 </div>
 
@@ -229,27 +279,55 @@
 <script>
 function lihatDetailPemusnahan(id) {
     $('#list-detail-pemusnahan').html('<tr><td colspan="4" class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></td></tr>');
+    
     $.get("/pemusnahan-arsip/detail/" + id, function(res) {
         if(res.success) {
-            $('#det_no_ba').text(res.ba.no_berita_acara);
-            let statusBA = res.ba.status.toUpperCase();
-            $('#det_status_ba').attr('class', 'badge ' + (statusBA === 'DISETUJUI' ? 'bg-success text-white' : 'bg-warning text-dark')).text(statusBA);
+    // Jika res.ba.status NULL, kita anggap PENDING atau DIAJUKAN
+    let statusRaw = res.ba.status ? res.ba.status : 'DIAJUKAN';
+    let statusBA = statusRaw.toUpperCase();
+    
+    let badgeClass = 'badge bg-warning text-dark';
+    if (statusBA === 'DISETUJUI') {
+        badgeClass = 'badge bg-success text-white';
+    } else if (statusBA === 'DITOLAK') {
+        badgeClass = 'badge bg-danger text-white'; // Merah untuk Ditolak
+    }
+
+    $('#det_status_ba').attr('class', badgeClass).text(statusBA);
+
             let html = '';
             res.data.forEach(item => {
-                let badge = (statusBA === 'DISETUJUI') ? `<span class="badge bg-danger-subtle text-danger border">DIMUSNAHKAN</span>` : `<span class="badge bg-warning-subtle text-warning border">DIAJUKAN</span>`;
-                html += `<tr><td class="text-center py-2">${item.no_permohonan}</td><td>${item.nama}</td><td class="text-center">${item.jenis_permohonan || '-'}</td><td class="text-center">${badge}</td></tr>`;
+                let badgeBerkas = `<span class="badge bg-warning-subtle text-warning border">DIAJUKAN</span>`;
+                
+                if (statusBA === 'DISETUJUI') {
+                    badgeBerkas = `<span class="badge bg-success-subtle text-success border">DIMUSNAHKAN</span>`;
+                } else if (statusBA === 'DITOLAK') {
+                    badgeBerkas = `<span class="badge bg-danger-subtle text-danger border">DITOLAK</span>`;
+                }
+
+                html += `<tr>
+                            <td class="text-center py-2">${item.no_permohonan}</td>
+                            <td>${item.nama}</td>
+                            <td class="text-center">${item.jenis_permohonan || '-'}</td>
+                            <td class="text-center">${badgeBerkas}</td>
+                         </tr>`;
             });
-            $('#list-detail-pemusnahan').html(html || '<tr><td colspan="4" class="text-center py-4">Data kosong</td></tr>');
+            
+            $('#list-detail-pemusnahan').html(html);
             new bootstrap.Modal(document.getElementById('modalDetailPemusnahan')).show();
         }
     });
 }
-
 $(document).ready(function() {
+    // 1. Pencarian rincian di dalam modal detail
     $("#searchDetailPemusnahan").on("keyup", function() {
         var v = $(this).val().toLowerCase();
-        $("#list-detail-pemusnahan tr").filter(function() { $(this).toggle($(this).text().toLowerCase().indexOf(v) > -1) });
+        $("#list-detail-pemusnahan tr").filter(function() { 
+            $(this).toggle($(this).text().toLowerCase().indexOf(v) > -1) 
+        });
     });
+
+    // 2. Kalkulasi jumlah dokumen otomatis saat ganti tanggal
     $('.date-calc').on('change', function() {
         let m = $('#filter_mulai').val(), s = $('#filter_selesai').val();
         if (m && s) {
@@ -259,10 +337,102 @@ $(document).ready(function() {
             });
         }
     });
+    $(document).on('click', '.btn-upload-langsung', function(e) {
+    e.preventDefault();
+    
+    // DEBUG 1: Cek apakah tombol merespon klik
+    console.log("=== DEBUG START ===");
+    console.log("1. Tombol biru diklik");
+
+    // DEBUG 2: Ambil ID Baris
+    let idBA = $(this).data('id'); 
+    console.log("2. ID Baris (idBA):", idBA);
+
+    // DEBUG 3: Cari elemen input di kiri
+    let inputKiri = document.getElementById('fileBeritaAcaraUtama');
+    console.log("3. Elemen Input Kiri ditemukan:", inputKiri);
+
+    // DEBUG 4: Cek keberadaan file
+    if (!inputKiri || inputKiri.files.length === 0) {
+        console.error("4. ERROR: File tidak ditemukan di input kiri!");
+        Swal.fire({
+            icon: 'warning',
+            title: 'File Belum Dipilih',
+            text: 'Silakan pilih file PDF di kotak sebelah kiri terlebih dahulu.',
+        });
+        return;
+    }
+
+    let fileUtama = inputKiri.files[0];
+    console.log("5. File siap diupload:", fileUtama.name);
+
+    Swal.fire({
+        title: 'Konfirmasi Upload',
+        text: "Gunakan berkas '" + fileUtama.name + "'?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Upload!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            console.log("6. User klik Ya, memulai AJAX...");
+            
+            Swal.fire({ 
+                title: 'Sedang Mengunggah...', 
+                allowOutsideClick: false, 
+                didOpen: () => { Swal.showLoading(); } 
+            });
+
+            let formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+            formData.append('file_pdf', fileUtama);
+
+            $.ajax({
+                url: "/pemusnahan-arsip/upload/" + idBA,
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    console.log("7. AJAX SUKSES:", res);
+                    Swal.fire('Berhasil!', 'Berkas disimpan.', 'success')
+                        .then(() => { location.reload(); });
+                },
+                error: function(err) {
+                    console.error("7. AJAX ERROR:", err);
+                    Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error');
+                }
+            });
+        } else {
+            console.log("6. User membatalkan upload.");
+        }
+    });
+});
+
+    // 4. Konfirmasi Tombol Setuju (✓)
     $(document).on('click', '.btn-konfirmasi-setuju', function(e) {
         e.preventDefault();
         let f = $(this).closest('form');
-        Swal.fire({ title: 'Setujui Pemusnahan?', text: "Berkas akan dihapus permanen.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Setujui' }).then((r) => { if (r.isConfirmed) f.submit(); });
+        Swal.fire({ 
+            title: 'Setujui Pemusnahan?', 
+            text: "Berkas akan dihapus permanen dari lokasi rak.", 
+            icon: 'warning', 
+            showCancelButton: true, 
+            confirmButtonText: 'Ya, Setujui' 
+        }).then((r) => { if (r.isConfirmed) f.submit(); });
+    });
+
+    // 5. Konfirmasi Tombol Tolak (✕)
+    $(document).on('click', '.btn-konfirmasi-tolak', function(e) {
+        e.preventDefault();
+        let f = $(this).closest('form');
+        Swal.fire({ 
+            title: 'Tolak Pengajuan?', 
+            text: "Data berkas akan tetap aman di gudang arsip.", 
+            icon: 'error', 
+            showCancelButton: true, 
+            confirmButtonText: 'Ya, Tolak',
+            confirmButtonColor: '#dc3545'
+        }).then((r) => { if (r.isConfirmed) f.submit(); });
     });
 });
 </script>

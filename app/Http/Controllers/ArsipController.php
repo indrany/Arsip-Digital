@@ -65,7 +65,7 @@ class ArsipController extends Controller
         if (!in_array(strtoupper($user->role), ['ADMIN', 'TIKIM'])) {
             $query->where('petugas_kirim', $user->name);
         }
-        $riwayat = $query->orderBy('created_at', 'desc')->get();
+        $riwayat = $query->orderBy('created_at', 'desc')->paginate(10);
         return view('auth.Dashboard.pengiriman_berkas', [
             'current_page' => 'pengiriman-berkas',
             'riwayat' => $riwayat
@@ -79,7 +79,7 @@ class ArsipController extends Controller
             ->select('no_pengirim', 'tgl_pengirim', 'jumlah_berkas', 'asal_unit', 'status')
             ->orderByRaw("CASE WHEN status = 'Diajukan' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10);
         return view('arsip.riwayat_pengiriman', [
             'current_page' => 'pengiriman-berkas',
             'riwayat' => $riwayat
@@ -99,7 +99,7 @@ class ArsipController extends Controller
             ->whereIn('status', ['Diajukan', 'DITERIMA OLEH ARSIP']) 
             ->orderByRaw("FIELD(status, 'Diajukan') DESC")
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10);
 
         // Cek ketersediaan rak untuk validasi tombol simpan
         $jumlahLoker = RakLoker::count();
@@ -403,7 +403,6 @@ public function store(Request $request) {
             return back()->with('success', 'Data Lemari berhasil dibuat.');
         } catch (\Exception $e) { return back()->with('error', 'Gagal: ' . $e->getMessage()); }
     }
-
     public function rakDestroy($id) {
         $rak = RakLoker::findOrFail($id);
         if ($rak->terisi > 0) return redirect()->back()->with('error', 'Rak sudah berisi berkas!');
@@ -415,11 +414,21 @@ public function store(Request $request) {
         return $data ? response()->json(['success' => true, 'data' => $data]) : response()->json(['success' => false], 404);
     }
 
-    public function pemusnahanIndex() {
-        $riwayat = PemusnahanArsip::orderBy('created_at', 'desc')->get();
-        return view('arsip.pemusnahan', compact('riwayat'));
+    public function pemusnahanIndex(Request $request) // Tambahkan parameter Request $request
+{
+    $query = PemusnahanArsip::query();
+    if ($request->filled('start_date') && $request->filled('end_date')) {
+        $query->whereBetween('created_at', [
+            $request->start_date . ' 00:00:00', 
+            $request->end_date . ' 23:59:59'
+        ]);
     }
-
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    $riwayat = $query->orderBy('created_at', 'desc')->get();
+    return view('arsip.pemusnahan', compact('riwayat'));
+}
     public function hitungDokumen(Request $request) {
         $jumlah = Permohonan::whereBetween('tanggal_permohonan', [$request->mulai, $request->selesai])->where('status_berkas', 'DITERIMA OLEH ARSIP')->count();
         return response()->json(['jumlah' => $jumlah]);
@@ -529,14 +538,38 @@ public function store(Request $request) {
         $permohonan = Permohonan::whereIn('id', $ids)->get();
         return view('arsip.cetak_ba', compact('ba', 'permohonan'));
     }
-
+    public function tolakPemusnahan($id)
+    {
+        try {
+            // Cari data berita acara
+            $ba = PemusnahanArsip::findOrFail($id);
+            
+            // Update status secara eksplisit
+            $ba->status = 'Ditolak'; 
+            
+            // Simpan ke database
+            if ($ba->save()) {
+                return redirect()->back()->with('success', 'Pengajuan pemusnahan berhasil ditolak.');
+            }
+            
+            return redirect()->back()->with('error', 'Gagal menyimpan perubahan status.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Kesalahan Sistem: ' . $e->getMessage());
+        }
+    }
     public function getDetailPemusnahan($id) {
         try {
             $ba = PemusnahanArsip::findOrFail($id);
+            $statusAsli = $ba->status ?: 'Diajukan'; 
+            $ba->status = strtoupper($statusAsli); 
+            
             $ids = is_array($ba->daftar_id_permohonan) ? $ba->daftar_id_permohonan : json_decode($ba->daftar_id_permohonan, true);
-            if (!$ids) return response()->json(['success' => true, 'ba' => $ba, 'data' => []]);
-            $data = Permohonan::whereIn('id', $ids)->select('no_permohonan', 'nama', 'jenis_permohonan', 'tanggal_permohonan')->get();
+            $data = Permohonan::whereIn('id', $ids)->get();
+    
             return response()->json(['success' => true, 'ba' => $ba, 'data' => $data]);
-        } catch (\Exception $e) { return response()->json(['success' => false, 'message' => $e->getMessage()], 500); }
+        } catch (\Exception $e) { 
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500); 
+        }
     }
+    
 }

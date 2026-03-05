@@ -14,35 +14,60 @@
         <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam" style="white-space: nowrap;">
             + Pinjam Berkas
         </button>
-        <button type="button" class="btn-filter-custom" onclick="toggleFilter(event)" style="white-space: nowrap;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-            </svg>
-            Cari
-        </button>
 
+        {{-- TOMBOL FILTER BARU --}}
+        <button type="button" class="btn-filter-custom" onclick="toggleFilter(event)" style="white-space: nowrap;">
+    <i class="filter-icon-svg"></i> Filters
+</button>
+
+        {{-- DROPDOWN FILTER IDENTIK PENCARIAN --}}
         <div id="filterDropdown" class="filter-dropdown-custom shadow-lg">
             <form action="{{ route('pinjam-berkas.index') }}" method="GET">
+                {{-- Tetap simpan search permohonan jika ada --}}
+                <input type="hidden" name="no_permohonan" value="{{ request('no_permohonan') }}">
+
                 <div class="filter-group-custom">
-                    <label>No Permohonan</label>
-                    <input type="text" name="no_permohonan" value="{{ request('no_permohonan') }}" placeholder="Masukkan No Permohonan">
+                    <label style="display: block; font-size: 11px; font-weight: 700; color: #667085; text-transform: uppercase; margin-bottom: 8px;">Range Tanggal</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="date" name="start_date" value="{{ request('start_date') }}" 
+                            style="width: 100%; padding: 6px; border: 1px solid #D0D5DD; border-radius: 6px; font-size: 13px;">
+                        <input type="date" name="end_date" value="{{ request('end_date') }}" 
+                            style="width: 100%; padding: 6px; border: 1px solid #D0D5DD; border-radius: 6px; font-size: 13px;">
+                    </div>
                 </div>
-                <button type="submit" class="btn-submit-filter">Cari</button>
-                <a href="{{ route('pinjam-berkas.index') }}" class="btn-reset-filter">Reset</a>
+                
+                <div class="filter-group-custom" style="margin-top: 15px;">
+                    <label style="display: block; font-size: 11px; font-weight: 700; color: #667085; text-transform: uppercase; margin-bottom: 8px;">Status</label>
+                    <select name="status" style="width: 100%; padding: 8px; border: 1px solid #D0D5DD; border-radius: 6px; font-size: 13px; color: #344054;">
+                        <option value="">Semua Status</option>
+                        <option value="Pengajuan" {{ request('status') == 'Pengajuan' ? 'selected' : '' }}>Pengajuan</option>
+                        <option value="Disetujui" {{ request('status') == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
+                        <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 20px;">
+                    <button type="submit" class="btn-apply" style="background: #1366D9; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Apply</button>
+                    <a href="{{ route('pinjam-berkas.index') }}" style="text-decoration: none; text-align: center; font-size: 13px; font-weight: 600; padding: 8px; background: #ffffff; color: #344054; border: 1px solid #D0D5DD; border-radius: 8px;">Reset</a>
+                </div>
             </form>
         </div>
-    </div>
-</div>
-        @if(request('no_permohonan'))
+        </div> {{-- Penutup filterArea --}}
+
+        @if(request('no_permohonan') || request('status') || request('start_date'))
             <div class="mb-3 d-flex align-items-center justify-content-between p-3 rounded" style="background-color: #F9FAFB; border: 1px solid #EAECF0;">
                 <span style="font-size: 13px; color: #475467;">
-                    Menampilkan hasil untuk: <strong>"{{ request('no_permohonan') }}"</strong>
+                    Menampilkan hasil untuk: 
+                    @if(request('no_permohonan')) <strong>"{{ request('no_permohonan') }}"</strong> @endif
+                    @if(request('start_date')) <strong>Tanggal: {{ request('start_date') }} s/d {{ request('end_date') }}</strong> @endif
+                    @if(request('status')) <strong>Status: {{ request('status') }}</strong> @endif
                 </span>
-                <span class="badge rounded-pill" style="background-color: #1366D9; padding: 6px 12px; font-size: 11px;">
-                    {{ $dataPinjam->count() }} Berkas Ditemukan
-                </span>
+                <a href="{{ route('pinjam-berkas.index') }}" class="badge rounded-pill text-decoration-none" style="background-color: #1366D9; padding: 6px 12px; font-size: 11px; color: white;">
+                    {{ $dataPinjam->total() }} Berkas Ditemukan (Reset)
+                </a>
             </div>
         @endif
+        </div>
         <div class="table-responsive">
             <table class="table-custom">
             <thead>
@@ -132,11 +157,10 @@
                         <tr><td colspan="8" class="text-center text-muted py-4">Data tidak ditemukan</td></tr>
                     @endforelse
                 </tbody>
-            </table>
-        </div>
+                </table>
     </div>
+</div> 
 </div>
-
 {{-- MODAL PINJAM --}}
 <div class="modal fade" id="modalPinjam" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;"> 
@@ -244,6 +268,7 @@
     </div>
 </div>
 
+
 {{-- MODAL DETAIL --}}
 <div class="modal fade" id="modalDetailBerkas" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -309,9 +334,48 @@
 .bg-disetujui { background-color: #34C759; }
 .bg-ditolak { background-color: #FF383C; }
 .bg-selesai { background-color: #0088FF; }
-.filter-dropdown-custom { display: none; position: absolute; background: #ffffff; padding: 24px; border-radius: 12px; width: 320px; z-index: 1050; right: 0; top: 50px; border: 1px solid #E4E7EC; box-shadow: 0px 12px 16px -4px rgba(16, 24, 40, 0.08); }
+.filter-dropdown-custom {
+    display: none; /* Tetap sembunyi di awal */
+    position: absolute;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    width: 450px; 
+    z-index: 9999 !important; 
+    right: 0;
+    top: 48px; /* Jarak dari tombol */
+    border: 1px solid #E4E7EC;
+    box-shadow: 0px 12px 16px -4px rgba(16, 24, 40, 0.08);
+    pointer-events: auto; 
+}
 .filter-dropdown-custom.show { display: block; }
 .btn-cetak { background: #667085; color: white; border: none; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 12px; }
+.filter-icon-svg {
+    width: 16px;
+    height: 16px;
+    background-color: #667085;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>') no-repeat center;
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>') no-repeat center;
+}
+.filter-dropdown-custom {
+    display: none;
+    position: absolute;
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 12px;
+    width: 280px;
+    z-index: 1050;
+    right: 0;
+    top: 45px;
+    border: 1px solid #E4E7EC;
+    box-shadow: 0px 12px 16px -4px rgba(16, 24, 40, 0.08);
+}
+.filter-dropdown-custom.show {
+    display: block;
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
