@@ -55,9 +55,10 @@ body {
 
 .system-logo {
     width: 220px; 
-    height: 220px;
+    height: auto;
+    max-height: 220px;
+    object-fit: contain;
     margin-bottom: 30px;
-    /* FIX CROPPING */
     margin-left: 0; 
 }
 
@@ -70,7 +71,7 @@ body {
     margin-left: 0;
 }
 
-/* Bagian Kanan (Form Login) - Dengan Penggeseran Kiri di Desktop */
+/* Bagian Kanan (Form Login) - Ini Di git */
 .login-box {
     width: 360px; 
     display: flex;
@@ -78,13 +79,14 @@ body {
     align-items: center; 
     position: relative; 
     padding-top: 80px;
-    /* margin-left: -30px;  */
     transform: translateX(-50px);
 }
 
 .login-logo-small {
     width: 60px;
-    height: 60px;
+    height: auto;
+    max-height: 60px;
+    object-fit: contain;
     position: absolute;
     top: 0;
     left: 50%;

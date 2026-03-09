@@ -173,47 +173,52 @@
                                 <span class="badge bg-secondary-subtle text-secondary px-3">{{ $row->jumlah_dokumen }} Berkas</span>
                             </td>
                             <td class="col-status text-center">
-                                @php $status = strtoupper($row->status); @endphp
-                                @if($status == 'DISETUJUI')
+                                @php 
+                                    $currentStatus =   strtoupper($row->status ?? 'DIAJUKAN'); 
+                                @endphp
+
+                                @if($currentStatus == 'DISETUJUI')
                                     <span class="badge bg-success text-white px-3">DISETUJUI</span>
-                                @elseif($status == 'DITOLAK')
-                                    <span class="badge bg-danger text-white px-3" style="background-color: #dc3545 !important;">DITOLAK</span>
+                                @elseif($currentStatus == 'DITOLAK')
+                                    <span class="badge bg-danger text-white px-3">DITOLAK</span>
                                 @else
                                     <span class="badge bg-warning text-dark px-3">DIAJUKAN</span>
                                 @endif
                             </td>
                             <td class="col-aksi">
-                                <div class="d-flex justify-content-center gap-2">
-                                    <button type="button" class="btn btn-action btn-outline-primary shadow-sm" onclick="lihatDetailPemusnahan('{{ $row->id }}')" title="Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" class="btn btn-action btn-success text-white shadow-sm" title="Cetak BA">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                    @if(in_array(strtoupper(Auth::user()->role), ['TIKIM', 'ADMIN']))
-                                    <button type="button" 
-                                            class="btn btn-action btn-info text-white shadow-sm btn-upload-langsung" 
-                                            data-id="{{ $row->id }}">
-                                        <i class="fas fa-file-upload"></i>
-                                    </button>
-                                    @endif
-                                    @if(strtoupper(Auth::user()->role) == 'ADMIN' && $row->status == 'Diajukan')
-                                        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">
-                                                SETUJUI
-                                            </button>
-                                        </form>
-                                        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm">
-                                            ✕
-                                        </button>
-                                    </form>
-                                    </div>
-                                    @endif
-                                </div>
-                            </td>
+    <div class="d-flex justify-content-center gap-2">
+        {{-- 1. Tombol Detail Mata --}}
+        <button type="button" class="btn btn-action btn-outline-primary shadow-sm" onclick="lihatDetailPemusnahan('{{ $row->id }}')" title="Detail">
+            <i class="fas fa-eye"></i>
+        </button>
+
+        {{-- nanti ini di git --}}
+        @if($row->file_pdf)
+            <a href="{{ asset('uploads/pemusnahan/' . $row->file_pdf) }}" target="_blank" class="btn btn-action btn-info text-white shadow-sm">
+                <i class="fas fa-file-pdf"></i>
+            </a>
+        @else
+            <button type="button" class="btn btn-action btn-info text-white shadow-sm btn-upload-langsung" data-id="{{ $row->id }}">
+                <i class="fas fa-file-upload"></i>
+            </button>
+        @endif
+        <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" class="btn btn-action btn-success text-white shadow-sm" title="Cetak BA">
+            <i class="fas fa-download"></i>
+        </a>
+
+        {{-- 4. Tombol Persetujuan Admin (Hanya jika status Diajukan) --}}
+        @if(strtoupper(Auth::user()->role) == 'ADMIN' && strtoupper($row->status ?? 'DIAJUKAN') == 'DIAJUKAN')
+        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
+            @csrf
+            <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">SETUJUI</button>
+        </form>
+        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
+            @csrf
+            <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm">✕</button>
+        </form>
+        @endif
+        </div>
+                        </td>
                         </tr>
                         @empty
                         <tr>
@@ -223,6 +228,13 @@
                     </tbody>
                 </table>
             </div>
+            {{-- PAGINATION FOOTER - Sudah diperbaiki variabelnya jadi $riwayat --}}
+            @if(isset($riwayat) && method_exists($riwayat, 'links'))
+            <div class="mt-3 px-3">
+                {{-- Menggunakan variabel $riwayat sesuai yang dikirim dari ArsipController --}}
+                @include('components.pagination-footer', ['data' => $riwayat])
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -282,27 +294,31 @@ function lihatDetailPemusnahan(id) {
     
     $.get("/pemusnahan-arsip/detail/" + id, function(res) {
         if(res.success) {
-    // Jika res.ba.status NULL, kita anggap PENDING atau DIAJUKAN
-    let statusRaw = res.ba.status ? res.ba.status : 'DIAJUKAN';
-    let statusBA = statusRaw.toUpperCase();
-    
-    let badgeClass = 'badge bg-warning text-dark';
-    if (statusBA === 'DISETUJUI') {
-        badgeClass = 'badge bg-success text-white';
-    } else if (statusBA === 'DITOLAK') {
-        badgeClass = 'badge bg-danger text-white'; // Merah untuk Ditolak
-    }
-
-    $('#det_status_ba').attr('class', badgeClass).text(statusBA);
+            // Normalisasi status: jika kosong atau null anggap DIAJUKAN
+            let statusDB = res.ba.status ? res.ba.status.toUpperCase() : 'DIAJUKAN';
+            
+            // Update Header Modal
+            let badgeClass = 'badge bg-warning text-dark';
+            if (statusDB === 'DISETUJUI') {
+                badgeClass = 'badge bg-success text-white';
+            } else if (statusDB === 'DITOLAK') {
+                badgeClass = 'badge bg-danger text-white';
+            }
+            
+            $('#det_status_ba').attr('class', badgeClass).text(statusDB);
+            $('#det_no_ba').text(res.ba.no_berita_acara || '-');
 
             let html = '';
             res.data.forEach(item => {
-                let badgeBerkas = `<span class="badge bg-warning-subtle text-warning border">DIAJUKAN</span>`;
+                let badgeBerkas = '';
                 
-                if (statusBA === 'DISETUJUI') {
-                    badgeBerkas = `<span class="badge bg-success-subtle text-success border">DIMUSNAHKAN</span>`;
-                } else if (statusBA === 'DITOLAK') {
-                    badgeBerkas = `<span class="badge bg-danger-subtle text-danger border">DITOLAK</span>`;
+                // Logika Status Tiap Berkas mengikuti Status Induk (BA)
+                if (statusDB === 'DISETUJUI') {
+                    badgeBerkas = '<span class="badge bg-success-subtle text-success border">DIMUSNAHKAN</span>';
+                } else if (statusDB === 'DITOLAK') {
+                    badgeBerkas = '<span class="badge bg-danger-subtle text-danger border">DITOLAK</span>';
+                } else {
+                    badgeBerkas = '<span class="badge bg-warning-subtle text-warning border">DIAJUKAN</span>';
                 }
 
                 html += `<tr>

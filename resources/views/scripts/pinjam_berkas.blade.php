@@ -111,7 +111,6 @@
                                     class="btn-detail-blue">
                                     Detail
                                 </button> 
-
                                 @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
                                     @if($item->status == 'Pengajuan')
                                         <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
@@ -120,18 +119,30 @@
                                         <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" class="d-inline"> @csrf
                                             <button class="btn-reject-custom" title="Tolak">✕</button>
                                         </form>
-                                    @elseif($item->status == 'Disetujui')
-                                        <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
-                                        class="btn-cetak" title="Cetak Tanda Terima" target="_blank">
-                                            <i class="fas fa-print"></i>
-                                        </a>
-                                        <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn-selesai" onclick="return confirm('Yakin berkas sudah kembali?')">
-                                                Selesai
-                                            </button>
-                                        </form>
-                                    @elseif($item->status == 'Selesai')
+                                        {{-- 1.di git ini --}}
+                                        @elseif($item->status == 'Disetujui')
+                                            <div class="d-flex align-items-center gap-2">
+                                                {{-- 1. TOMBOL PRINT: Saat diklik, dia akan memancing tombol Selesai untuk muncul --}}
+                                                <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
+                                                class="btn-cetak" 
+                                                title="Cetak Surat Izin Pinjam" 
+                                                target="_blank"
+                                                onclick="document.getElementById('wrapper-selesai-{{ $item->id }}').style.setProperty('display', 'inline-block', 'important')">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+
+                                                {{-- 2. WRAPPER SELESAI: Awalnya disembunyikan (display: none) --}}
+                                                <div id="wrapper-selesai-{{ $item->id }}" style="display: none;">
+                                                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn-selesai" onclick="return confirm('Apakah berkas fisik sudah benar-benar kembali?')">
+                                                            Selesai
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        @elseif($item->status == 'Selesai')
+                                        {{-- smapai ini git nya--}}
                                         <a href="{{ route('pinjam-berkas.cetak-kembali', $item->id) }}" 
                                         class="btn-cetak" style="background: #34C759;" 
                                         title="Cetak Berita Acara Kembali" target="_blank">

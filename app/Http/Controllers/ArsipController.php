@@ -441,7 +441,7 @@ public function rakIndex() {
     if ($request->filled('status')) {
         $query->where('status', $request->status);
     }
-    $riwayat = $query->orderBy('created_at', 'desc')->paginate(10); 
+    $riwayat = $query->orderBy('created_at', 'desc')->paginate(2); 
         
     return view('arsip.pemusnahan', compact('riwayat'));
 }
@@ -555,24 +555,11 @@ public function rakIndex() {
         return view('arsip.cetak_ba', compact('ba', 'permohonan'));
     }
     public function tolakPemusnahan($id)
-    {
-        try {
-            // Cari data berita acara
-            $ba = PemusnahanArsip::findOrFail($id);
-            
-            // Update status secara eksplisit
-            $ba->status = 'Ditolak'; 
-            
-            // Simpan ke database
-            if ($ba->save()) {
-                return redirect()->back()->with('success', 'Pengajuan pemusnahan berhasil ditolak.');
-            }
-            
-            return redirect()->back()->with('error', 'Gagal menyimpan perubahan status.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Kesalahan Sistem: ' . $e->getMessage());
-        }
-    }
+{
+    $ba = \App\Models\PemusnahanArsip::findOrFail($id);
+    $ba->update(['status' => 'Ditolak']); // Pastikan 'Ditolak' sudah ada di ENUM database
+    return redirect()->back()->with('success', 'Pengajuan berhasil ditolak.');
+}
     public function getDetailPemusnahan($id) {
         try {
             $ba = PemusnahanArsip::findOrFail($id);
@@ -587,5 +574,34 @@ public function rakIndex() {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500); 
         }
     }
+    // Tambahkan di bagian bawah sebelum penutup class
+    public function upload(Request $request, $id)
+{
+    $request->validate([
+        'file_pdf' => 'required|mimes:pdf|max:2048',
+    ]);
+
+    if ($request->hasFile('file_pdf')) {
+        $file = $request->file('file_pdf');
+        $namaFile = 'BA_' . time() . '_' . $id . '.' . $file->getClientOriginalExtension();
+
+        // Tentukan folder tujuan di public/uploads (Ganti agar tidak bentrok dengan symlink storage)
+        $tujuan = public_path('uploads/pemusnahan');
+
+        // Buat folder jika belum ada secara otomatis
+        if (!file_exists($tujuan)) {
+            mkdir($tujuan, 0755, true);
+        }
+
+        // Pindahkan file
+        $file->move($tujuan, $namaFile);
+
+        $pemusnahan = \App\Models\PemusnahanArsip::findOrFail($id);
+        $pemusnahan->file_pdf = $namaFile;
+        $pemusnahan->save();
+
+        return response()->json(['success' => true]);
+    }
+}
     
 }
