@@ -71,7 +71,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pemusnahan-arsip/hitung', [ArsipController::class, 'hitungDokumen'])->name('pemusnahan.hitung');
         Route::get('/pemusnahan-arsip/cetak/{id}', [ArsipController::class, 'cetakPemusnahan'])->name('pemusnahan.cetak');
         Route::get('/pemusnahan-arsip/detail/{id}', [App\Http\Controllers\ArsipController::class, 'getDetailPemusnahan'])->name('pemusnahan.detail');
-        Route::post('/pemusnahan-arsip/reject/{id}', [ArsipController::class, 'tolakPemusnahan'])->name('pemusnahan.reject');
+        Route::post('/pemusnahan-arsip/reject/{id}', [ArsipController::class, 'reject'])->name('pemusnahan.reject');
         
         // Route untuk TIKIM (Simpan Data & Upload Susulan)
         Route::post('/pemusnahan-arsip/simpan', [ArsipController::class, 'simpanPemusnahan'])->name('pemusnahan.store');

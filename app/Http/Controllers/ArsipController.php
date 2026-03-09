@@ -554,25 +554,20 @@ public function rakIndex() {
         $permohonan = Permohonan::whereIn('id', $ids)->get();
         return view('arsip.cetak_ba', compact('ba', 'permohonan'));
     }
-    public function tolakPemusnahan($id)
-    {
-        try {
-            // Cari data berita acara
-            $ba = PemusnahanArsip::findOrFail($id);
-            
-            // Update status secara eksplisit
-            $ba->status = 'Ditolak'; 
-            
-            // Simpan ke database
-            if ($ba->save()) {
-                return redirect()->back()->with('success', 'Pengajuan pemusnahan berhasil ditolak.');
-            }
-            
-            return redirect()->back()->with('error', 'Gagal menyimpan perubahan status.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Kesalahan Sistem: ' . $e->getMessage());
-        }
+    public function reject($id)
+{
+    try {
+        // Gunakan Eloquent Model agar lebih aman
+        $ba = \App\Models\PemusnahanArsip::findOrFail($id);
+        $ba->status = 'Ditolak'; // Sesuai dengan ENUM di phpMyAdmin
+        $ba->save();
+
+        return redirect()->back()->with('success', 'Berhasil! Status di database sudah jadi Ditolak.');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
     }
+}
+
     public function getDetailPemusnahan($id) {
         try {
             $ba = PemusnahanArsip::findOrFail($id);

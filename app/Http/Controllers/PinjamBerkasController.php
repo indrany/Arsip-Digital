@@ -39,6 +39,7 @@ class PinjamBerkasController extends Controller
         )
         ->orderBy('pinjam_berkas.created_at', 'desc')
         ->paginate(10);
+        $dataPinjam->appends($request->query());
 
     return view('scripts.pinjam_berkas', compact('dataPinjam'));
 }
