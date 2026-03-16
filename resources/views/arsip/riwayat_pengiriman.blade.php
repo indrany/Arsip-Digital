@@ -268,7 +268,6 @@
     function renderTableDetail() {
         let displayData = (filteredDetailData !== null) ? filteredDetailData : currentDetailData;
         
-        // Ambil Limit dari Dropdown
         const selectShow = document.getElementById('det_rows_per_page');
         if (selectShow) rowsPerPageDetail = parseInt(selectShow.value);
 
@@ -282,25 +281,41 @@
         let html = '';
         paginatedItems.forEach(item => {
             let s = (item.status_berkas || '').toUpperCase();
-            let sClass = s.includes('DITERIMA') ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning';
+            
+            // --- LOGIKA WARNA DINAMIS ---
+            let sClass = '';
+            let sText = s;
+
+            if (s.includes('DIMUSNAHKAN')) {
+                // MERAH TEBAL UNTUK DIMUSNAHKAN
+                sClass = 'text-danger fw-bold border border-danger px-2 rounded';
+                sText = 'DIMUSNAHKAN';
+            } else if (s.includes('DITERIMA')) {
+                // HIJAU UNTUK SELESAI
+                sClass = 'badge bg-success-subtle text-success border px-2';
+                sText = 'SELESAI';
+            } else {
+                // KUNING UNTUK PROSES
+                sClass = 'badge bg-warning-subtle text-warning border px-2';
+                sText = s;
+            }
+
             html += `<tr>
                 <td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td>
                 <td>${item.nama}</td>
                 <td class="text-center">${item.jenis_permohonan || '-'}</td>
                 <td class="text-center">${item.jenis_paspor || '-'}</td>
                 <td class="text-center">${item.tujuan_paspor || '-'}</td>
-                <td class="text-center"><span class="badge ${sClass} border px-2" style="font-size:9px;">${s}</span></td>
+                <td class="text-center"><span class="${sClass}" style="font-size:9px;">${sText}</span></td>
             </tr>`;
         });
         
         document.getElementById('det_list_berkas').innerHTML = html || '<tr><td colspan="6" class="text-center py-3">Data Tidak Ditemukan</td></tr>';
         
-        // Update Info Teks
         let from = totalItems > 0 ? start + 1 : 0;
         let to = Math.min(end, totalItems);
         document.getElementById('det_pagination_info').innerHTML = `SHOWING <b>${from} - ${to}</b> OF <b>${totalItems}</b> ENTRIES`;
         
-        // GAMBAR ULANG TOMBOL ANGKA
         renderJSNav('det_pagination_links', currentPageDetail, totalPages);
     }
     
