@@ -58,34 +58,48 @@ class ArsipController extends Controller
     }
 
     // 2. HALAMAN TAMBAH PENGIRIMAN (LOKET)
-    public function tambahPengiriman()
-    {
-        $user = Auth::user();
-        $query = DB::table('pengiriman_batch');
-        if (!in_array(strtoupper($user->role), ['ADMIN', 'TIKIM'])) {
-            $query->where('petugas_kirim', $user->name);
-        }
-        $riwayat = $query->orderBy('created_at', 'desc')->paginate(10);
-        return view('auth.Dashboard.pengiriman_berkas', [
-            'current_page' => 'pengiriman-berkas',
-            'riwayat' => $riwayat
-        ]);
+public function tambahPengiriman(Request $request)
+{
+    $user = Auth::user();
+    $query = DB::table('pengiriman_batch');
+    if (!in_array(strtoupper($user->role), ['ADMIN', 'TIKIM'])) {
+        $query->where('petugas_kirim', $user->name);
     }
+
+    // Ambil limit, paksa jadi Integer (Angka)
+    $perPage = (int) $request->input('per_page', 5);
+
+    $riwayat = $query->orderBy('created_at', 'desc')
+        ->paginate($perPage) 
+        ->appends(['per_page' => $perPage]);
+
+    return view('auth.Dashboard.pengiriman_berkas', [
+        'current_page' => 'pengiriman-berkas',
+        'riwayat' => $riwayat
+    ]);
+}
 
     // 3. RIWAYAT PENGIRIMAN
-    public function pengirimanBerkas()
-    {
-        // PASTIIN PAKAI paginate() atau simplePaginate(), JANGAN pakai get()
-        $riwayat = DB::table('pengiriman_batch')
-            ->orderByRaw("CASE WHEN status = 'Diajukan' THEN 0 ELSE 1 END")
-            ->orderBy('created_at', 'desc')
-            ->paginate(10); // <--- INI KUNCINYA, Maang!
-    
-        return view('arsip.riwayat_pengiriman', compact('riwayat'));
-    }
+    public function pengirimanBerkas(Request $request) // <--- PASTIKAN ADA Request $request
+{
+    // 1. Tangkap angka dari dropdown. Kalau kosong, default kasih 5.
+    $perPage = $request->get('per_page', 5); 
+
+    $riwayat = DB::table('pengiriman_batch')
+        ->orderByRaw("CASE WHEN status = 'Diajukan' THEN 0 ELSE 1 END")
+        ->orderBy('created_at', 'desc')
+        
+        // 2. PAKAI variabel $perPage biar otomatis motong datanya
+        ->paginate($perPage) 
+        
+        // 3. Tambahkan appends agar pilihan 10 ini tidak hilang pas pindah halaman
+        ->appends(['per_page' => $perPage]);
+
+    return view('arsip.riwayat_pengiriman', compact('riwayat'));
+}
 
     // 4. PENERIMAAN BERKAS (ARSIP) - UPDATE LOGIKA RAK
-    public function penerimaanBerkas()
+    public function penerimaanBerkas(Request $request)
     {
         $user = Auth::user();
         if (!$user || !in_array(strtoupper($user->role), ['ADMIN', 'TIKIM'])) {
@@ -97,7 +111,7 @@ class ArsipController extends Controller
             ->whereIn('status', ['Diajukan', 'DITERIMA OLEH ARSIP']) 
             ->orderByRaw("FIELD(status, 'Diajukan') DESC")
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate($request->get('per_page', 5))->appends(['per_page' => $request->get('per_page')]);
 
         // Cek ketersediaan rak untuk validasi tombol simpan
         $jumlahLoker = RakLoker::count();
@@ -111,16 +125,28 @@ class ArsipController extends Controller
         ]);
     }
 
-    public function listBerkas($no_pengirim)
-    {
-        try {
-            $batch = DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->first();
-            $data = Permohonan::where('no_pengirim', $no_pengirim)->get();
-            return response()->json(['success' => true, 'batch' => $batch, 'data' => $data]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+    public function listBerkas(Request $request, $no_pengirim)
+{
+    try {
+        $batch = DB::table('pengiriman_batch')->where('no_pengirim', $no_pengirim)->first();
+        
+        // JANGAN PAKAI PAGINATE DISINI
+        // Kita pakai ->get() supaya semua 11 data terkirim sekaligus
+        $data = Permohonan::where('no_pengirim', $no_pengirim)->get();
+
+        return response()->json([
+            'success' => true, 
+            'batch'   => $batch, 
+            'data'    => $data, // Kirim array utuh
+            'pagination' => [
+                'total' => $data->count(), // Hitung total dari koleksi
+                // Sisanya biarkan 0 atau hapus saja karena JS akan menghitung sendiri
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
+}
 
     public function cetakPengantar($no_pengirim)
     {
@@ -198,23 +224,20 @@ class ArsipController extends Controller
     }
     }
 
-    public function pencarianBerkas() {
-        // JOIN ke database paspor dengan paksaan COLLATE agar tidak error Illegal Mix
+    public function pencarianBerkas(Request $request) {
+        // 1. Ambil angka dropdown, paksa jadi Integer
+        $perPage = (int) $request->input('per_page', 5);
+    
         $results = DB::table('permohonan')
-        ->leftJoin('datapaspor.datapaspor', function($join) {
-            $join->on(
-                'permohonan.no_permohonan', 
-                '=', 
-                // KUNCINYA DISINI: Paksa datapaspor ikuti collation permohonan
-                DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci')
-            );
-        })
-        ->select(
-            'permohonan.*', 
-            'datapaspor.alurterakhir as alur_paspor_update'
-        )
-        ->orderBy('permohonan.created_at', 'desc')
-        ->paginate(10);
+            ->leftJoin('datapaspor.datapaspor', function($join) {
+                $join->on('permohonan.no_permohonan', '=', DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci'));
+            })
+            ->select('permohonan.*', 'datapaspor.alurterakhir as alur_paspor_update')
+            ->orderBy('permohonan.created_at', 'desc')
+            
+            // 2. Gunakan variabel dinamis
+            ->paginate($perPage)
+            ->appends(['per_page' => $perPage]);
     
         foreach ($results as $item) {
             if ($item->status_berkas === 'DIMUSNAHKAN') {
@@ -254,7 +277,7 @@ class ArsipController extends Controller
                 'permohonan.*', 
                 'datapaspor.alurterakhir as alur_paspor_update'
             )
-            ->paginate(10);
+            ->paginate($request->get('per_page', 5))->appends(['per_page' => $request->get('per_page')]);
 
         // Biar keyword search tidak hilang pas pindah page
         $results->appends(['nomor_permohonan' => $q]);
@@ -398,10 +421,14 @@ public function store(Request $request) {
     }
 }
 
-public function rakIndex() {
+public function rakIndex(Request $request) {
+    // Ambil angka dropdown
+    $perPage = (int) $request->input('per_page', 5);
+
     $rak = RakLoker::orderBy('no_lemari', 'asc')
-                   ->orderBy('kode_rak', 'asc')
-                   ->paginate(10);
+        ->orderBy('kode_rak', 'asc')
+        ->paginate($perPage) 
+        ->appends(['per_page' => $perPage]);
                    
     return view('arsip.rak_loker', [
         'current_page' => 'rak-loker', 
@@ -441,7 +468,8 @@ public function rakIndex() {
     if ($request->filled('status')) {
         $query->where('status', $request->status);
     }
-    $riwayat = $query->orderBy('created_at', 'desc')->paginate(2); 
+    $riwayat = $query->orderBy('created_at', 'desc')
+    ->paginate($request->get('per_page', 5))->appends(['per_page' => $request->get('per_page')]); 
         
     return view('arsip.pemusnahan', compact('riwayat'));
 }

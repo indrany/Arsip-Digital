@@ -7,28 +7,35 @@
 @section('content')
 
 <style>
+    /* 1. Pengaturan Tabel */
     #table-antrean-utama th, #table-antrean-utama td { white-space: nowrap; padding: 12px 8px; }
     .col-no-pengirim { width: 20%; text-align: left; padding-left: 25px !important; }
-    .col-jumlah { width: 15%; text-align: center; }
-    .col-unit { width: 15%; text-align: center; }
-    .col-tanggal { width: 15%; text-align: center; }
-    .col-status { width: 15%; text-align: center; }
-    .col-aksi { width: 20%; text-align: center; }
+    .col-jumlah, .col-unit, .col-tanggal, .col-status, .col-aksi { width: 15%; text-align: center; }
+
+    /* 2. Warna Badge */
     .bg-danger-subtle { background-color: #fee2e2 !important; color: #dc2626 !important; border: 1px solid #fecaca !important; }
     .bg-success-subtle { background-color: #dcfce7 !important; color: #16a34a !important; border: 1px solid #bbf7d0 !important; }
     .bg-warning-subtle { background-color: #fef9c3 !important; color: #a16207 !important; border: 1px solid #fef08a !important; }
-    #modalDetailBerkas .modal-dialog { max-width: 420px; margin: 1.75rem auto; }
-    #modalDetailBerkas .modal-content { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    #form-detail-pop .row { margin-bottom: 7px !important; }
-    #form-detail-pop label { font-size: 12.5px; font-weight: 600; color: #6c757d; display: flex; align-items: center; }
-    #form-detail-pop .form-control-sm { font-size: 13px; height: 36px; border-radius: 8px; background-color: #fff !important; border: 1px solid #ced4da; color: #333; }
-    #modalDetailBerkas .modal-footer { padding: 0.5rem 1.5rem 1.5rem 1.5rem; justify-content: flex-end; border: none; }
-    #modalDetailBerkas .btn-danger { background-color: #ff7675; border: none; padding: 8px 25px; border-radius: 8px; font-weight: bold; font-size: 14px; }
-    #tbody-perlu-scan, #tbody-hasil-scan { display: table; width: 100%; table-layout: fixed !important; }
-    #tbody-perlu-scan tr td, #tbody-hasil-scan tr td { vertical-align: top !important; padding-top: 12px !important; padding-bottom: 12px !important; }
-    .bg-primary-subtle { background-color: #e0e7ff !important; }
-    .text-primary { color: #3b82f6 !important; }
     .text-scanned { color: #198754; font-weight: 700; font-size: 11px; letter-spacing: 0.5px; }
+
+    /* 3. Gaya Paginasi Modal */
+    .app-pagination-list { 
+        display: flex !important; flex-direction: row !important; 
+        justify-content: center !important; list-style: none !important; 
+        padding: 0 !important; margin: 0 !important; gap: 6px !important; 
+    }
+    .app-pagination-list .page-item span {
+        display: flex; align-items: center; justify-content: center; 
+        width: 34px; height: 34px; cursor: pointer !important; 
+        background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
+        color: #64748b; font-size: 13px; font-weight: 700; transition: all 0.2s;
+    }
+    .app-pagination-list .page-item.active span { background-color: #3b82f6; color: #ffffff; border-color: #2563eb; }
+    .app-pagination-list .page-item.disabled span { background-color: #f8fafc; color: #cbd5e1; cursor: not-allowed !important; }
+    
+    /* 4. Modal Styles */
+    #modalDetailBerkas .modal-dialog { max-width: 420px; }
+    #modalDetailBerkas .modal-content { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 </style>
 
 {{-- INPUT SCAN BARCODE --}}
@@ -36,6 +43,7 @@
     <input type="text" id="input-barcode-permohonan" autofocus autocomplete="off">
 </div>
 
+{{-- 1. SECTION DAFTAR ANTREAN --}}
 <div id="section-riwayat">
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
@@ -92,15 +100,11 @@
                     </tbody>
                 </table>
             </div>
-            {{-- Pagination Utama (Jika ada) --}}
-            @if(method_exists($antrean_batches, 'links'))
-                @include('components.pagination-footer', ['data' => $antrean_batches])
-            @endif
         </div>
     </div>
 </div>
 
-{{-- SECTION PROSES SCAN --}}
+{{-- 2. SECTION PROSES SCAN (HIDDEN BY DEFAULT) --}}
 <div id="section-proses-scan" style="display: none;">
     <div class="mb-4 text-start">
         <button class="btn btn-sm btn-outline-secondary btn-back-riwayat shadow-sm px-3" style="border-radius: 20px;"><i class="fas fa-arrow-left me-2"></i> Kembali ke Antrean</button>
@@ -108,10 +112,7 @@
     <div class="row g-4 text-start">
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm p-4" style="min-height: 500px; border-radius: 15px;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold m-0 text-muted small uppercase">1. List Kiriman (Belum Verifikasi)</h6>
-                    <span id="pending-count" class="badge bg-light text-dark border" style="font-size: 10px;">0 BERKAS BELUM SCAN</span>
-                </div>
+                <h6 class="fw-bold mb-3 text-muted small uppercase">1. List Kiriman (Belum Verifikasi)</h6>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle"><tbody id="tbody-perlu-scan" style="font-size: 13px;"></tbody></table>
                 </div>
@@ -119,23 +120,19 @@
         </div>
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm p-4" style="min-height: 500px; border-radius: 15px;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold m-0 text-muted small uppercase">2. Hasil Verifikasi (Selesai Scan)</h6>
-                    <span id="scan-count-live" class="badge bg-success" style="font-size: 10px;">0 BERKAS TERVERIFIKASI</span>
-                </div>
+                <h6 class="fw-bold mb-3 text-muted small uppercase">2. Hasil Verifikasi (Selesai Scan)</h6>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle"><tbody id="tbody-hasil-scan" style="font-size: 13px;"></tbody></table>
                 </div>
             </div>
         </div>
     </div>
-    <div class="text-center mt-5 d-flex justify-content-center gap-3">
-        <button id="btn-simpan-draft" class="btn btn-outline-primary px-5 fw-bold shadow-sm py-3" style="border-radius: 50px;">Simpan Draft</button>
-        <button id="btn-simpan-batch" class="btn btn-secondary px-5 fw-bold shadow-sm py-3" style="border-radius: 50px;" disabled>Selesaikan & Terima Berkas</button>
+    <div class="text-center mt-5">
+        <button id="btn-simpan-batch" class="btn btn-success px-5 fw-bold shadow-sm py-3" style="border-radius: 50px;">Selesaikan & Terima Berkas</button>
     </div>
 </div>
 
-{{-- MODAL DETAIL BATCH --}}
+{{-- 3. MODAL DETAIL BATCH --}}
 <div class="modal fade" id="modalDetailBatch" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content shadow border-0" style="border-radius: 12px;">
@@ -147,56 +144,86 @@
                 <div class="row bg-light p-3 rounded mb-4 g-3 border mx-0">
                     <div class="col-md-4">
                         <label class="d-block text-muted small fw-bold">ID Batch (No Pengirim)</label>
-                        <span id="det_no_pengirim" class="fw-bold text-primary" style="font-size: 16px;">-</span>
+                        <span id="det_no_pengirim" class="fw-bold text-primary">-</span>
                     </div>
                     <div class="col-md-4">
                         <label class="d-block text-muted small fw-bold">Tanggal Kirim</label>
-                        <span id="det_tgl_pengirim" class="fw-bold" style="font-size: 16px;">-</span>
+                        <span id="det_tgl_pengirim" class="fw-bold">-</span>
                     </div>
                     <div class="col-md-4">
                         <label class="d-block text-muted small fw-bold">Status Batch</label>
-                        <span id="det_status" class="badge">-</span>
-                    </div>
-                </div>
-                <div class="row mb-3 align-items-center">
-                    <div class="col-md-7"><h6 class="fw-bold m-0 d-flex align-items-center"><i class="fas fa-list-ul me-2 text-primary"></i>Daftar Berkas Terlampir</h6></div>
-                    <div class="col-md-5">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" id="searchDetailBerkas" class="form-control border-start-0 shadow-none" placeholder="Cari No. Permohonan atau Nama...">
+                        <div id="det_status_wrapper">
+                             <span id="det_status" class="badge bg-warning text-dark">-</span>
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered align-middle mb-0">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="small fw-bold text-muted mb-0">SHOW</label>
+                        <select id="det_rows_per_page" class="form-select form-select-sm" 
+                                onchange="currentPageDetail = 1; renderDetailPagination();" style="width: 70px;">
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                        </select>
+                    </div>
+                    <div style="width: 250px;">
+                        <input type="text" id="searchDetailBerkas" class="form-control form-control-sm" placeholder="Cari nama..." onkeyup="searchDetailBerkasFungsi()">
+                    </div>
+                </div>
+
+                <div class="table-responsive border rounded">
+                    <table class="table table-sm table-hover align-middle mb-0">
                         <thead class="bg-dark text-white text-center" style="font-size: 12px;">
                             <tr><th>No Permohonan</th><th>Nama Pemohon</th><th>Jenis Permohonan</th><th>Tujuan</th><th>Lokasi Rak</th><th>Status Berkas</th></tr>
                         </thead>
                         <tbody id="det_list_berkas_riwayat" style="font-size: 12px;"></tbody>
                     </table>
                 </div>
-                {{-- KOMPONEN PAGINATION JS --}}
-                @include('components.pagination-footer')
-            </div>
-            <div class="modal-footer border-0 p-3"><button type="button" class="btn btn-secondary px-4 fw-bold shadow-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button></div>
-        </div>
-    </div>
-</div>
 
-{{-- MODAL DETAIL PERMOHONAN --}}
+                <div class="mt-4 border-top pt-3">
+                    <div class="d-flex flex-column align-items-center gap-2">
+                        <div id="det_pagination_links"></div>
+                        <div id="det_pagination_info" class="small text-muted"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-secondary px-4 fw-bold shadow-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button>
+            </div>
+        </div> 
+    </div> 
+</div> 
+
+{{-- 4. MODAL DETAIL PERMOHONAN --}}
 <div class="modal fade" id="modalDetailBerkas" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg">
-            <div class="modal-header border-0 d-flex justify-content-between align-items-center px-4 pt-4 pb-2"><h5 class="modal-title">Detail Permohonan</h5><button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 12px;"></button></div>
+            <div class="modal-header border-0 px-4 pt-4 pb-2">
+                <h5 class="modal-title">Detail Permohonan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body px-4">
                 <form id="form-detail-pop">
                     @php $fields = ['nomor'=>'Nomor Permohonan', 'tgl-mohon'=>'Tgl Permohonan', 'tgl-terbit'=>'Tgl Terbit', 'nama'=>'Nama', 'tempat-lahir'=>'Tempat Lahir', 'tgl-lahir'=>'Tgl Lahir', 'jk'=>'Jenis Kelamin', 'telp'=>'No Telpon', 'jenis-mohon'=>'Jenis Permohonan', 'jenis-paspor'=>'Jenis Paspor', 'tujuan'=>'Tujuan Paspor', 'no-paspor'=>'No Paspor', 'alur'=>'Alur Terakhir', 'lokasi'=>'Lokasi Arsip']; @endphp
                     @foreach($fields as $id => $label)
-                    <div class="row align-items-center"><label class="col-5 fw-bold text-muted" style="font-size: 11.5px;">{{ $label }}</label><div class="col-7">@if($id === 'nama')<div id="det-nama" class="form-control form-control-sm bg-white border text-dark" style="height: auto; min-height: 36px; word-break: break-word; white-space: normal; line-height: 1.4; display: block; padding: 6px 10px;">-</div>@else<input type="text" id="det-{{ $id }}" readonly class="form-control form-control-sm bg-white border text-dark" style="border-radius: 8px; height: 38px; font-size: 13px;">@endif</div></div>
+                    <div class="row align-items-center">
+                        <label class="col-5 fw-bold text-muted" style="font-size: 11.5px;">{{ $label }}</label>
+                        <div class="col-7">
+                            @if($id === 'nama')
+                                <div id="det-nama" class="form-control form-control-sm bg-white border text-dark" style="height: auto; min-height: 36px; padding: 6px 10px;">-</div>
+                            @else
+                                <input type="text" id="det-{{ $id }}" readonly class="form-control form-control-sm bg-white border text-dark" style="border-radius: 8px; height: 38px;">
+                            @endif
+                        </div>
+                    </div>
                     @endforeach
                 </form>
             </div>
-            <div class="modal-footer border-0"><button type="button" class="btn btn-danger shadow-sm" data-bs-dismiss="modal">Tutup</button></div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-danger shadow-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
         </div>
     </div>
 </div>
@@ -206,11 +233,13 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// VARIABEL GLOBAL UNTUK PAGINATION MODAL
+// 1. VARIABEL GLOBAL
 let allDetailData = []; 
 let currentPageDetail = 1;
-const rowsPerPageDetail = 10;
+const rowsPerPageDetail = 5; 
+let currentBatchID = '';
 
+// 2. FUNGSI DETAIL INDIVIDU (POP-UP BIODATA)
 window.fetchAndShowDetail = function(nomor) {
     $.get(`/penerimaan-berkas/get-detail/${nomor}`, function(res) {
         if (res.success) {
@@ -227,39 +256,15 @@ window.fetchAndShowDetail = function(nomor) {
             $('#det-jenis-paspor').val(item.jenis_paspor || '-'); 
             $('#det-tujuan').val(item.tujuan_paspor || '-'); 
             $('#det-no-paspor').val(item.no_paspor || '-'); 
-            $('#det-alur').val(item.status_berkas || '-'); 
+            $('#det-alur').val(item.status_berkas.includes('DITERIMA') ? 'SELESAI' : (item.status_berkas || '-'));; 
             $('#det-lokasi').val(item.lokasi_arsip || '-');
             new bootstrap.Modal(document.getElementById('modalDetailBerkas')).show();
         }
     });
 };
-
-function lihatDetailBatch(noPengirim) {
-    document.getElementById('det_list_berkas_riwayat').innerHTML = '<tr><td colspan="6" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Mengambil data...</td></tr>';
-    fetch(`/arsip/list-berkas/${noPengirim}`).then(response => response.json()).then(res => {
-        if(res.success) {
-            allDetailData = res.data;
-            currentPageDetail = 1;
-            
-            document.getElementById('det_no_pengirim').innerText = res.batch.no_pengirim;
-            document.getElementById('det_tgl_pengirim').innerText = res.batch.tgl_pengirim;
-            
-            const elStatusBatch = document.getElementById('det_status');
-            const statusBatchText = res.batch.status.toUpperCase().trim();
-            elStatusBatch.innerText = statusBatchText;
-            elStatusBatch.className = statusBatchText.includes('DITERIMA') ? 'badge bg-success text-white' : 'badge bg-warning text-dark';
-            
-            renderDetailPagination();
-            new bootstrap.Modal(document.getElementById('modalDetailBatch')).show();
-        }
-    });
-}
-
-// FUNGSI RENDER TABEL DETAIL DENGAN PAGINATION JS (VERSI FIX)
+// 3. FUNGSI RENDER TABEL & PAGINASI (MODAL RIWAYAT BATCH)
 function renderDetailPagination() {
-    let searchValue = document.getElementById('searchDetailBerkas').value.toLowerCase();
-    
-    // 1. Filter Berdasarkan Search
+    let searchValue = $('#searchDetailBerkas').val().toLowerCase();
     let filteredData = allDetailData.filter(item => 
         (item.no_permohonan && item.no_permohonan.toLowerCase().includes(searchValue)) || 
         (item.nama && item.nama.toLowerCase().includes(searchValue))
@@ -267,22 +272,21 @@ function renderDetailPagination() {
 
     let total = filteredData.length;
     let totalPages = Math.ceil(total / rowsPerPageDetail);
-    
-    // 2. LOGIKA SLICING (INI YANG TADI KURANG, MAANG!)
     let startIdx = (currentPageDetail - 1) * rowsPerPageDetail;
-    let endIdx = Math.min(startIdx + rowsPerPageDetail, total);
-    let paginatedData = filteredData.slice(startIdx, endIdx); // Ambil data per halaman
+    let paginatedData = filteredData.slice(startIdx, startIdx + rowsPerPageDetail);
 
     let html = '';
     paginatedData.forEach(item => {
-        let statusHtml = ''; 
-        let statusInput = item.status_berkas ? item.status_berkas.trim().toUpperCase() : '';
-        if (statusInput === 'DIMUSNAHKAN') { 
-            statusHtml = `<span class="badge bg-danger-subtle text-danger px-2" style="font-size:9px;">DIMUSNAHKAN</span>`; 
-        } else if (statusInput.includes('DITERIMA')) { 
-            statusHtml = `<span class="badge bg-success-subtle text-success px-2" style="font-size:9px;">DITERIMA OLEH ARSIP</span>`; 
-        } else { 
-            statusHtml = `<span class="badge bg-warning-subtle text-warning px-2" style="font-size:9px;">${statusInput}</span>`; 
+        let statusAsli = (item.status_berkas || '').toUpperCase();
+        let statusHtml = '';
+
+        // LOGIKA PAKSA "SELESAI" DENGAN CENTANG HIJAU
+        if (statusAsli.includes('DITERIMA')) {
+            statusHtml = `<span class="badge bg-success-subtle text-success border px-2" style="font-size:9px; border-radius:10px;">
+                            <i class="fas fa-check-circle me-1"></i> SELESAI
+                          </span>`;
+        } else {
+            statusHtml = `<span class="badge bg-warning-subtle text-warning border px-2" style="font-size:9px;">${statusAsli}</span>`;
         }
         
         html += `<tr>
@@ -295,113 +299,131 @@ function renderDetailPagination() {
         </tr>`;
     });
 
-    document.getElementById('det_list_berkas_riwayat').innerHTML = html || '<tr><td colspan="6" class="text-center py-4 text-muted">Data tidak ditemukan</td></tr>';
+    $('#det_list_berkas_riwayat').html(html || '<tr><td colspan="6" class="text-center py-4">Data tidak ditemukan</td></tr>');
+    let from = total > 0 ? startIdx + 1 : 0;
+    renderJSNav('det_pagination_links', currentPageDetail, totalPages);
+    $('#det_pagination_info').html(`SHOWING <b>${from} - ${Math.min(startIdx + rowsPerPageDetail, total)}</b> OF <b>${total}</b> ENTRIES`);
+}
 
-    // 3. Kalkulasi Info Untuk Pagination Footer (Manusiawi dimulai dari 1)
-    let startInfo = total > 0 ? startIdx + 1 : 0;
-    
-    // 4. PANGGIL FUNGSI DARI KOMPONEN
-    if(typeof renderJSNav === "function") {
-        renderJSNav(
-            'det_pagination_links', 
-            currentPageDetail, 
-            totalPages, 
-            'det_pagination_info', 
-            startInfo, 
-            endIdx, 
-            total
-        );
+function renderJSNav(containerId, currentPage, totalPages) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    let displayPages = totalPages < 1 ? 1 : totalPages;
+    let html = '<ul class="app-pagination-list">';
+    html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><span onclick="${currentPage > 1 ? `changeDetailPage(${currentPage - 1})` : ''}"><i class="fas fa-chevron-left"></i></span></li>`;
+    for (let i = 1; i <= displayPages; i++) {
+        html += `<li class="page-item ${i === currentPage ? 'active' : ''}"><span onclick="changeDetailPage(${i})">${i}</span></li>`;
     }
+    html += `<li class="page-item ${currentPage === displayPages || displayPages === 1 ? 'disabled' : ''}"><span onclick="${currentPage < displayPages ? `changeDetailPage(${currentPage + 1})` : ''}"><i class="fas fa-chevron-right"></i></span></li>`;
+    html += '</ul>';
+    container.innerHTML = html;
 }
 
-// Fungsi Pindah Halaman
-function changeDetailPage(page) {
-    currentPageDetail = page;
-    renderDetailPagination();
+function changeDetailPage(page) { currentPageDetail = page; renderDetailPagination(); }
+function searchDetailBerkasFungsi() { currentPageDetail = 1; renderDetailPagination(); }
+
+// 4. FUNGSI DETAIL BATCH (DARI TABEL UTAMA)
+function lihatDetailBatch(noPengirim) {
+    $('#det_list_berkas_riwayat').html('<tr><td colspan="6" class="text-center py-4">Loading...</td></tr>');
+    $.get(`/arsip/list-berkas/${noPengirim}`, function(res) {
+        if(res.success) {
+            allDetailData = res.data; currentPageDetail = 1;
+            $('#det_no_pengirim').text(res.batch.no_pengirim);
+            $('#det_tgl_pengirim').text(res.batch.tgl_pengirim);
+            const txt = res.batch.status.toUpperCase();
+            $('#det_status').text(txt).attr('class', `badge ${txt.includes('DITERIMA') ? 'bg-success' : 'bg-warning text-dark'}`);
+            renderDetailPagination();
+            $('#modalDetailBatch').modal('show');
+        }
+    });
 }
 
+// 5. LOGIKA SCAN & SIMPAN BATCH
 $(document).ready(function() {
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
     const inputBarcode = $('#input-barcode-permohonan');
-    let currentBatchID = '';
-
     inputBarcode.focus();
-    
-    $(document).on('click', function(e) {
-        if ($(e.target).closest('#select-loker-bulk, .modal-content, input, select').length) return; 
-        if (!$('.modal').is(':visible')) inputBarcode.focus();
-    });
 
-    $('.modal').on('hidden.bs.modal', function () {
-        setTimeout(() => inputBarcode.focus(), 300);
-    });
-
-    // SEARCH DETAIL DALAM MODAL
-    $("#searchDetailBerkas").on("keyup", function() {
-        currentPageDetail = 1;
-        renderDetailPagination();
-    });
-
-    $('.btn-proses-batch').on('click', function() {
-        currentBatchID = $(this).data('id');
-        $('#tbody-hasil-scan, #tbody-perlu-scan').empty();
-        $.get(`/arsip/list-berkas/${currentBatchID}`, function(res) {
-            if(res.success) {
-                res.data.forEach(item => {
-                    let isDone = (item.status_berkas === 'DITERIMA' || item.status_berkas.includes('DITERIMA'));
-                    let checkIcon = isDone ? '<i class="fas fa-check-circle text-success me-2"></i>' : '';
-                    let rowHtml = `<tr id="row-${item.no_permohonan}" class="align-middle border-bottom ${isDone ? 'table-success fw-bold' : ''}"><td style="width: 35%;" class="py-3 ps-2 text-start"><div class="d-flex align-items-center icon-container">${checkIcon}<span>${item.no_permohonan}</span></div></td><td style="width: 45%;" class="py-3 text-start"><div style="word-break: break-word; line-height: 1.4;">${item.nama}</div></td><td style="width: 20%;" class="py-3 text-end pe-2"><button type="button" class="btn btn-primary btn-sm py-0" onclick="window.fetchAndShowDetail('${item.no_permohonan}')" style="font-size: 10px; height: 22px; width: 50px;">Detail</button></td></tr>`;
-                    $('#tbody-perlu-scan').append(rowHtml); if(isDone) $('#tbody-hasil-scan').prepend(rowHtml);
-                });
-                updateCounters(); $('#section-riwayat').hide(); $('#section-proses-scan').fadeIn(); setTimeout(() => inputBarcode.focus(), 500);
-            }
-        });
-    });
-
+    // UPDATE COUNTER & BUKA BUTTON SIMPAN
     function updateCounters() {
         let total = $('#tbody-perlu-scan tr').length;
         let done = $('#tbody-perlu-scan tr.table-success').length;
         $('#pending-count').text((total - done) + ' BERKAS BELUM SCAN');
         $('#scan-count-live').text(done + ' BERKAS TERVERIFIKASI');
-        if (total > 0 && total === done) { $('#btn-simpan-batch').prop('disabled', false).removeClass('btn-secondary').addClass('btn-success'); } 
-        else { $('#btn-simpan-batch').prop('disabled', true).addClass('btn-secondary').removeClass('btn-success'); }
+        
+        // JIKA SEMUA SUDAH DI-SCAN, BUTTON AKTIF
+        if (total > 0 && total === done) {
+            $('#btn-simpan-batch').prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
+        } else {
+            $('#btn-simpan-batch').prop('disabled', true).addClass('btn-secondary').removeClass('btn-success');
+        }
     }
 
+    // MULAI TERIMA (TOMBOL BIRU DI TABEL UTAMA)
+    $(document).on('click', '.btn-proses-batch', function() {
+        currentBatchID = $(this).data('id');
+        $('#tbody-hasil-scan, #tbody-perlu-scan').empty();
+        $.get(`/arsip/list-berkas/${currentBatchID}`, function(res) {
+            if(res.success) {
+                res.data.forEach(item => {
+                    let isDone = (item.status_berkas || '').toUpperCase().includes('DITERIMA');
+                    let checkIcon = isDone ? '<i class="fas fa-check-circle text-success me-2"></i>' : '';
+                    let rowHtml = `<tr id="row-${item.no_permohonan}" class="align-middle border-bottom ${isDone ? 'table-success fw-bold' : ''}">
+                        <td style="width: 35%;" class="py-3 ps-2 text-start"><div class="d-flex align-items-center icon-container">${checkIcon}<span>${item.no_permohonan}</span></div></td>
+                        <td style="width: 45%;" class="text-start"><div>${item.nama}</div></td>
+                        <td style="width: 20%;" class="text-end pe-2"><button type="button" class="btn btn-primary btn-sm py-0" onclick="window.fetchAndShowDetail('${item.no_permohonan}')" style="font-size: 10px;">Detail</button></td>
+                    </tr>`;
+                    $('#tbody-perlu-scan').append(rowHtml); 
+                    if(isDone) $('#tbody-hasil-scan').prepend(rowHtml);
+                });
+                updateCounters();
+                $('#section-riwayat').hide(); $('#section-proses-scan').fadeIn();
+                setTimeout(() => inputBarcode.focus(), 500);
+            }
+        });
+    });
+
+    // LOGIKA SCAN (ENTER)
     inputBarcode.on('keypress', function(e) {
         if (e.which === 13) {
-            e.preventDefault(); const barcode = $(this).val().trim(); $(this).val('');
-            if (!barcode) return;
-            const rowTarget = $(`#row-${barcode}`);
-            if (rowTarget.length === 0) { Swal.fire({ icon: 'error', title: 'Gagal', text: `Nomor ${barcode} tidak ada di batch ini!`, timer: 2000, showConfirmButton: false }); return; }
+            e.preventDefault();
+            let barcode = $(this).val().trim(); $(this).val('');
+            let rowTarget = $(`#row-${barcode}`);
+            
+            if (rowTarget.length === 0) {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Nomor tidak ada di batch ini!', timer: 1500, showConfirmButton: false });
+                return;
+            }
             if (rowTarget.hasClass('table-success')) return;
+
             $.post("{{ route('penerimaan-berkas.scan-permohonan') }}", { nomor_permohonan: barcode }, function(res) {
                 if (res.success) { 
                     rowTarget.addClass('table-success fw-bold'); 
-                    if (rowTarget.find('.fa-check-circle').length === 0) { rowTarget.find('.icon-container').prepend('<i class="fas fa-check-circle text-success me-2"></i>'); } 
-                    const rowClone = rowTarget.clone(); 
-                    $('#tbody-hasil-scan').prepend(rowClone); 
-                    updateCounters(); 
+                    if (rowTarget.find('.fa-check-circle').length === 0) rowTarget.find('.icon-container').prepend('<i class="fas fa-check-circle text-success me-2"></i>');
+                    $('#tbody-hasil-scan').prepend(rowTarget.clone()); 
+                    updateCounters();
                 }
-            }).fail(err => { Swal.fire({ icon: 'error', title: 'Gagal Scan', text: err.responseJSON.message }); });
+            });
         }
     });
 
-    $(document).on('click', '#btn-simpan-batch', function() {
+    // TOMBOL SELESAIKAN & TERIMA (VALIDASI LOKER)
+    $('#btn-simpan-batch').on('click', function() {
         const adaLoker = {{ $adaLoker ? 'true' : 'false' }};
         if (!adaLoker) {
             Swal.fire({
                 icon: 'warning',
-                title: 'Master Rak Belum Terisi',
-                text: 'Data rak loker pada sistem arsip masih kosong.',
+                title: 'Master Rak Belum Terisi / Penuh',
+                text: 'Silahkan tambah atau bersihkan kapasitas rak arsip terlebih dahulu.',
                 confirmButtonText: 'Buka Master Rak',
                 showCancelButton: true
-            }).then((result) => { if (result.isConfirmed) window.location.href = "{{ route('rak-loker.index') }}"; });
+            }).then((r) => { if (r.isConfirmed) window.location.href = "{{ route('rak-loker.index') }}"; });
             return;
         }
 
         Swal.fire({
             title: 'Konfirmasi Simpan?',
-            text: "Berkas akan didaftarkan ke rak loker secara otomatis.",
+            text: "Berkas akan otomatis didaftarkan ke rak loker arsip.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Ya, Selesaikan',
@@ -409,25 +431,13 @@ $(document).ready(function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 Swal.showLoading();
-                $.post("{{ route('penerimaan-berkas.konfirmasi-bulk') }}", { 
-                    _token: "{{ csrf_token() }}",
-                    no_pengirim: currentBatchID 
-                }, function(res) {
-                    if(res.success) Swal.fire('Berhasil!', 'Berkas telah diterima.', 'success').then(() => window.location.reload());
-                }).fail(err => Swal.fire('Error', 'Gagal memproses data', 'error'));
+                $.post("{{ route('penerimaan-berkas.konfirmasi-bulk') }}", { no_pengirim: currentBatchID }, function(res) {
+                    if(res.success) Swal.fire('Berhasil!', 'Berkas masuk ke arsip.', 'success').then(() => window.location.reload());
+                });
             }
         });
     });
 
-    function applyFilters() {
-        let s = $("#search-antrean").val().toLowerCase(), t = $("#filter-tanggal-antrean").val(), st = $("#filter-status-antrean").val();
-        $("#table-antrean-utama tbody tr").each(function() { 
-            let rowText = $(this).text().toLowerCase(), rowDate = $(this).data('tanggal'), rowStatus = $(this).data('status'); 
-            $(this).toggle(rowText.indexOf(s) > -1 && (t === "" || rowDate === t) && (st === "" || rowStatus === st)); 
-        });
-    }
-    $("#search-antrean").on("keyup", applyFilters); 
-    $("#filter-tanggal-antrean, #filter-status-antrean").on("change", applyFilters);
     $('.btn-back-riwayat, #btn-simpan-draft').on('click', () => window.location.reload());
 });
 </script>

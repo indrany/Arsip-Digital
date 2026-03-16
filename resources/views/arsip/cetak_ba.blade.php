@@ -185,37 +185,23 @@
         </div>
 
         <ul class="batch-info-list">
-            <li><span class="label-list">Periode Dokumen</span>: <b>{{ \Carbon\Carbon::parse($ba->filter_mulai)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($ba->filter_selesai)->format('d/m/Y') }}</b></li>
-            <li><span class="label-list">Jumlah Dokumen</span>: <b>{{ $ba->jumlah_dokumen }} Berkas</b></li>
-            <li><span class="label-list">Metode Pemusnahan</span>: <b>Pencacahan / Pembakaran</b></li>
+            <li>
+                <span class="label-list">Periode Dokumen</span>: 
+                <b>{{ \Carbon\Carbon::parse($ba->filter_mulai)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($ba->filter_selesai)->format('d/m/Y') }}</b>
+            </li>
+            <li>
+                <span class="label-list">Jumlah Dokumen</span>: 
+                <b>{{ $ba->jumlah_dokumen }} Berkas</b>
+            </li>
         </ul>
 
-        <p style="font-weight: bold; margin-bottom: 10px;">Daftar Rincian Berkas:</p>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th width="40">No</th>
-                    <th>Nomor Permohonan</th>
-                    <th>Nama Pemohon</th>
-                    <th>Jenis Berkas</th>
-                    <th>Tanggal</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($permohonan as $index => $p)
-                <tr>
-                    <td style="text-align: center;">{{ $index + 1 }}</td>
-                    <td>{{ $p->no_permohonan }}</td>
-                    <td>{{ $p->nama }}</td>
-                    <td>{{ $p->jenis_permohonan }}</td>
-                    <td style="text-align: center;">{{ \Carbon\Carbon::parse($p->tanggal_permohonan)->format('d/m/Y') }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <p style="font-size: 12pt; margin-top: 20px; text-indent: 40px;">Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.</p>
-
+        <div style="font-size: 12pt; text-align: justify; margin-top: 20px;">
+            Pemusnahan dilaksanakan berdasarkan ketentuan peraturan perundang-undangan yang berlaku dengan cara yang menjamin kerahasiaan isi dokumen arsip.
+        </div>
+        
+        <p style="font-size: 12pt; margin-top: 20px; text-indent: 45px;">
+            Demikian Berita Acara ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.
+        </p>
         <table class="table-ttd">
             <tr>
                 <td class="td-ttd"></td>
