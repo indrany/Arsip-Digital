@@ -21,7 +21,8 @@
             <img src="{{ asset('images/v1_150.png') }}" alt="Logo Kementerian Imigrasi dan Pemasyarakatan" class="system-logo">
 
             <h1 class="system-title">
-                SISTEM ARSIP IMIGRASI <br> TANJUNG PERAK
+                SISTEM ARSIP DIGITAL <br>
+                <span class="sub-title">KANTOR IMIGRASI KELAS I TPI TANJUNG PERAK</span>
             </h1>
         </div>
 
