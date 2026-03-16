@@ -20,7 +20,15 @@
 
     /* Badge & Button Styling */
     .badge { padding: 6px 12px; font-weight: 600; border-radius: 8px; }
-    .btn-action { border-radius: 8px; width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .btn-action { 
+        width: 32px !important; 
+        height: 32px !important; 
+        display: inline-flex !important; 
+        align-items: center; 
+        justify-content: center; 
+        border-radius: 8px; 
+    }
+
     .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 
     /* Warna Status Dinamis */
@@ -31,6 +39,28 @@
     /* Modal Detail Styling */
     #modalDetailPemusnahan .modal-content { border-radius: 15px; border: none; }
     .table-detail-head { background-color: #1e293b !important; color: white !important; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .app-pagination-list { 
+        display: flex !important; 
+        flex-direction: row !important; 
+        justify-content: center !important; 
+        list-style: none !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        gap: 6px !important; 
+    }
+    .app-pagination-list .page-item span {
+        display: flex; align-items: center; justify-content: center; 
+        width: 32px; height: 32px; cursor: pointer; 
+        background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
+        color: #64748b; font-size: 13px; font-weight: 700; transition: all 0.2s;
+    }
+    .app-pagination-list .page-item.active span { 
+        background-color: #3b82f6; color: #ffffff; border-color: #2563eb; 
+    }
+    .app-pagination-list .page-item.disabled span { 
+        background-color: #f8fafc; color: #cbd5e1; cursor: not-allowed !important; 
+    }
 </style>
 
 <div class="container-fluid px-4 py-4">
@@ -187,18 +217,25 @@
             <i class="fas fa-download"></i>
         </a>
 
-        {{-- 4. Tombol Persetujuan Admin (Hanya jika status Diajukan) --}}
-        @if(strtoupper(Auth::user()->role) == 'ADMIN' && strtoupper($row->status ?? 'DIAJUKAN') == 'DIAJUKAN')
-        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
-            @csrf
-            <button type="button" class="btn btn-primary btn-sm fw-bold px-3 btn-konfirmasi-setuju shadow-sm" style="border-radius: 8px; height: 35px;">SETUJUI</button>
-        </form>
-        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
-            @csrf
-            <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm">✕</button>
-        </form>
-        @endif
-        </div>
+        {{-- Tombol Persetujuan Admin --}}
+                        @if(strtoupper(Auth::user()->role) == 'ADMIN' && strtoupper($row->status ?? 'DIAJUKAN') == 'DIAJUKAN')
+                        {{-- Form Setuju: Sekarang Pakai Ikon Centang --}}
+                        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="button" class="btn btn-success btn-sm btn-konfirmasi-setuju shadow-sm btn-action" title="Setujui">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </form>
+
+                        {{-- Form Tolak: Tetap Ikon Silang --}}
+                        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm btn-action" title="Tolak">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                        @endif
+                        </div>
                         </td>
                         </tr>
                         @empty
@@ -231,32 +268,57 @@
                 <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="row bg-light p-3 rounded mb-4 g-3 border mx-0">
+                {{-- BARIS ATAS: INFO BA (KIRI) & DROPDOWN SHOW (KANAN) --}}
+                <div class="row align-items-center mb-4">
                     <div class="col-md-6">
-                        <label class="d-block text-muted small fw-bold uppercase">No. Berita Acara</label>
+                        <label class="d-block text-muted small fw-bold uppercase mb-1">No. Berita Acara</label>
                         <span id="det_no_ba" class="fw-bold text-primary" style="font-size: 16px;">-</span>
                     </div>
-                    <div class="col-md-6 text-md-end">
-                        <label class="d-block text-muted small fw-bold uppercase">Status Pengajuan</label>
-                        <div id="det_status_wrapper"><span id="det_status_ba" class="badge">-</span></div>
-                    </div>
-                </div>
-                <div class="row mb-3 align-items-center">
-                    <div class="col-md-7"><h6 class="fw-bold m-0">Rincian Berkas</h6></div>
-                    <div class="col-md-5">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" id="searchDetailPemusnahan" class="form-control border-start-0 shadow-none" placeholder="Cari di rincian...">
+                    <div class="col-md-6 text-end">
+                        <div class="d-flex align-items-center justify-content-end gap-2">
+                            <label class="small fw-bold text-muted mb-0">SHOW</label>
+                            <select id="det_rows_per_page" class="form-select form-select-sm" 
+                            style="font-size: 11px; font-weight: 800; border-radius: 6px; width: 75px; color: #3b82f6; background: #f8f9fa; border: 1px solid #e2e8f0;" 
+                            onchange="renderTableDetail()">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive" style="max-height: 400px;">
-                    <table class="table table-sm table-bordered align-middle mb-0">
+            
+                {{-- BARIS KEDUA: JUDUL & SEARCH --}}
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-7">
+                        <h6 class="fw-bold m-0"><i class="fas fa-list me-2"></i>Rincian Berkas</h6>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="input-group input-group-sm shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="searchDetailPemusnahan" class="form-control border-start-0 ps-0" placeholder="Cari nomor atau nama...">
+                        </div>
+                    </div>
+                </div>
+            
+                {{-- TABEL DATA --}}
+                <div class="table-responsive border rounded mb-4" style="max-height: 400px;">
+                    <table class="table table-sm table-hover align-middle mb-0">
                         <thead class="table-detail-head text-center sticky-top">
-                            <tr><th>No. Permohonan</th><th>Nama</th><th>Jenis</th><th>Status Berkas</th></tr>
+                            <tr><th>No. Permohonan</th><th>Nama Pemohon</th><th>Jenis</th><th>Status Berkas</th></tr>
                         </thead>
                         <tbody id="list-detail-pemusnahan" style="font-size: 12px;"></tbody>
                     </table>
+                </div>
+            
+                {{-- FOOTER: PAGINASI & INFO DI TENGAH --}}
+                <div class="border-top pt-3 text-center">
+                    <div class="d-flex flex-column align-items-center gap-2">
+                        <div id="det_pagination_links"></div>
+                        <div id="det_pagination_info" style="font-size: 10px; color: #adb5bd; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -267,36 +329,121 @@
 
 @push('scripts')
 <script>
-// 1. Fungsi Lihat Detail via AJAX
+// 1. VARIABEL GLOBAL
+let allDetailData = []; 
+let currentPageDetail = 1;
+let statusBatchUtama = ''; 
+
+// 2. FUNGSI LIHAT DETAIL (AJAX)
 function lihatDetailPemusnahan(id) {
     $('#list-detail-pemusnahan').html('<tr><td colspan="4" class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></td></tr>');
+    
     $.get("/pemusnahan-arsip/detail/" + id, function(res) {
         if(res.success) {
-            let statusBA = (res.ba.status || 'DIAJUKAN').toUpperCase();
-            let badgeClass = statusBA === 'DISETUJUI' ? 'badge bg-success text-white' : (statusBA === 'DITOLAK' ? 'badge bg-danger text-white' : 'badge bg-warning text-dark');
+            // Normalisasi status dari database: hapus spasi dan jadikan uppercase
+            let rawStatus = (res.ba.status || 'DIAJUKAN').toUpperCase().replace(/\s+/g, '');
+            
+            // Paksa pakai format "DISETUJUI" jika mengandung kata SETUJU
+            statusBatchUtama = rawStatus.includes('SETUJU') ? 'DISETUJUI' : rawStatus;
+            
+            allDetailData = res.data;
+            currentPageDetail = 1;
+            
+            // Set Header Modal
+            let badgeClass = (statusBatchUtama === 'DISETUJUI') ? 'badge bg-success text-white' : (statusBatchUtama.includes('TOLAK') ? 'badge bg-danger text-white' : 'badge bg-warning text-dark');
+            
             $('#det_no_ba').text(res.ba.no_berita_acara);
-            $('#det_status_ba').attr('class', badgeClass).text(statusBA);
-            let html = '';
-            res.data.forEach(item => {
-                let badgeBerkas = statusBA === 'DISETUJUI' ? '<span class="badge bg-success-subtle text-success border">DIMUSNAHKAN</span>' : (statusBA === 'DITOLAK' ? '<span class="badge bg-danger-subtle text-danger border">DITOLAK</span>' : '<span class="badge bg-warning-subtle text-warning border">DIAJUKAN</span>');
-                html += `<tr><td class="text-center py-2">${item.no_permohonan}</td><td>${item.nama}</td><td class="text-center">${item.jenis_permohonan || '-'}</td><td class="text-center">${badgeBerkas}</td></tr>`;
-            });
-            $('#list-detail-pemusnahan').html(html);
+            // Tampilan di header tetap cantik (pakai spasi jika mau, tapi logika tetap DISETUJUI)
+            $('#det_status_ba').attr('class', badgeClass).text(statusBatchUtama === 'DISETUJUI' ? 'DI SETUJUI' : statusBatchUtama);
+            
+            renderDetailPagination();
             new bootstrap.Modal(document.getElementById('modalDetailPemusnahan')).show();
         }
     });
 }
 
-$(document).ready(function() {
-    // 2. Pencarian Real-time di Modal
-    $("#searchDetailPemusnahan").on("keyup", function() {
-        var v = $(this).val().toLowerCase();
-        $("#list-detail-pemusnahan tr").filter(function() { 
-            $(this).toggle($(this).text().toLowerCase().indexOf(v) > -1) 
-        });
+// 3. FUNGSI RENDER TABEL & PAGINASI
+function renderDetailPagination() {
+    let searchValue = $('#searchDetailPemusnahan').val().toLowerCase();
+    
+    // 1. Filter data berdasarkan pencarian
+    let filteredData = allDetailData.filter(item => 
+        (item.no_permohonan && item.no_permohonan.toLowerCase().includes(searchValue)) || 
+        (item.nama && item.nama.toLowerCase().includes(searchValue))
+    );
+
+    // 2. Ambil limit dari dropdown (Opsi: 5, 10, 25, 50, 100)
+    let limit = parseInt($('#det_rows_per_page').val()) || 5;
+    let total = filteredData.length;
+    let totalPages = Math.ceil(total / limit);
+
+    // 3. Reset ke halaman 1 jika halaman saat ini melampaui total halaman baru
+    if (currentPageDetail > totalPages && totalPages > 0) {
+        currentPageDetail = 1;
+    }
+
+    // 4. Potong data sesuai limit
+    let startIdx = (currentPageDetail - 1) * limit;
+    let paginatedData = filteredData.slice(startIdx, startIdx + limit);
+
+    let html = '';
+    paginatedData.forEach(item => {
+        let badgeBerkas = '';
+        
+        // Logika Status Berdasarkan Variabel Global
+        if (statusBatchUtama === 'DISETUJUI') {
+            badgeBerkas = '<span class="text-danger fw-bold border border-danger px-2 rounded" style="font-size:10px; background: #fff5f5;">DIMUSNAHKAN</span>';
+        } else if (statusBatchUtama.includes('TOLAK')) {
+            badgeBerkas = '<span class="badge bg-danger-subtle text-danger border">DITOLAK</span>';
+        } else {
+            badgeBerkas = '<span class="badge bg-warning-subtle text-warning border">DIAJUKAN</span>';
+        }
+        
+        html += `<tr>
+            <td class="text-center py-2 fw-bold text-primary">${item.no_permohonan}</td>
+            <td class="ps-3">${item.nama}</td>
+            <td class="text-center">${item.jenis_permohonan || '-'}</td>
+            <td class="text-center">${badgeBerkas}</td>
+        </tr>`;
     });
 
-    // 3. Kalkulasi Jumlah Dokumen Berdasarkan Tanggal
+    // 5. Tampilkan ke Tabel
+    $('#list-detail-pemusnahan').html(html || '<tr><td colspan="4" class="text-center py-4">Data tidak ditemukan</td></tr>');
+    
+    // 6. Update Info Entries
+    let from = total > 0 ? startIdx + 1 : 0;
+    let to = Math.min(startIdx + limit, total);
+    $('#det_pagination_info').html(`SHOWING <b>${from} - ${to}</b> OF <b>${total}</b> ENTRIES`);
+
+    // 7. Gambar Navigasi
+    renderJSNav('det_pagination_links', currentPageDetail, totalPages);
+}
+
+// 4. MESIN NAVIGASI ANGKA
+function renderJSNav(containerId, currentPage, totalPages) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    let displayPages = totalPages < 1 ? 1 : totalPages;
+    let html = '<ul class="app-pagination-list">';
+    html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><span onclick="${currentPage > 1 ? `changeDetailPage(${currentPage - 1})` : ''}"><i class="fas fa-chevron-left"></i></span></li>`;
+    for (let i = 1; i <= displayPages; i++) {
+        html += `<li class="page-item ${i === currentPage ? 'active' : ''}"><span onclick="changeDetailPage(${i})">${i}</span></li>`;
+    }
+    html += `<li class="page-item ${currentPage === displayPages || displayPages === 1 ? 'disabled' : ''}"><span onclick="${currentPage < displayPages ? `changeDetailPage(${currentPage + 1})` : ''}"><i class="fas fa-chevron-right"></i></span></li>`;
+    html += '</ul>';
+    container.innerHTML = html;
+}
+
+function changeDetailPage(p) { currentPageDetail = p; renderDetailPagination(); }
+function renderTableDetail() { currentPageDetail = 1; renderDetailPagination(); }
+
+// 5. DOCUMENT READY
+$(document).ready(function() {
+    $("#searchDetailPemusnahan").on("keyup", function() {
+        currentPageDetail = 1;
+        renderDetailPagination();
+    });
+
     $('.date-calc').on('change', function() {
         let m = $('#filter_mulai').val(), s = $('#filter_selesai').val();
         if (m && s) {
@@ -307,69 +454,37 @@ $(document).ready(function() {
         }
     });
 
-    // 4. Konfirmasi Tombol Setuju (✓)
     $(document).on('click', '.btn-konfirmasi-setuju', function(e) {
         e.preventDefault();
-        let id = $(this).data('id');
-        Swal.fire({ 
-            title: 'Setujui Pemusnahan?', 
-            text: "Berkas akan dihapus secara sistem dari lokasi rak.", 
-            icon: 'warning', 
-            showCancelButton: true, 
-            confirmButtonText: 'Ya, Setujui' 
-        }).then((r) => { if (r.isConfirmed) $('#form-setuju-' + id).submit(); });
+        let form = $(this).closest('form');
+        Swal.fire({ title: 'Setujui Pemusnahan?', text: "Berkas akan dihapus secara sistem.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Setujui' }).then((r) => { if (r.isConfirmed) form.submit(); });
     });
 
-    // 5. Konfirmasi Tombol Tolak (✕)
     $(document).on('click', '.btn-konfirmasi-tolak', function(e) {
         e.preventDefault();
-        let id = $(this).data('id');
-        Swal.fire({ 
-            title: 'Tolak Pengajuan?', 
-            text: "Data berkas akan tetap aman di gudang arsip.", 
-            icon: 'error', 
-            showCancelButton: true, 
-            confirmButtonText: 'Ya, Tolak',
-            confirmButtonColor: '#dc3545'
-        }).then((r) => { if (r.isConfirmed) $('#form-tolak-' + id).submit(); });
+        let form = $(this).closest('form');
+        Swal.fire({ title: 'Tolak Pengajuan?', text: "Data berkas akan tetap aman.", icon: 'error', showCancelButton: true, confirmButtonText: 'Ya, Tolak', confirmButtonColor: '#dc3545' }).then((r) => { if (r.isConfirmed) form.submit(); });
     });
 
-    // 6. AJAX Upload Langsung (Tombol Biru)
     $(document).on('click', '.btn-upload-langsung', function(e) {
         e.preventDefault();
         let idBA = $(this).data('id'); 
         let inputKiri = document.getElementById('fileBeritaAcaraUtama');
         if (!inputKiri || inputKiri.files.length === 0) {
-            Swal.fire({ icon: 'warning', title: 'Pilih File Dulu', text: 'Pilih file PDF di sebelah kiri.' });
+            Swal.fire({ icon: 'warning', title: 'Pilih File Dulu' });
             return;
         }
-        let fileUtama = inputKiri.files[0];
-        Swal.fire({
-            title: 'Konfirmasi Upload',
-            text: "Upload file '" + fileUtama.name + "' ke baris ini?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, Upload!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({ title: 'Sedang Mengunggah...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                let formData = new FormData();
-                formData.append('_token', '{{ csrf_token() }}');
-                formData.append('file_pdf', fileUtama);
-                $.ajax({
-                    url: "/pemusnahan-arsip/upload/" + idBA,
-                    type: "POST",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function() {
-                        Swal.fire('Berhasil!', 'Berkas disimpan.', 'success').then(() => { location.reload(); });
-                    },
-                    error: function() { Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error'); }
-                });
-            }
+        let formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('file_pdf', inputKiri.files[0]);
+        Swal.fire({ title: 'Sedang Mengunggah...', didOpen: () => { Swal.showLoading(); } });
+        $.ajax({
+            url: "/pemusnahan-arsip/upload/" + idBA,
+            type: "POST", data: formData, processData: false, contentType: false,
+            success: function() { Swal.fire('Berhasil!', 'Berkas disimpan.', 'success').then(() => { location.reload(); }); }
         });
     });
 });
+
 </script>
 @endpush

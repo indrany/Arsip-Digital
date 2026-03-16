@@ -77,7 +77,9 @@
                     <tbody class="text-center">
                         @forelse($antrean_batches->sortByDesc(fn($i) => strtoupper($i->status) === 'DIAJUKAN') as $row)
                         @php $statusText = strtoupper($row->status) == 'DIAJUKAN' ? 'DIAJUKAN' : 'DITERIMA OLEH ARSIP'; @endphp
-                        <tr class="row-antrean" data-tanggal="{{ \Carbon\Carbon::parse($row->tgl_pengirim)->format('Y-m-d') }}" data-status="{{ $statusText }}">
+                        <tr class="row-antrean" 
+                            data-tanggal="{{ \Carbon\Carbon::parse($row->tgl_pengirim)->format('Y-m-d') }}" 
+                            data-status="{{ strtoupper($row->status) == 'DIAJUKAN' ? 'DIAJUKAN' : 'DITERIMA OLEH ARSIP' }}">
                             <td class="col-no-pengirim fw-bold text-primary">{{ $row->no_pengirim }}</td>
                             <td class="col-jumlah"><span class="badge bg-secondary-subtle text-secondary px-3 py-2" style="border-radius: 8px;">{{ $row->jumlah_berkas }} Berkas</span></td>
                             <td class="col-unit"><span class="badge bg-info-subtle text-info px-3 py-2 fw-bold" style="border-radius: 8px;">{{ $row->asal_unit ?? 'Kanim' }}</span></td>
@@ -100,6 +102,7 @@
                     </tbody>
                 </table>
             </div>
+            @include('components.pagination-footer', ['data' => $antrean_batches])
         </div>
     </div>
 </div>
@@ -162,10 +165,13 @@
                     <div class="d-flex align-items-center gap-2">
                         <label class="small fw-bold text-muted mb-0">SHOW</label>
                         <select id="det_rows_per_page" class="form-select form-select-sm" 
-                                onchange="currentPageDetail = 1; renderDetailPagination();" style="width: 70px;">
+                                style="font-size: 12px; font-weight: 800; border-radius: 6px; width: 75px; color: #3b82f6; background: #f8f9fa; border: 1px solid #e2e8f0;" 
+                                onchange="currentPageDetail = 1; renderTableDetail();">
                             <option value="5" selected>5</option>
                             <option value="10">10</option>
                             <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
                         </select>
                     </div>
                     <div style="width: 250px;">
@@ -182,13 +188,19 @@
                     </table>
                 </div>
 
+                {{-- FOOTER: SEMUA DI TENGAH (ANGKA ATAS, INFO BAWAH) --}}
                 <div class="mt-4 border-top pt-3">
                     <div class="d-flex flex-column align-items-center gap-2">
+                        
+                        {{-- Tempat Tombol Angka (Halaman 1, 2, dst) --}}
                         <div id="det_pagination_links"></div>
-                        <div id="det_pagination_info" class="small text-muted"></div>
+
+                        {{-- Tempat Tulisan SHOWING 1 - 5 OF 6 ENTRIES --}}
+                        <div id="det_pagination_info" style="font-size: 10px; color: #adb5bd; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;"></div>
+
                     </div>
                 </div>
-            </div>
+                </div>
             <div class="modal-footer border-0 p-3">
                 <button type="button" class="btn btn-secondary px-4 fw-bold shadow-sm" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button>
             </div>
@@ -270,57 +282,86 @@ function renderDetailPagination() {
         (item.nama && item.nama.toLowerCase().includes(searchValue))
     );
 
+    let limit = parseInt($('#det_rows_per_page').val()) || 5;
     let total = filteredData.length;
-    let totalPages = Math.ceil(total / rowsPerPageDetail);
-    let startIdx = (currentPageDetail - 1) * rowsPerPageDetail;
-    let paginatedData = filteredData.slice(startIdx, startIdx + rowsPerPageDetail);
+    let totalPages = Math.ceil(total / limit);
+    
+    let startIdx = (currentPageDetail - 1) * limit;
+    let paginatedData = filteredData.slice(startIdx, startIdx + limit);
 
     let html = '';
     paginatedData.forEach(item => {
-        let statusAsli = (item.status_berkas || '').toUpperCase();
-        let statusHtml = '';
-
-        // LOGIKA PAKSA "SELESAI" DENGAN CENTANG HIJAU
-        if (statusAsli.includes('DITERIMA')) {
-            statusHtml = `<span class="badge bg-success-subtle text-success border px-2" style="font-size:9px; border-radius:10px;">
-                            <i class="fas fa-check-circle me-1"></i> SELESAI
-                          </span>`;
-        } else {
-            statusHtml = `<span class="badge bg-warning-subtle text-warning border px-2" style="font-size:9px;">${statusAsli}</span>`;
-        }
+        let s = (item.status_berkas || '').toUpperCase();
         
+        // --- LOGIKA WARNA DINAMIS DI SINI ---
+        let sClass = '';
+        let sText = s;
+
+        if (s.includes('DIMUSNAHKAN')) {
+            // MERAH TEBAL UNTUK DIMUSNAHKAN
+            sClass = 'text-danger fw-bold border border-danger px-2 rounded';
+            sText = 'DIMUSNAHKAN';
+        } else if (s.includes('DITERIMA')) {
+            // HIJAU UNTUK SELESAI/DITERIMA
+            sClass = 'badge bg-success-subtle text-success border px-2';
+            sText = 'SELESAI';
+        } else {
+            // KUNING UNTUK PROSES/DIAJUKAN
+            sClass = 'badge bg-warning-subtle text-warning border px-2';
+        }
+
         html += `<tr>
             <td class="text-primary fw-bold text-center py-2">${item.no_permohonan}</td>
             <td class="text-start">${item.nama}</td>
             <td class="text-center">${item.jenis_permohonan || '-'}</td>
             <td class="text-center">${item.tujuan_paspor || '-'}</td>
             <td class="text-center"><span class="badge bg-light text-dark border">${item.lokasi_arsip || '-'}</span></td>
-            <td class="text-center">${statusHtml}</td>
+            <td class="text-center"><span class="${sClass}" style="font-size:9px;">${sText}</span></td>
         </tr>`;
     });
 
     $('#det_list_berkas_riwayat').html(html || '<tr><td colspan="6" class="text-center py-4">Data tidak ditemukan</td></tr>');
+    
     let from = total > 0 ? startIdx + 1 : 0;
+    let to = Math.min(startIdx + limit, total);
+    $('#det_pagination_info').html(`SHOWING <b>${from} - ${to}</b> OF <b>${total}</b> ENTRIES`);
+
     renderJSNav('det_pagination_links', currentPageDetail, totalPages);
-    $('#det_pagination_info').html(`SHOWING <b>${from} - ${Math.min(startIdx + rowsPerPageDetail, total)}</b> OF <b>${total}</b> ENTRIES`);
 }
 
 function renderJSNav(containerId, currentPage, totalPages) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    let displayPages = totalPages < 1 ? 1 : totalPages;
+    
     let html = '<ul class="app-pagination-list">';
     html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><span onclick="${currentPage > 1 ? `changeDetailPage(${currentPage - 1})` : ''}"><i class="fas fa-chevron-left"></i></span></li>`;
-    for (let i = 1; i <= displayPages; i++) {
+    
+    for (let i = 1; i <= totalPages; i++) {
         html += `<li class="page-item ${i === currentPage ? 'active' : ''}"><span onclick="changeDetailPage(${i})">${i}</span></li>`;
     }
-    html += `<li class="page-item ${currentPage === displayPages || displayPages === 1 ? 'disabled' : ''}"><span onclick="${currentPage < displayPages ? `changeDetailPage(${currentPage + 1})` : ''}"><i class="fas fa-chevron-right"></i></span></li>`;
+
+    html += `<li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}"><span onclick="${currentPage < totalPages ? `changeDetailPage(${currentPage + 1})` : ''}"><i class="fas fa-chevron-right"></i></span></li>`;
     html += '</ul>';
     container.innerHTML = html;
 }
 
-function changeDetailPage(page) { currentPageDetail = page; renderDetailPagination(); }
-function searchDetailBerkasFungsi() { currentPageDetail = 1; renderDetailPagination(); }
+// Fungsi pembantu klik angka
+function changeDetailPage(page) {
+    currentPageDetail = page;
+    renderDetailPagination();
+}
+
+// Fungsi pembantu ganti limit SHOW
+function renderTableDetail() {
+    currentPageDetail = 1;
+    renderDetailPagination();
+}
+
+// Fungsi pembantu search
+function searchDetailBerkasFungsi() {
+    currentPageDetail = 1;
+    renderDetailPagination();
+}
 
 // 4. FUNGSI DETAIL BATCH (DARI TABEL UTAMA)
 function lihatDetailBatch(noPengirim) {
@@ -343,6 +384,41 @@ $(document).ready(function() {
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
     const inputBarcode = $('#input-barcode-permohonan');
     inputBarcode.focus();
+
+    // --- FUNGSI FILTER TABEL UTAMA ---
+    function filterAntreanUtama() {
+        let statusVal = $('#filter-status-antrean').val().toUpperCase();
+        let searchVal = $('#search-antrean').val().toLowerCase();
+        let tanggalVal = $('#filter-tanggal-antrean').val();
+
+        $('.row-antrean').each(function() {
+            let rowStatus = $(this).data('status').toUpperCase();
+            let rowTanggal = $(this).data('tanggal');
+            let rowText = $(this).text().toLowerCase();
+
+            // Cek kecocokan
+            let matchStatus = (statusVal === "") || (rowStatus === statusVal);
+            let matchTanggal = (tanggalVal === "") || (rowTanggal === tanggalVal);
+            let matchSearch = (searchVal === "") || (rowText.indexOf(searchVal) > -1);
+
+            // Tampilkan jika semua kriteria cocok, sembunyikan jika tidak
+            if (matchStatus && matchTanggal && matchSearch) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
+    // Jalankan filter saat dropdown status atau tanggal diganti
+    $('#filter-status-antrean, #filter-tanggal-antrean').on('change', function() {
+        filterAntreanUtama();
+    });
+
+    // Jalankan filter saat mengetik di kolom pencarian
+    $('#search-antrean').on('keyup', function() {
+        filterAntreanUtama();
+    });
 
     // UPDATE COUNTER & BUKA BUTTON SIMPAN
     function updateCounters() {
