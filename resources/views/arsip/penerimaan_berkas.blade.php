@@ -409,7 +409,7 @@ $(document).ready(function() {
 
     // TOMBOL SELESAIKAN & TERIMA (VALIDASI LOKER)
     $('#btn-simpan-batch').on('click', function() {
-        const adaLoker = {{ $adaLoker ? 'true' : 'false' }};
+        const adaLoker = "{{ $adaLoker ? 'true' : 'false' }}";
         if (!adaLoker) {
             Swal.fire({
                 icon: 'warning',
