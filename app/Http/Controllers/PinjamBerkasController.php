@@ -12,14 +12,21 @@ class PinjamBerkasController extends Controller
 {
     public function index(Request $request)
 {
+    // Ambil angka dari dropdown SHOW, kalau kosong default 10
+    $perPage = (int) $request->input('per_page', 10);
+
     $query = PinjamBerkas::with('permohonan')
         ->join('permohonan', 'pinjam_berkas.permohonan_id', '=', 'permohonan.id')
         ->leftJoin('datapaspor.datapaspor', function($join) {
             $join->on('permohonan.no_permohonan', '=', DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci'));
         });
+
     if ($request->filled('no_permohonan')) {
-        $query->where('permohonan.no_permohonan', 'like', '%' . $request->no_permohonan . '%')
-              ->orWhere('permohonan.nama', 'like', '%' . $request->no_permohonan . '%'); 
+        $q = $request->no_permohonan;
+        $query->where(function($sub) use ($q) {
+            $sub->where('permohonan.no_permohonan', 'like', '%' . $q . '%')
+                ->orWhere('permohonan.nama', 'like', '%' . $q . '%'); 
+        });
     }
     if ($request->filled('start_date') && $request->filled('end_date')) {
         $query->whereBetween('pinjam_berkas.tgl_pinjam', [$request->start_date, $request->end_date]);
@@ -38,8 +45,9 @@ class PinjamBerkasController extends Controller
             'datapaspor.alurterakhir as alur_paspor_update'
         )
         ->orderBy('pinjam_berkas.created_at', 'desc')
-        ->paginate(10);
-        $dataPinjam->appends($request->query());
+        ->paginate($perPage);
+
+    $dataPinjam->appends($request->query());
 
     return view('scripts.pinjam_berkas', compact('dataPinjam'));
 }
@@ -76,9 +84,8 @@ class PinjamBerkasController extends Controller
     }
 
     // --- PERBAIKAN DI SINI: FUNGSI CARI SEKARANG JOIN KE PUSAT ---
-    public function cariPermohonan($no)
+    public function cariPermohonan(Request $request, $no)
     {
-        // Join ke datapaspor agar dapat status SELESAI dari pusat
         $permohonan = DB::table('permohonan')
             ->leftJoin('datapaspor.datapaspor', function($join) {
                 $join->on('permohonan.no_permohonan', '=', DB::raw('datapaspor.nopermohonan COLLATE utf8mb4_unicode_ci'));
@@ -86,20 +93,31 @@ class PinjamBerkasController extends Controller
             ->where('permohonan.no_permohonan', $no)
             ->select('permohonan.*', 'datapaspor.alurterakhir as alur_paspor_update')
             ->first();
-
+    
         if ($permohonan) {
-            $pinjamAktif = PinjamBerkas::where('permohonan_id', $permohonan->id)
+            // Cek apakah berkas spesifik ini sedang dipinjam
+            $isBorrowed = PinjamBerkas::where('permohonan_id', $permohonan->id)
                 ->whereIn('status', ['Pengajuan', 'Disetujui'])
+                ->whereNull('tgl_kembali') // Pastikan belum balik
                 ->first();
-
+    
+            // CEK TUNGGAKAN DIVISI: Apakah divisi ini punya berkas lain yang belum balik?
+            $hasUnreturned = false;
+            if($request->divisi) {
+                $hasUnreturned = PinjamBerkas::where('divisi_peminjam', $request->divisi)
+                    ->whereNull('tgl_kembali')
+                    ->where('status', '!=', 'Ditolak')
+                    ->exists();
+            }
+    
             return response()->json([
                 'success' => true,
                 'data' => $permohonan,
-                // Kita kirim status_berkas dari pusat jika ada, kalau tidak ada pakai yang lokal
                 'status_terupdate' => $permohonan->alur_paspor_update ?? $permohonan->status_berkas,
-                'is_borrowed' => $pinjamAktif ? true : false,
-                'borrower_name' => $pinjamAktif ? $pinjamAktif->nama_peminjam : '',
-                'personnel_name' => $pinjamAktif ? $pinjamAktif->nama_personil : ''
+                'is_borrowed' => $isBorrowed ? true : false,
+                'has_unreturned_files' => $hasUnreturned, // Info buat JavaScript
+                'borrower_name' => $isBorrowed ? $isBorrowed->divisi_peminjam : '',
+                'personnel_name' => $isBorrowed ? $isBorrowed->nama_peminjam : ''
             ]);
         }
         return response()->json(['success' => false]);

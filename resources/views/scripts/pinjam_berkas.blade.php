@@ -105,53 +105,62 @@
                         <td>{{ $item->tgl_pinjam }}</td>
                         <td>{{ $item->tgl_kembali ?? '-' }}</td>
                         <td style="width: 15%; text-align: center;">
-                            <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
-                                <button type="button" 
-                                    onclick="showDetail({{ json_encode($item) }})" 
-                                    class="btn-detail-blue">
-                                    Detail
-                                </button> 
-                                @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
-                                    @if($item->status == 'Pengajuan')
-                                        <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
-                                            <button class="btn-check-custom" title="Setujui">✓</button>
-                                        </form>
-                                        <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" class="d-inline"> @csrf
-                                            <button class="btn-reject-custom" title="Tolak">✕</button>
-                                        </form>
-                                        {{-- 1.di git ini --}}
-                                        @elseif($item->status == 'Disetujui')
-                                            <div class="d-flex align-items-center gap-2">
-                                                {{-- 1. TOMBOL PRINT: Saat diklik, dia akan memancing tombol Selesai untuk muncul --}}
-                                                <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
-                                                class="btn-cetak" 
-                                                title="Cetak Surat Izin Pinjam" 
-                                                target="_blank"
-                                                onclick="document.getElementById('wrapper-selesai-{{ $item->id }}').style.setProperty('display', 'inline-block', 'important')">
-                                                    <i class="fas fa-print"></i>
-                                                </a>
+    <div class="aksi-wrapper" style="display:flex; gap:5px; justify-content:center; align-items:center;">
+        {{-- 1. TOMBOL DETAIL --}}
+        <button type="button" onclick="showDetail({{ json_encode($item) }})" class="btn-detail-blue">
+            Detail
+        </button> 
 
-                                                {{-- 2. WRAPPER SELESAI: Awalnya disembunyikan (display: none) --}}
-                                                <div id="wrapper-selesai-{{ $item->id }}" style="display: none;">
-                                                    <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="btn-selesai" onclick="return confirm('Apakah berkas fisik sudah benar-benar kembali?')">
-                                                            Selesai
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        @elseif($item->status == 'Selesai')
-                                        {{-- smapai ini git nya--}}
-                                        <a href="{{ route('pinjam-berkas.cetak-kembali', $item->id) }}" 
-                                        class="btn-cetak" style="background: #34C759;" 
-                                        title="Cetak Berita Acara Kembali" target="_blank">
-                                            <i class="fas fa-file-invoice"></i>
-                                        </a>
-                                    @endif
-                                @endif
-                            </div>
-                        </td>
+        @if(in_array(strtoupper(auth()->user()->role), ['ADMIN', 'TIKIM']))
+            
+            {{-- JIKA MASIH PENGAJUAN --}}
+            @if(strtoupper($item->status) == 'PENGAJUAN')
+                <form action="{{ route('pinjam-berkas.approve', $item->id) }}" method="POST" class="d-inline"> @csrf
+                    <button class="btn-check-custom" title="Setujui">✓</button>
+                </form>
+                <form action="{{ route('pinjam-berkas.reject', $item->id) }}" method="POST" class="d-inline"> @csrf
+                    <button class="btn-reject-custom" title="Tolak">✕</button>
+                </form>
+
+            {{-- JIKA DISETUJUI (Proses Pinjam Berlangsung) --}}
+            @elseif(strtoupper($item->status) == 'DISETUJUI')
+                <div class="d-flex align-items-center gap-2">
+                    {{-- TOMBOL CETAK SURAT IZIN (Warna Abu-abu) --}}
+                    <a href="{{ route('pinjam-berkas.cetak', $item->id) }}" 
+                       class="btn-cetak" 
+                       title="Cetak Surat Izin Pinjam" 
+                       target="_blank"
+                       onclick="document.getElementById('wrapper-selesai-{{ $item->id }}').classList.remove('d-none')">
+                        <i class="fas fa-print"></i>
+                    </a>
+
+                    {{-- TOMBOL SELESAI (Muncul SETELAH Cetak di atas diklik) --}}
+                    {{-- Gunakan class d-none agar benar-benar tersembunyi di awal --}}
+                    <div id="wrapper-selesai-{{ $item->id }}" class="d-none">
+                        <form action="{{ route('pinjam-berkas.complete', $item->id) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn-selesai" style="background: #0088FF; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px;"
+                                    onclick="return confirm('Apakah berkas fisik sudah benar-benar kembali?')">
+                                Selesai
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            {{-- JIKA SUDAH SELESAI (Berkas Sudah Kembali) --}}
+            @elseif(strtoupper($item->status) == 'SELESAI')
+                <a href="{{ route('pinjam-berkas.cetak-kembali', $item->id) }}" 
+                   class="btn-cetak" 
+                   style="background: #34C759;" 
+                   title="Cetak Berita Acara Kembali" 
+                   target="_blank">
+                    <i class="fas fa-file-invoice"></i>
+                </a>
+            @endif
+
+        @endif
+    </div>
+</td>
                         <td>
                             @php
                                 $statusCheck = strtoupper($item->status);
@@ -492,18 +501,42 @@ if (inputPermohonan) {
 
 function handleSimpanPinjaman() {
     const no = document.getElementById('input_no_permohonan').value;
+    
+    // Ambil nilai divisi dari select atau role user
+    const divisiSelect = document.querySelector('select[name="nama_peminjam"]');
+    const divisi = divisiSelect ? divisiSelect.value : "{{ auth()->user()->role }}";
+
     if(!no) { Swal.fire('Peringatan', 'Masukkan Nomor Permohonan', 'warning'); return; }
-    fetch(`/cari-permohonan/${no}`)
+    if(!divisi) { Swal.fire('Peringatan', 'Pilih Divisi Peminjam', 'warning'); return; }
+
+    // Kita tambahkan ?divisi=... supaya Controller bisa ngecek tunggakan divisi tersebut
+    fetch(`/cari-permohonan/${no}?divisi=${divisi}`)
         .then(r => r.json())
         .then(data => {
-            if(data.success && data.is_borrowed) {
-                Swal.fire({
-                    title: 'Berkas Sedang Dipinjam!',
-                    html: `Berkas ini sedang dipinjam oleh <b>${data.personnel_name}</b> dari divisi <b>${data.borrower_name}</b>.<br>Selesaikan pengembalian berkas terlebih dahulu.`,
-                    icon: 'error',
-                    confirmButtonColor: '#F97066'
-                });
-            } else if(data.success) {
+            if (data.success) {
+                // 1. Cek apakah BERKAS ini sedang dipinjam orang lain
+                if (data.is_borrowed) {
+                    Swal.fire({
+                        title: 'Berkas Sedang Dipinjam!',
+                        html: `Berkas ini sedang dibawa oleh <b>${data.personnel_name}</b> dari divisi <b>${data.borrower_name}</b>.`,
+                        icon: 'error'
+                    });
+                    return;
+                }
+
+                // 2. Cek apakah DIVISI ini masih punya berkas lain yang belum balik
+                // (Ini membaca variabel has_unreturned_files yang kamu buat di Controller)
+                if (data.has_unreturned_files) {
+                    Swal.fire({
+                        title: 'Divisi Anda Masih Meminjam Berkas!',
+                        html: `Divisi <b>${divisi}</b> terdeteksi masih memiliki berkas yang belum dikembalikan (Tanggal Kembali Kosong). <br><br> Silakan selesaikan pengembalian sebelumnya terlebih dahulu.`,
+                        icon: 'warning',
+                        confirmButtonColor: '#F97066'
+                    });
+                    return;
+                }
+
+                // Jika semua lolos, baru submit form
                 document.getElementById('formPinjamBerkas').submit();
             } else {
                 Swal.fire('Gagal', 'Nomor Permohonan tidak valid.', 'error');

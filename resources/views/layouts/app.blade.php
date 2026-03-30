@@ -33,7 +33,34 @@
             height: 100vh;
             overflow-y: auto;
         }
+        .sidebar-logo-area {
+        display: flex;
+        align-items: center; /* Menyejajarkan logo dan teks secara vertikal di tengah */
+        gap: 12px; /* Memberi jarak antara logo dan teks */
+        padding: 15px; /* Sesuaikan padding header sidebar kamu */
+    }
 
+    /* KUNCI UTAMA: Membuat teks di dalamnya menumpuk ke bawah */
+    .sidebar-text-group {
+        display: flex;
+        flex-direction: column; /* Memaksa isi di dalamnya berbaris ke bawah */
+        justify-content: center;
+    }
+
+    .sidebar-system-title {
+        font-weight: 700;
+        font-size: 13px;
+        color: #333; /* Sesuaikan warna */
+        line-height: 1.2;
+    }
+
+    .sidebar-sub-title {
+        font-size: 11px; /* Ukuran lebih kecil agar serasi */
+        color: #666;
+        line-height: 1.3;
+        margin-top: 2px; /* Jarak sedikit dari judul atasnya */
+        display: block; /* Memastikan dia mengambil baris baru */
+    }
         .content-wrapper {
             flex-grow: 1;
             display: flex;
@@ -66,7 +93,10 @@
             <div class="v1_205 sidebar-header">
                 <div class="v1_207 sidebar-logo-area">
                     <div class="v1_208"></div> 
+                <div class="sidebar-text-group">
                     <span class="sidebar-system-title">Sistem Arsip Digital</span>
+                    <span class="sidebar-sub-title">Kantor Imigrasi Kelas I TPI Tanjung Perak</span>
+                </div>
                 </div>
             </div>
             <nav class="sidebar-nav">
