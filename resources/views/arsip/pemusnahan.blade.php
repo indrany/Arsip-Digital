@@ -113,37 +113,45 @@
         {{-- 2. BAGIAN TABEL RIWAYAT --}}
         <div class="{{ strtoupper(Auth::user()->role) == 'TIKIM' ? 'col-lg-8' : 'col-lg-12' }}">
             <div class="card shadow-sm border-0 rounded-3">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Riwayat Pemusnahan</h6>
-                    
-                    {{-- Filter Dropdown --}}
-                    <div class="dropdown">
-                        <button class="btn btn-light btn-sm border d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-filter text-primary"></i> Filters
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0" style="width:320px; border-radius:10px;">
-                            <form action="{{ route('pemusnahan.index') }}" method="GET">
-                                <label class="form-label small fw-bold text-muted mb-2">RANGE TANGGAL PENGAJUAN</label>
-                                <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
-                                    <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
-                                </div>
-                                <label class="form-label small fw-bold text-muted mb-2">STATUS</label>
-                                <select name="status" class="form-select form-select-sm mb-3">
-                                    <option value="">Semua Status</option>
-                                    <option value="Diajukan" {{ request('status') == 'Diajukan' ? 'selected' : '' }}>Diajukan</option>
-                                    <option value="Disetujui" {{ request('status') == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
-                                    <option value="Ditolak" {{ request('status') == 'Ditolak' ? 'selected' : '' }}>Ditolak</option>
-                                </select>
-                                <div class="d-grid gap-2 mt-2">
-                                    <button type="submit" class="btn btn-primary btn-sm fw-bold">Apply</button>
-                                    <a href="{{ route('pemusnahan.index') }}" class="btn btn-light btn-sm border fw-bold">Reset</a>
-                                </div>
-                            </form>
-                        </div>
+                {{-- HEADER RIWAYAT: JUDUL (KIRI) & FILTER + SHOW (KANAN) --}}
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            {{-- Sisi Kiri: Judul --}}
+            <h6 class="mb-0 fw-bold text-dark">
+                <i class="fas fa-history me-2 text-primary"></i>Riwayat Pemusnahan
+            </h6>
+            
+            {{-- Sisi Kanan: Wadah Filter & SHOW Berdampingan --}}
+            <div class="d-flex align-items-center gap-2" id="areaShowPemusnahan">
+                {{-- Dropdown Filters --}}
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm border d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="border-radius:6px;">
+                        <i class="fas fa-filter text-primary"></i> Filters
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0" style="width:320px; border-radius:10px;">
+                        <form action="{{ route('pemusnahan.index') }}" method="GET">
+                            <label class="form-label small fw-bold text-muted mb-2">RANGE TANGGAL PENGAJUAN</label>
+                            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
+                                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
+                            </div>
+                            <label class="form-label small fw-bold text-muted mb-2">STATUS</label>
+                            <select name="status" class="form-select form-select-sm mb-3">
+                                <option value="">Semua Status</option>
+                                <option value="Diajukan" {{ request('status') == 'Diajukan' ? 'selected' : '' }}>Diajukan</option>
+                                <option value="Disetujui" {{ request('status') == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
+                                <option value="Ditolak" {{ request('status') == 'Ditolak' ? 'selected' : '' }}>Ditolak</option>
+                            </select>
+                            <div class="d-grid gap-2 mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm fw-bold">Apply</button>
+                                <a href="{{ route('pemusnahan.index') }}" class="btn btn-light btn-sm border fw-bold">Reset</a>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
+                {{-- Dropdown SHOW akan mendarat di SINI secara otomatis karena ID areaShowPemusnahan --}}
+            </div>
+        </div>
         {{-- BADGE INFO FILTER AKTIF (Identik Badge Pinjam Berkas) --}}
         @if(request('start_date') || request('status'))
         <div class="px-4 py-2 bg-light border-bottom d-flex align-items-center justify-content-between">
@@ -249,8 +257,7 @@
             {{-- PAGINATION FOOTER - Sudah diperbaiki variabelnya jadi $riwayat --}}
             @if(isset($riwayat) && method_exists($riwayat, 'links'))
             <div class="mt-3 px-3">
-                {{-- Menggunakan variabel $riwayat sesuai yang dikirim dari ArsipController --}}
-                @include('components.pagination-footer', ['data' => $riwayat])
+                @include('components.pagination-footer', ['data' => $riwayat, 'targetId' => 'areaShowPemusnahan'])
             </div>
             @endif
         </div>
