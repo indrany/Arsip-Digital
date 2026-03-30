@@ -8,35 +8,48 @@
     <div class="card shadow-sm border-0" style="border-radius: 12px;">
         <div class="card-body">
             {{-- HEADER: TOMBOL & FILTER GABUNGAN --}}
-            <div class="row g-3 mb-4 align-items-center">
-                <div class="col-md-3">
-                    <a href="{{ route('pengiriman-berkas.create') }}" class="btn btn-primary fw-bold px-3 shadow-sm w-100" style="border-radius: 8px;">
-                        <i class="fas fa-plus-circle me-1"></i> Tambah Pengiriman
-                    </a>
-                </div>
-                <div class="col-md-2">
-                    <input type="date" id="filterTanggal" class="form-control form-control-sm bg-light" title="Filter Tanggal Kirim">
-                </div>
+<div class="d-flex flex-wrap align-items-center mb-4">
+    
+    {{-- Tombol Tambah (Dipaksa ke kiri dengan me-auto) --}}
+    <div class="me-auto">
+        <a href="{{ route('pengiriman-berkas.create') }}" class="btn btn-primary fw-bold px-3 shadow-sm" style="border-radius: 8px; white-space: nowrap; display: inline-flex; align-items: center;">
+            <i class="fas fa-plus-circle me-1"></i> Tambah Pengiriman Berkas
+        </a>
+    </div>
 
-                <div class="col-md-3">
-                    <select id="filterStatus" class="form-select form-select-sm bg-light fw-bold">
-                        <option value="">-- Semua Status --</option>
-                        <option value="DIAJUKAN">⚠️ DIAJUKAN</option>
-                        <option value="DITERIMA OLEH ARSIP">✅ DITERIMA OLEH ARSIP</option>
-                    </select>
-                </div>
+    {{-- GRUP FILTER (Tetap rapat di kanan) --}}
+    <div class="d-flex align-items-center gap-2">
+        {{-- Filter Tanggal --}}
+        <div style="width: 140px;">
+            <input type="date" id="filterTanggal" class="form-control form-control-sm bg-light" title="Filter Tanggal Kirim">
+        </div>
 
-                <div class="col-md-4">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" id="inputSearchRiwayat" class="form-control border-0 bg-light" placeholder="Cari No. Pengirim...">
-                        <button class="btn btn-light border-0" type="button" id="btnResetFilter">
-                            <i class="fas fa-sync-alt text-muted"></i>
-                        </button>
-                    </div>
-                </div>
+        {{-- Filter Status --}}
+        <div style="width: 150px;">
+            <select id="filterStatus" class="form-select form-select-sm bg-light fw-bold">
+                <option value="">-- Status --</option>
+                <option value="DIAJUKAN">⚠️ DIAJUKAN</option>
+                <option value="DITERIMA OLEH ARSIP">✅ DITERIMA OLEH ARSIP</option>
+            </select>
+        </div>
+
+        {{-- Search Bar --}}
+        <div style="width: 200px;">
+            <div class="input-group input-group-sm shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="inputSearchRiwayat" class="form-control border-0 bg-light" placeholder="Cari No...">
+                <button class="btn btn-light border-0" type="button" id="btnResetFilter">
+                    <i class="fas fa-sync-alt text-muted"></i>
+                </button>
             </div>
+        </div>
 
+        {{-- AREA SHOW --}}
+        <div id="areaShowKanan">
+            {{-- Dropdown SHOW nempel di sini otomatis --}}
+        </div>
+    </div>
+</div>
             <h6 class="fw-bold mb-3 d-flex align-items-center">
                 <i class="fas fa-history me-2 text-primary"></i>Tabel Riwayat Pengiriman Berkas
             </h6>
@@ -102,14 +115,11 @@
                     </tbody>
                 </table>
             </div>
-
-            @include('components.pagination-footer', ['data' => $riwayat])
-
+            @include('components.pagination-footer', ['data' => $riwayat, 'targetId' => 'areaShowKanan'])
         </div>
     </div>
 </div>
 
-{{-- MODAL DETAIL BATCH --}}
 {{-- MODAL DETAIL BATCH --}}
 <div class="modal fade" id="modalDetailBatch" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -367,28 +377,38 @@
     .bg-info-subtle { background-color: #e0f2fe !important; color: #0369a1 !important; }
 
     .app-pagination-list { 
-    display: flex !important; 
-    flex-direction: row !important; /* WAJIB: Biar angka 1, 2, 3 sejajar ke samping */
-    justify-content: center !important;
-    list-style: none !important; 
-    padding: 0 !important; 
-    margin: 0 !important; 
-    gap: 6px !important; 
-}
-    .app-pagination-list .page-item span {
+        display: flex !important; 
+        flex-direction: row !important; 
+        justify-content: center !important;
+        list-style: none !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        gap: 6px !important; 
+    }
+
+    .app-pagination-list .page-item span, .app-pagination-list .page-item a {
         display: flex; align-items: center; justify-content: center; 
-        width: 34px; height: 34px; cursor: pointer; 
+        width: 34px; height: 34px; cursor: pointer; text-decoration: none;
         background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
         color: #64748b; font-size: 13px; font-weight: 700; transition: all 0.2s;
     }
+
     .app-pagination-list .page-item.active span { 
         background-color: #3b82f6; color: #ffffff; border-color: #2563eb; 
     }
-    .app-pagination-list .page-item.disabled span {
-    background-color: #f8fafc !important;
-    color: #cbd5e1 !important;
-    cursor: not-allowed !important;
-    border-color: #e2e8f0 !important;
-}
+
+    /* CSS KHUSUS UNTUK KOTAK SHOW AGAR RAPI */
+    #areaShowKanan .d-flex { 
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+    }
+
+    #areaShowKanan select {
+        width: 70px !important;
+        height: 31px !important;
+        font-size: 11px !important;
+        border-radius: 6px !important;
+    }
 </style>
 @endsection

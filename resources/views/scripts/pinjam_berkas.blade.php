@@ -8,17 +8,17 @@
     <div class="card-custom" style="width: 108%; margin-left: 0px;">
     <div class="table-header-custom">
     <h5 class="table-title-custom fw-bold m-0">Data Berkas yang dipinjam</h5>
-    <div class="table-actions-custom" id="filterArea" style="position: relative; display: flex; gap: 10px; align-items: center;">
+    <div class="table-actions-custom" id="areaShowPinjam" style="position: relative; display: flex; gap: 10px; align-items: center;">
         @php $roleUser = strtoupper(auth()->user()->role); @endphp
  
         <button type="button" class="btn-filter-custom" data-bs-toggle="modal" data-bs-target="#modalPinjam" style="white-space: nowrap;">
             + Pinjam Berkas
         </button>
 
-        {{-- TOMBOL FILTER BARU --}}
+        {{-- TOMBOL FILTER --}}
         <button type="button" class="btn-filter-custom" onclick="toggleFilter(event)" style="white-space: nowrap;">
-    <i class="filter-icon-svg"></i> Filters
-</button>
+            <i class="filter-icon-svg"></i> Filters
+        </button>
 
         {{-- DROPDOWN FILTER IDENTIK PENCARIAN --}}
         <div id="filterDropdown" class="filter-dropdown-custom shadow-lg">
@@ -167,10 +167,10 @@
             </table>
         </div>
 
-        {{-- PAGINATION FOOTER - TARUH DISINI AGAR MASUK KE DALAM CARD --}}
+        {{-- PAGINATION FOOTER - Nempel di areaShowPinjam --}}
         @if(isset($dataPinjam) && method_exists($dataPinjam, 'links'))
             <div class="mt-4 px-2">
-                @include('components.pagination-footer', ['data' => $dataPinjam])
+                @include('components.pagination-footer', ['data' => $dataPinjam, 'targetId' => 'areaShowPinjam'])
             </div>
         @endif
     </div>
@@ -389,6 +389,11 @@
 }
 .filter-dropdown-custom.show {
     display: block;
+}
+#areaShowPinjam .d-flex { 
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
 }
 </style>
 

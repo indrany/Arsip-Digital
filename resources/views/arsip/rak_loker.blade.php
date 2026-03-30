@@ -40,7 +40,7 @@
     {{-- TABEL DAFTAR RAK --}}
     <div class="col-md-8">
         <div class="card shadow-sm border-0" style="border-radius: 12px;">
-            <div class="card-header bg-white py-3">
+            <div class="card-header bg-white py-3" id="headerMasterRak">
                 <h6 class="m-0 fw-bold text-dark"><i class="fas fa-th-list me-2 text-primary"></i>Monitoring Kapasitas Rak</h6>
             </div>
             <div class="card-body p-0">
@@ -100,7 +100,7 @@
                 {{-- NAVIGASI HALAMAN - TARUH DISINI MAANG! --}}
                 @if(isset($rak) && method_exists($rak, 'links'))
                     <div class="px-4 py-3 border-top">
-                        @include('components.pagination-footer', ['data' => $rak])
+                        @include('components.pagination-footer', ['data' => $rak, 'targetId' => 'headerMasterRak'])
                     </div>
                 @endif
             </div>

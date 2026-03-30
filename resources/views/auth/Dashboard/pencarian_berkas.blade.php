@@ -27,38 +27,40 @@
 
     {{-- HASIL PENCARIAN --}}
     <div class="card shadow-sm border-0 mt-2" style="border-radius:12px;">
+        {{-- CARD HEADER: JUDUL & KONTROL --}}
         <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center border-bottom">
             <h6 class="mb-0 fw-bold text-dark" style="font-size:14px;">
                 <i class="fas fa-list-ul me-2 text-primary"></i>Hasil Pencarian
             </h6>
 
-            <div class="dropdown">
-                <button class="btn btn-light btn-sm border d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="border-radius:6px; font-size:12px;">
-                    <i class="fas fa-filter text-primary"></i> Filters
-                </button>
-                <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0" style="width:280px; border-radius:10px;">
-                    <form action="{{ route('pencarian-berkas.search') }}" method="GET">
-                        {{-- Hidden input agar saat filter tanggal, kata kunci search tidak hilang --}}
-                        <input type="hidden" name="nomor_permohonan" value="{{ request('nomor_permohonan') }}">
-                        
-                        <label class="form-label small fw-bold text-muted mb-2">RANGE TANGGAL</label>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
+            <div class="d-flex align-items-center gap-2" id="areaShowPencarian">
+                {{-- Dropdown Filters --}}
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm border d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="border-radius:6px; font-size:12px;">
+                        <i class="fas fa-filter text-primary"></i> Filters
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0" style="width:280px; border-radius:10px;">
+                        <form action="{{ route('pencarian-berkas.search') }}" method="GET">
+                            <input type="hidden" name="nomor_permohonan" value="{{ request('nomor_permohonan') }}">
+                            <label class="form-label small fw-bold text-muted mb-2">RANGE TANGGAL</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                                <a href="{{ route('pencarian-berkas.index') }}" class="btn btn-light btn-sm border">Reset</a>
                             </div>
-                        </div>
-                        <div class="d-grid gap-2 mt-3">
-                            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-                            <a href="{{ route('pencarian-berkas.index') }}" class="btn btn-light btn-sm border">Reset</a>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
+                {{-- Dropdown SHOW bakal mendarat otomatis di sini karena ID areaShowPencarian --}}
             </div>
         </div>
-
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" style="font-size:13px;">
@@ -94,10 +96,10 @@
                 </table>
             </div>
 
-            {{-- PAGINATION FOOTER - Letak di bawah table-responsive --}}
+            {{-- PAGINATION FOOTER - Nempel di areaShowPencarian --}}
             @if(isset($results) && method_exists($results, 'links'))
                 <div class="mt-2">
-                    @include('components.pagination-footer', ['data' => $results])
+                    @include('components.pagination-footer', ['data' => $results, 'targetId' => 'areaShowPencarian'])
                 </div>
             @endif
         </div>

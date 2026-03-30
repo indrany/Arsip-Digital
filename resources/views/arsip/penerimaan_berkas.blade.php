@@ -36,6 +36,12 @@
     /* 4. Modal Styles */
     #modalDetailBerkas .modal-dialog { max-width: 420px; }
     #modalDetailBerkas .modal-content { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+    #areaShowPenerimaan .d-flex { 
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end;
+}
 </style>
 
 {{-- INPUT SCAN BARCODE --}}
@@ -46,18 +52,42 @@
 {{-- 1. SECTION DAFTAR ANTREAN --}}
 <div id="section-riwayat">
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-            <h6 class="m-0 fw-bold text-dark"><i class="fas fa-inbox me-2 text-primary"></i>Daftar Antrean</h6>
-            <div class="d-flex gap-2 align-items-center">
-                <input type="date" id="filter-tanggal-antrean" class="form-control form-control-sm bg-light border-0" style="width: 140px;">
-                <select id="filter-status-antrean" class="form-select form-select-sm bg-light fw-bold border-0" style="width: 220px;">
-                    <option value="">-- Status --</option>
-                    <option value="DIAJUKAN">⚠️ DIAJUKAN</option>
-                    <option value="DITERIMA OLEH ARSIP">✅ DITERIMA OLEH ARSIP </option>
-                </select>
-                <div class="input-group input-group-sm border rounded bg-light" style="width: 250px;">
-                    <span class="input-group-text bg-transparent border-0 pe-1"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" id="search-antrean" class="form-control border-0 bg-transparent shadow-none" placeholder="Cari...">
+        {{-- HEADER: JUDUL & FILTER (SUPER RAPAT) --}}
+        <div class="card-header bg-white py-3 border-bottom">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                {{-- Sisi Kiri: Judul --}}
+                <div class="me-auto">
+                    <h6 class="m-0 fw-bold text-dark"><i class="fas fa-inbox me-2 text-primary"></i>Daftar Antrean</h6>
+                </div>
+
+                {{-- Sisi Kanan: Grup Filter Rapat --}}
+                <div class="d-flex align-items-center gap-2">
+                    {{-- Filter Tanggal --}}
+                    <div style="width: 140px;">
+                        <input type="date" id="filter-tanggal-antrean" class="form-control form-control-sm bg-light border-0">
+                    </div>
+
+                    {{-- Filter Status --}}
+                    <div style="width: 180px;">
+                        <select id="filter-status-antrean" class="form-select form-select-sm bg-light fw-bold border-0">
+                            <option value="">-- Status --</option>
+                            <option value="DIAJUKAN">⚠️ DIAJUKAN</option>
+                            <option value="DITERIMA OLEH ARSIP">✅ DITERIMA OLEH ARSIP</option>
+                        </select>
+                    </div>
+
+                    {{-- Search Bar --}}
+                    <div style="width: 200px;">
+                        <div class="input-group input-group-sm border rounded bg-light">
+                            <span class="input-group-text bg-transparent border-0 pe-1"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="search-antrean" class="form-control border-0 bg-transparent shadow-none" placeholder="Cari...">
+                        </div>
+                    </div>
+
+                    {{-- AREA SHOW: Pojok Kanan --}}
+                    <div id="areaShowPenerimaan">
+                        {{-- Dropdown SHOW nempel di sini otomatis --}}
+                    </div>
                 </div>
             </div>
         </div>
@@ -102,7 +132,7 @@
                     </tbody>
                 </table>
             </div>
-            @include('components.pagination-footer', ['data' => $antrean_batches])
+            @include('components.pagination-footer', ['data' => $antrean_batches, 'targetId' => 'areaShowPenerimaan'])
         </div>
     </div>
 </div>
