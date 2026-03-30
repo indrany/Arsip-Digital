@@ -205,46 +205,57 @@
                                 @endif
                             </td>
                             <td class="col-aksi">
-    <div class="d-flex justify-content-center gap-2">
-        {{-- 1. Tombol Detail Mata --}}
-        <button type="button" class="btn btn-action btn-outline-primary shadow-sm" onclick="lihatDetailPemusnahan('{{ $row->id }}')" title="Detail">
-            <i class="fas fa-eye"></i>
-        </button>
-
-        {{-- nanti ini di git --}}
-        @if($row->file_pdf)
-            <a href="{{ asset('uploads/pemusnahan/' . $row->file_pdf) }}" target="_blank" class="btn btn-action btn-info text-white shadow-sm">
-                <i class="fas fa-file-pdf"></i>
-            </a>
-        @else
-            <button type="button" class="btn btn-action btn-info text-white shadow-sm btn-upload-langsung" data-id="{{ $row->id }}">
-                <i class="fas fa-file-upload"></i>
-            </button>
-        @endif
-        <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" class="btn btn-action btn-success text-white shadow-sm" title="Cetak BA">
-            <i class="fas fa-download"></i>
-        </a>
-
-        {{-- Tombol Persetujuan Admin --}}
-                        @if(strtoupper(Auth::user()->role) == 'ADMIN' && strtoupper($row->status ?? 'DIAJUKAN') == 'DIAJUKAN')
-                        {{-- Form Setuju: Sekarang Pakai Ikon Centang --}}
-                        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="button" class="btn btn-success btn-sm btn-konfirmasi-setuju shadow-sm btn-action" title="Setujui">
-                                <i class="fas fa-check"></i>
-                            </button>
-                        </form>
-
-                        {{-- Form Tolak: Tetap Ikon Silang --}}
-                        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm btn-action" title="Tolak">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </form>
-                        @endif
-                        </div>
-                        </td>
+                                <div class="d-flex justify-content-center gap-2">
+                                    {{-- 1. Tombol Detail Mata --}}
+                                    <button type="button" class="btn btn-action btn-outline-primary shadow-sm" 
+                                            onclick="lihatDetailPemusnahan('{{ $row->id }}')" 
+                                            title="Lihat Detail Berkas">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                            
+                                    {{-- 2. Logika Upload / Lihat PDF --}}
+                                    @if($row->file_pdf)
+                                        <a href="{{ asset('uploads/pemusnahan/' . $row->file_pdf) }}" target="_blank" 
+                                           class="btn btn-action btn-info text-white shadow-sm" 
+                                           title="Surat Pemusnahan">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    @else
+                                        {{-- TOOLTIP TAMBAHAN DI SINI --}}
+                                        <button type="button" class="btn btn-action btn-info text-white shadow-sm btn-upload-langsung" 
+                                                data-id="{{ $row->id }}" 
+                                                title="Upload Pemusnahan">
+                                            <i class="fas fa-file-upload"></i>
+                                        </button>
+                                    @endif
+                            
+                                    {{-- 3. Tombol Cetak/Download BA --}}
+                                    <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" 
+                                       class="btn btn-action btn-success text-white shadow-sm" 
+                                       title="Cetak BA Pemusnahan">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                            
+                                    {{-- 4. Tombol Persetujuan Admin --}}
+                                    @if(strtoupper(Auth::user()->role) == 'ADMIN' && strtoupper($row->status ?? 'DIAJUKAN') == 'DIAJUKAN')
+                                        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="button" class="btn btn-success btn-sm btn-konfirmasi-setuju shadow-sm btn-action" 
+                                                    title="Setujui Pemusnahan">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                            
+                                        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm btn-action" 
+                                                    title="Tolak Pengajuan">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
