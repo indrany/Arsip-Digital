@@ -186,85 +186,93 @@
         });
 
         // --- 3. CSS RESET & KONFIGURASI CETAK (MODEL FONT SERAGAM) ---
-const cetakStyles = `
-    <style>
-        @page { size: 10.5cm 7.5cm; margin: 0; }
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        const cetakStyles = `
+<style>
+    @media print {
+        @page { 
+            size: 70mm 50mm; 
+            margin: 0; 
+        }
+    }
+
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+    
+    body { 
+        margin: 0; padding: 0; 
+        width: 70mm; height: 50mm; 
+        overflow: hidden;
+        background-color: white;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    
+    .wrapper {
+        width: 70mm; 
+        height: 50mm; 
+        padding: 2mm; 
+        display: flex; 
+        flex-direction: column; 
+        /* UBAH INI: Biar elemennya gak dipaksa mencar ke ujung-ujung */
+        justify-content: flex-start; 
+        align-items: center;
+        page-break-after: always;
+    }
+
+    .header { 
+        width: 100%; display: flex; align-items: center; 
+        justify-content: center; gap: 4px; height: 7mm;
+        margin-bottom: 2mm;
+    }
+
+    .logo { 
+        width: 22px; height: 22px; 
+        background: url("/images/v1_208.png") no-repeat center; 
+        background-size: contain; 
+    }
+    
+    .title { font-size: 7pt; font-weight: bold; text-transform: uppercase; white-space: nowrap; }
+
+    .main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* Kasih jarak sedikit bawah barcode & nama */
+        margin-bottom: 3mm; 
+    }
+
+    .nama { 
+        font-size: 9pt; 
+        font-weight: bold; 
+        text-transform: uppercase; 
+        text-align: center;
+        width: 100%;
+        margin-top: 2mm;
+        line-height: 1.1;
+        font-family: Arial, sans-serif;
+    }
+
+    .footer { 
+        width: 100%; 
+        text-align: center; 
+        font-size: 6.5pt; 
+        font-weight: bold; 
+        text-transform: uppercase;
         
-        body { 
-            margin: 0; padding: 0; 
-            width: 10.5cm; height: 7.5cm; 
-            /* MODEL FONT: Disamakan dengan font standar barcode (Monospace/Arial) */
-            font-family: 'Courier New', Courier, monospace; 
-            overflow: hidden; 
-        }
-        
-        .wrapper {
-            width: 10.5cm; height: 7.5cm; 
-            padding: 0.5cm 0.7cm;
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between;
-            align-items: center;
-            page-break-after: always;
-        }
+        /* SEKARANG INI PASTI NGEFEK */
+        margin-top: 2mm; /* Atur jaraknya manual dari sini */
+        padding-bottom: 0;
+    }
 
-        .header { 
-            width: 100%; display: flex; align-items: center; 
-            justify-content: center; gap: 15px; height: 1.8cm;
-        }
-
-        .logo { width: 70px; height: 70px; background: url("../images/v1_208.png") no-repeat center; background-size: contain; }
-        
-        /* Font Judul */
-        .title { 
-            font-family: Arial, sans-serif; /* Judul tetap pakai Arial biar formal */
-            font-size: 14pt; font-weight: bold; text-transform: uppercase; 
-        }
-        .main {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Memastikan Barcode & Nama sejajar tengah */
-            justify-content: center;
-        }
-        .nama { 
-            /* MODEL FONT NAMA: Dibuat Monospace biar sama dengan nomor barcode */
-            font-family: Arial, sans-serif;
-            font-size: 13pt; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            line-height: 1.2;
-            text-align: center;
-            width: 100%;
-            margin-top: 10px;
-            word-wrap: break-word;
-            white-space: normal;
-        }
-
-        .footer { 
-            width: 100%; text-align: center; 
-            font-family: Arial, sans-serif;
-            font-size: 11pt; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            letter-spacing: -0.5px; 
-            padding-bottom: 15px; 
-        }
-
-        /* BARCODE DISET MAKSIMAL */
-        svg { 
-        width: 100% !important; /* Paksa ambil lebar maksimal container */
+    svg { 
+        width: 46mm !important; 
         height: auto !important; 
-        min-width: 9.5cm;       /* KUNCI: Paksa lebar minimal agar tidak menciut */
-        max-height: 10.2cm;        /* Kasih ruang tinggi yang cukup */
+        /* NAIKKAN INI */
+        max-height: 25mm; 
         display: block;
         margin: 0 auto;
     }
-        svg { width: 100%; max-width: 8.5cm; height: auto; max-height: 2cm; }
-    </style>
+</style>
 `;
-
         // FUNGSI CETAK SATUAN
         window.printSingleBarcode = function(no, nama) {
             let printWindow = window.open('', '_blank');
@@ -286,12 +294,14 @@ const cetakStyles = `
                     <script>
                         JsBarcode("#b-print", "${no}", { 
                         format: "CODE128", 
-                        width: 4,      /* <--- NAIKKAN KE 4. Ini akan membuat setiap batang barcode jadi sangat tebal */
-                        height: 150,   /* <--- TINGGIKAN KE 150 agar batang barcodenya panjang ke bawah */
+                        width: 1.1,      /* Rampingkan dikit lagi biar aman */
+                        height: 45,      /* Jangan terlalu tinggi (45 cukup) */
                         displayValue: true, 
-                        fontSize: 60,  /* Besarkan juga font angkanya */
+                        fontSize: 13,    /* KUNCI: Kecilkan sedikit biar gak kepotong bawahnya */
                         fontOptions: "bold", 
-                        margin: 0 
+                        font: "Arial",
+                        margin: 0,
+                        textMargin: 3    /* Jarak batang ke angka jangan terlalu jauh */
                     });
                         window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); };
                     <\/script>
@@ -301,6 +311,7 @@ const cetakStyles = `
         };
 
         // FUNGSI CETAK SEMUA (BULK)
+        // FUNGSI CETAK SEMUA (BULK) - SUDAH FIX POTONG
         $('#btn-cetak-semua').on('click', function() {
             if (daftarBerkas.length === 0) return;
             let printWindow = window.open('', '_blank');
@@ -330,13 +341,21 @@ const cetakStyles = `
                         const data = ${JSON.stringify(daftarBerkas)};
                         data.forEach((item, i) => {
                             JsBarcode("#bulk-" + i, item.no, { 
-                                format: "CODE128", width: 4, height: 120, 
-                                displayValue: true, fontSize: 50, fontOptions: "bold", margin: 0 
+                                format: "CODE128", 
+                                width: 1.1,      /* SAMAKAN: Biar gak tumpah samping */
+                                height: 45,      /* SAMAKAN: Biar gak tumpah bawah */
+                                displayValue: true, 
+                                fontSize: 14,    /* SAMAKAN: Ukuran angka aman */
+                                fontOptions: "bold", 
+                                font: "Arial",
+                                margin: 0,
+                                textMargin: 2    /* SAMAKAN: Jarak angka ke batang */
                             });
                         });
                         window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); };
                     <\/script>
-                </body></html>
+                </body>
+                </html>
             `);
             printWindow.document.close();
         });
