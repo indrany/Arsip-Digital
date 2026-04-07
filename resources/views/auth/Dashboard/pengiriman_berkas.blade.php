@@ -233,29 +233,20 @@
             line-height: 1.2;
             margin-top: 2mm; 
         }
-        .petugas-info {
-            display: block;
-            /* 1. MENGGANTI WARNA: Jadi Hitam Pekat */
-            color: #000 !important; 
-            
-            /* 2. MENGECANGKAN FONT: Jadi Tebal (Bold) */
-            font-weight: bold !important; 
-            
-            /* 3. MENYAMAKAN UKURAN: Gunakan font 7pt biar gedean dikit */
-            font-size: 7pt; 
-            
-            text-transform: uppercase;
-            margin-top: 0.5mm;
-            
-            /* 4. PASTIKAN TIDAK TRANSPARAN */
-            opacity: 1 !important; 
-        }
-            svg { 
-            width: 42mm !important; /* Rampingkan dikit dari 44mm */
-            height: auto !important; 
-            max-height: 18mm; /* KUNCI: Turunkan tinggi maksimal barcode (dari 22mm ke 18mm) */
-            display: block;
-            margin: 0 auto;
+        .petugas-info { 
+        display: block; 
+        color: #000; 
+        font-weight: bold; 
+        font-size: 7pt; 
+        text-transform: uppercase; 
+        margin-top: 0.5mm; 
+    }
+        svg { 
+        width: 42mm !important; /* Rampingkan dikit dari 44mm */
+        height: auto !important; 
+        max-height: 18mm; /* KUNCI: Turunkan tinggi maksimal barcode (dari 22mm ke 18mm) */
+        display: block;
+        margin: 0 auto;
         }
         </style>`;
 
@@ -275,9 +266,9 @@
                             <div class="nama">${nama}</div>
                         </div>
                     <div class="footer">
-                        Kantor Imigrasi Kelas I TPI Tanjung Perak
-                        <span class="petugas-info">Petugas: ${namaPetugasLogin}</span>
-                    </div>
+                    KANTOR IMIGRASI KELAS I TPI TANJUNG PERAK
+                    <span class="petugas-info">${namaPetugasLogin}</span>
+                </div>
                     </div>
                     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                     <script>
@@ -317,8 +308,8 @@
                         <div class="nama">${item.nama}</div>
                     </div>
                     <div class="footer">
-                        Kantor Imigrasi Kelas I TPI Tanjung Perak
-                        <span class="petugas-info">Petugas: ${namaPetugasLogin}</span>
+                        KANTOR IMIGRASI KELAS I TPI TANJUNG PERAK
+                        <span class="petugas-info">${namaPetugasLogin}</span>
                     </div>
                 </div>`;
         });
