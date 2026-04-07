@@ -21,30 +21,47 @@ class PenerimaanBerkasController extends Controller
     }
 
     public function scanPermohonan(Request $request)
-    {
-        $nomor = $request->nomor_permohonan;
-        
-        // Cari data tanpa mengunci status secara ketat agar lebih fleksibel
-        $permohonan = Permohonan::where('no_permohonan', $nomor)->first();
+{
+    $nomor = $request->nomor_permohonan;
+    $no_pengirim = $request->no_pengirim; // Tambahkan ini jika ingin validasi per batch
 
-        if ($permohonan) {
-            // Ubah status menjadi DITERIMA agar masuk ke tabel sebelah kanan
-            $permohonan->update([
-                'status_berkas' => 'DITERIMA',
-                'updated_at' => Carbon::now()
-            ]);
+    // Cari data permohonan
+    $query = Permohonan::where('no_permohonan', $nomor);
 
+    // OPSIONAL: Jika ingin memastikan nomor tersebut memang bagian dari batch yang sedang dibuka
+    if ($no_pengirim) {
+        $query->where('no_pengirim', $no_pengirim);
+    }
+
+    $permohonan = $query->first();
+
+    if ($permohonan) {
+        // Cek apakah statusnya sudah DITERIMA sebelumnya (biar gak double update)
+        if ($permohonan->status_berkas === 'DITERIMA OLEH ARSIP') {
             return response()->json([
                 'success' => true,
+                'message' => 'Berkas sudah diverifikasi sebelumnya.',
                 'data' => $permohonan
             ]);
         }
 
+        // Ubah status menjadi DITERIMA OLEH ARSIP (Samakan dengan teks di Blade)
+        $permohonan->update([
+            'status_berkas' => 'DITERIMA OLEH ARSIP',
+            'updated_at' => Carbon::now()
+        ]);
+
         return response()->json([
-            'success' => false,
-            'message' => 'Nomor permohonan tidak ditemukan.'
-        ], 404);
+            'success' => true,
+            'data' => $permohonan
+        ]);
     }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'Nomor permohonan tidak ditemukan dalam sistem.'
+    ], 404);
+}
 
     public function checkNewScan()
     {
