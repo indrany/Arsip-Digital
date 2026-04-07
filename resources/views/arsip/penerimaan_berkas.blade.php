@@ -106,7 +106,7 @@
                             data-status="{{ strtoupper($row->status) == 'DIAJUKAN' ? 'DIAJUKAN' : 'DITERIMA OLEH ARSIP' }}">
                             <td class="col-no-pengirim fw-bold text-primary">{{ $row->no_pengirim }}</td>
                             <td class="col-jumlah"><span class="badge bg-secondary-subtle text-secondary px-3 py-2" style="border-radius: 8px;">{{ $row->jumlah_berkas }} Berkas</span></td>
-                            <td class="col-unit"><span class="badge bg-info-subtle text-info px-3 py-2 fw-bold" style="border-radius: 8px;">{{ str_replace('INTELTUSKIM', 'INTALTUSKIM', $row->asal_unit) ?? 'Kanim' }}</span></td>
+                            <td class="col-unit"><span class="badge bg-info-subtle text-info px-3 py-2 fw-bold" style="border-radius: 8px;">{{ $row->asal_unit ?? 'Kanim' }}</span></td>
                             <td class="col-tanggal">{{ \Carbon\Carbon::parse($row->tgl_pengirim)->format('d-m-Y') }}</td>
                             <td class="col-status"><span class="badge rounded-pill {{ $statusText == 'DIAJUKAN' ? 'bg-warning text-dark' : 'bg-success text-white' }} px-3">{{ $statusText }}</span></td>
                             <td class="col-aksi">

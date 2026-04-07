@@ -25,11 +25,4 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function getRoleDisplayAttribute()
-    {
-    if ($this->role === 'INTELTUSKIM') {
-        return 'INTALTUSKIM';
-    }
-    return $this->role;
-    }
 }

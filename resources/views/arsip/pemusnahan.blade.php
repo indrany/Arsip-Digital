@@ -181,20 +181,23 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" id="tablePemusnahan" style="font-size: 13px;">
-                        <thead class="bg-light text-muted uppercase">
-                    <tr>
-                        <th class="col-ba">No. Berita Acara</th>
-                        <th class="col-periode">Periode Berkas</th>
-                        <th class="text-center">Kalkulasi</th> 
-                        <th class="text-center">Jumlah</th>    
-                        <th class="text-center">Status</th>
-                        <th class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
+                    <thead class="bg-light text-muted uppercase">
+                        <tr>
+                            <th class="col-ba" style="width: 25%;">No. Berita Acara</th>
+                            <th class="col-periode" style="width: 20%;">Periode Berkas</th>
+                            <th class="text-center" style="width: 15%;">Kalkulasi</th> 
+                            <th class="text-center" style="width: 10%;">Jumlah</th>    
+                            <th class="text-center" style="width: 15%;">Status</th>
+                            <th class="text-center" style="width: 15%;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     @forelse($riwayat as $row)
                     <tr>
-                        <td class="col-ba fw-bold text-primary">{{ $row->no_berita_acara }}</td>
+                    <td class="fw-bold">
+                            <div class="text-truncate" style="max-width: 200px;" title="{{ $row->no_berita_acara }}">
+                                {{ $row->no_berita_acara }}</div>
+                    </td>
                         <td class="col-periode">
                             <div class="d-flex align-items-center gap-1 small fw-bold">
                                 <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_mulai)->format('d/m/Y') }}</span>

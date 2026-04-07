@@ -13,7 +13,7 @@ return new class extends Migration
         $table->string('nama_lengkap')->nullable()->after('name');
         
         // Tambahkan kembali kolom 'role' karena file yang lama sudah dihapus
-        $table->enum('role', ['TIKIM', 'LANTASKIM', 'INTELDAKIM', 'INTELTUSKIM', 'ADMIN'])
+        $table->enum('role', ['TIKIM', 'LANTASKIM', 'INTELDAKIM', 'INTALTUSKIM', 'ADMIN'])
               ->default('ADMIN')
               ->after('email');
               

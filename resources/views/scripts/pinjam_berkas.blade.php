@@ -97,7 +97,7 @@
                                     </div>
                                     <div style="font-size: 11px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
                                         <span style="width: 6px; height: 6px; background: #10B981; border-radius: 50%;"></span>
-                                        {{ str_replace('INTELTUSKIM', 'INTALTUSKIM', $item->divisi_peminjam) }}
+                                        {{ $item->divisi_peminjam }}
                                     </div>
                                 </div>
                             </div>
@@ -263,10 +263,10 @@
                         <option value="LANTASKIM">LANTASKIM</option>
                         <option value="TIKIM">TIKIM</option>
                         <option value="INTELDAKIM">INTELDAKIM</option>
-                        <option value="INTELTUSKIM">INTALTUSKIM</option>
+                        <option value="INTALTUSKIM">INTALTUSKIM</option>
                     </select>
                 @else
-                    <input type="text" class="form-control bg-light" value="{{ auth()->user()->role_display }}" readonly>
+                    <input type="text" class="form-control bg-light" value="{{ auth()->user()->role }}" readonly>
                     <input type="hidden" name="nama_peminjam" value="{{ auth()->user()->role }}">
                 @endif
                 </div>
