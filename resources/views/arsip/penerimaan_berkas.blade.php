@@ -43,12 +43,6 @@
     justify-content: flex-end;
 }
 </style>
-
-{{-- INPUT SCAN BARCODE --}}
-<div style="position: absolute; left: -9999px; top: 0;">
-    <input type="text" id="input-barcode-permohonan" autofocus autocomplete="off">
-</div>
-
 {{-- 1. SECTION DAFTAR ANTREAN --}}
 <div id="section-riwayat">
     <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
@@ -139,9 +133,42 @@
 
 {{-- 2. SECTION PROSES SCAN (HIDDEN BY DEFAULT) --}}
 <div id="section-proses-scan" style="display: none;">
-    <div class="mb-4 text-start">
-        <button class="btn btn-sm btn-outline-secondary btn-back-riwayat shadow-sm px-3" style="border-radius: 20px;"><i class="fas fa-arrow-left me-2"></i> Kembali ke Antrean</button>
+    
+    {{-- BARIS HEADER: TOMBOL DI KIRI, INPUT DI KANAN (PASTI SEJAJAR) --}}
+    <div class="row align-items-center mb-4 mt-2">
+        {{-- SISI KIRI: Tombol Kembali --}}
+        <div class="col-6 text-start">
+            <button class="btn btn-sm btn-outline-secondary btn-back-riwayat shadow-sm px-3" style="border-radius: 20px;">
+                <i class="fas fa-arrow-left me-2"></i> Kembali ke Antrean
+            </button>
+        </div>
+
+        {{-- SISI KANAN: Area Input Scan (Mepet Kanan) --}}
+        <div class="col-6">
+            <div id="area-input-penerimaan" style="display: none;" class="d-flex justify-content-end">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0 !important; width: 300px;">
+                    <div class="card-body p-2">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0" style="border-radius: 8px 0 0 8px;">
+                                <i class="fas fa-barcode text-primary" style="font-size: 0.8rem;"></i>
+                            </span>
+                            <input type="text" id="input-barcode-permohonan" 
+                                   class="form-control border-start-0 fw-bold shadow-none" 
+                                   placeholder="Scan / Ketik Nomor..." 
+                                   style="border-radius: 0 8px 8px 0; font-size: 0.8rem;"
+                                   autocomplete="off">
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                            <small style="font-size: 8px; color: #94a3b8; text-transform: uppercase;">ENTER TO PROCESS</small>
+                            <span class="badge bg-success-subtle text-success" style="font-size: 7px; padding: 1px 4px; border: 1px solid #bbf7d0;">READY</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    {{-- GRID TABEL --}}
     <div class="row g-4 text-start">
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm p-4" style="min-height: 500px; border-radius: 15px;">
@@ -160,11 +187,20 @@
             </div>
         </div>
     </div>
-    <div class="text-center mt-5">
-        <button id="btn-simpan-batch" class="btn btn-success px-5 fw-bold shadow-sm py-3" style="border-radius: 50px;">Selesaikan & Terima Berkas</button>
+
+    {{-- BUTTON ACTION DI BAGIAN BAWAH --}}
+    <div class="text-center mt-5 d-flex justify-content-center gap-3">
+        {{-- TOMBOL SIMPAN DRAFT --}}
+        <button id="btn-simpan-draft" type="button" class="btn btn-outline-warning px-4 fw-bold shadow-sm py-3" style="border-radius: 50px; min-width: 250px;">
+            <i class="fas fa-save me-2"></i> Simpan Draft
+        </button>
+
+        {{-- TOMBOL SELESAIKAN --}}
+        <button id="btn-simpan-batch" type="button" class="btn btn-success px-4 fw-bold shadow-sm py-3" style="border-radius: 50px; min-width: 250px;">
+            <i class="fas fa-check-double me-2"></i> Selesaikan & Terima Berkas
+        </button>
     </div>
 </div>
-
 {{-- 3. MODAL DETAIL BATCH --}}
 <div class="modal fade" id="modalDetailBatch" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -280,6 +316,7 @@ let allDetailData = [];
 let currentPageDetail = 1;
 const rowsPerPageDetail = 5; 
 let currentBatchID = '';
+let sedangProsesScan = false;
 
 // 2. FUNGSI DETAIL INDIVIDU (POP-UP BIODATA)
 window.fetchAndShowDetail = function(nomor) {
@@ -483,35 +520,90 @@ $(document).ready(function() {
                     if(isDone) $('#tbody-hasil-scan').prepend(rowHtml);
                 });
                 updateCounters();
-                $('#section-riwayat').hide(); $('#section-proses-scan').fadeIn();
+                $('#section-riwayat').hide(); 
+                $('#section-proses-scan').fadeIn();
+                $('#area-input-penerimaan').fadeIn();
                 setTimeout(() => inputBarcode.focus(), 500);
             }
         });
     });
+    $(document).on('click', function(e) {
+    // 1. Cek apakah ada teks yang lagi di-blok (sekeksi teks)
+    // Kalau ada, jangan paksa fokus biar bisa Ctrl+C
+    if (window.getSelection().toString().length > 0) {
+        return; 
+    }
 
-    // LOGIKA SCAN (ENTER)
-    inputBarcode.on('keypress', function(e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            let barcode = $(this).val().trim(); $(this).val('');
-            let rowTarget = $(`#row-${barcode}`);
-            
-            if (rowTarget.length === 0) {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Nomor tidak ada di batch ini!', timer: 1500, showConfirmButton: false });
-                return;
-            }
-            if (rowTarget.hasClass('table-success')) return;
-
-            $.post("{{ route('penerimaan-berkas.scan-permohonan') }}", { nomor_permohonan: barcode }, function(res) {
-                if (res.success) { 
-                    rowTarget.addClass('table-success fw-bold'); 
-                    if (rowTarget.find('.fa-check-circle').length === 0) rowTarget.find('.icon-container').prepend('<i class="fas fa-check-circle text-success me-2"></i>');
-                    $('#tbody-hasil-scan').prepend(rowTarget.clone()); 
-                    updateCounters();
-                }
-            });
+    // 2. Jika area proses scan lagi kebuka
+    if ($('#section-proses-scan').is(':visible')) {
+        // Jangan paksa fokus kalau user lagi ngeklik tombol, input lain, atau modal
+        if (!$(e.target).closest('.btn, .form-control, .modal, .card').length) {
+            $('#input-barcode-permohonan').focus();
         }
+    }
+});
+
+// 1. FUNGSI INTI VERIFIKASI (DIPISAH BIAR BISA DIPANGGIL DUA CARA)
+function eksekusiVerifikasi(barcode) {
+    // CEK: Jika sedang proses atau barcode kosong, batalkan perintah
+    if (barcode === "" || sedangProsesScan) return;
+
+    let rowTarget = $(`#row-${barcode}`);
+    
+    if (rowTarget.length === 0) {
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        Toast.fire({ icon: 'error', title: 'Nomor tidak terdaftar!' });
+        inputBarcode.val('').focus();
+        return;
+    }
+
+    if (rowTarget.hasClass('table-success')) {
+        inputBarcode.val('').focus();
+        return;
+    }
+
+    // KUNCI PROSES
+    sedangProsesScan = true;
+    inputBarcode.prop('readonly', true).addClass('bg-light');
+
+    $.post("{{ route('penerimaan-berkas.scan-permohonan') }}", { nomor_permohonan: barcode }, function(res) {
+        // BUKA KUNCI SETELAH BERHASIL
+        sedangProsesScan = false;
+        inputBarcode.val('').prop('readonly', false).removeClass('bg-light').focus();
+        
+        if (res.success) { 
+            // Validasi tambahan: Pastikan belum ada di tabel hasil (UI)
+            if ($(`#tbody-hasil-scan #row-${barcode}`).length === 0) {
+                rowTarget.addClass('table-success fw-bold'); 
+                if (rowTarget.find('.fa-check-circle').length === 0) rowTarget.find('.icon-container').prepend('<i class="fas fa-check-circle text-success me-2"></i>');
+                $('#tbody-hasil-scan').prepend(rowTarget.clone()); 
+                updateCounters();
+            }
+        }
+    }).fail(function() {
+        // BUKA KUNCI JIKA GAGAL
+        sedangProsesScan = false;
+        inputBarcode.val('').prop('readonly', false).removeClass('bg-light').focus();
     });
+}
+
+// 2. LOGIKA INPUT OTOMATIS (SUPPORT COPAS & TANPA ENTER)
+inputBarcode.on('input', function() {
+    let val = $(this).val().trim();
+    if (val.length >= 16) {
+        setTimeout(function() {
+            eksekusiVerifikasi(inputBarcode.val().trim());
+        }, 100);
+    }
+});
+
+// 3. LOGIKA ENTER (UNTUK MANUAL ATAU NOMOR PENDEK)
+inputBarcode.on('keypress', function(e) {
+    if (e.which === 13) {
+        e.preventDefault();
+        eksekusiVerifikasi($(this).val().trim());
+    }
+});
 
     // TOMBOL SELESAIKAN & TERIMA (VALIDASI LOKER)
     $('#btn-simpan-batch').on('click', function() {

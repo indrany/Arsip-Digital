@@ -117,6 +117,9 @@
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // Ambil nama dari user yang sedang login untuk dicetak
+    const namaPetugasLogin = "{{ Auth::user()->name }}";
+
     $(document).ready(function() {
         let daftarBerkas = [];
         const inputBarcode = $('#input_no_permohonan');
@@ -185,94 +188,77 @@
             resetSemuaInput();
         });
 
-        // --- 3. CSS RESET & KONFIGURASI CETAK (MODEL FONT SERAGAM) ---
+        // --- 3. CSS RESET & KONFIGURASI CETAK ---
         const cetakStyles = `
-<style>
-    @media print {
-        @page { 
-            size: 70mm 50mm; 
-            margin: 0; 
+        <style>
+            @media print { @page { size: 70mm 50mm; margin: 0; } }
+            * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+            body { margin: 0; padding: 0; width: 70mm; height: 50mm; overflow: hidden; background-color: white; font-family: Arial, sans-serif; }
+            .wrapper {
+            width: 70mm; 
+            height: 50mm; 
+            padding: 1.5mm 2mm; /* Perkecil padding atas bawah */
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-start; /* Tetap rapat atas */
+            align-items: center;
+            page-break-after: always;
         }
-    }
+            .header { width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; height: 7mm; margin-bottom: 1.5mm; }
+            .logo { width: 20px; height: 20px; background: url("/images/v1_208.png") no-repeat center; background-size: contain; }
+            .title { font-size: 7pt; font-weight: bold; text-transform: uppercase; white-space: nowrap; }
+            .main {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -1mm; /* TARIK KE ATAS: Angkat area barcode */
+            margin-bottom: 0mm; /* Hapuskan margin bawah agar tidak dorong footer */
+        }
+            .nama { 
+            font-size: 8pt; /* Kecilkan dikit dari 9pt biar hemat ruang */
+            font-weight: bold; 
+            text-transform: uppercase; 
+            text-align: center;
+            width: 100%;
+            margin-top: 1mm; /* Jarak dari angka barcode */
+            line-height: 1.1;
+        }
+        .footer { 
+            width: 100%; 
+            text-align: center; 
+            font-size: 7pt; /* Ukuran alamat kantor */
+            font-weight: bold; 
+            text-transform: uppercase;
+            line-height: 1.2;
+            margin-top: 2mm; 
+        }
+        .petugas-info {
+            display: block;
+            /* 1. MENGGANTI WARNA: Jadi Hitam Pekat */
+            color: #000 !important; 
+            
+            /* 2. MENGECANGKAN FONT: Jadi Tebal (Bold) */
+            font-weight: bold !important; 
+            
+            /* 3. MENYAMAKAN UKURAN: Gunakan font 7pt biar gedean dikit */
+            font-size: 7pt; 
+            
+            text-transform: uppercase;
+            margin-top: 0.5mm;
+            
+            /* 4. PASTIKAN TIDAK TRANSPARAN */
+            opacity: 1 !important; 
+        }
+            svg { 
+            width: 42mm !important; /* Rampingkan dikit dari 44mm */
+            height: auto !important; 
+            max-height: 18mm; /* KUNCI: Turunkan tinggi maksimal barcode (dari 22mm ke 18mm) */
+            display: block;
+            margin: 0 auto;
+        }
+        </style>`;
 
-    * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
-    
-    body { 
-        margin: 0; padding: 0; 
-        width: 70mm; height: 50mm; 
-        overflow: hidden;
-        background-color: white;
-        font-family: Arial, Helvetica, sans-serif;
-    }
-    
-    .wrapper {
-        width: 70mm; 
-        height: 50mm; 
-        padding: 2mm; 
-        display: flex; 
-        flex-direction: column; 
-        /* UBAH INI: Biar elemennya gak dipaksa mencar ke ujung-ujung */
-        justify-content: flex-start; 
-        align-items: center;
-        page-break-after: always;
-    }
-
-    .header { 
-        width: 100%; display: flex; align-items: center; 
-        justify-content: center; gap: 4px; height: 7mm;
-        margin-bottom: 2mm;
-    }
-
-    .logo { 
-        width: 22px; height: 22px; 
-        background: url("/images/v1_208.png") no-repeat center; 
-        background-size: contain; 
-    }
-    
-    .title { font-size: 7pt; font-weight: bold; text-transform: uppercase; white-space: nowrap; }
-
-    .main {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        /* Kasih jarak sedikit bawah barcode & nama */
-        margin-bottom: 3mm; 
-    }
-
-    .nama { 
-        font-size: 9pt; 
-        font-weight: bold; 
-        text-transform: uppercase; 
-        text-align: center;
-        width: 100%;
-        margin-top: 2mm;
-        line-height: 1.1;
-        font-family: Arial, sans-serif;
-    }
-
-    .footer { 
-        width: 100%; 
-        text-align: center; 
-        font-size: 6.5pt; 
-        font-weight: bold; 
-        text-transform: uppercase;
-        
-        /* SEKARANG INI PASTI NGEFEK */
-        margin-top: 2mm; /* Atur jaraknya manual dari sini */
-        padding-bottom: 0;
-    }
-
-    svg { 
-        width: 46mm !important; 
-        height: auto !important; 
-        /* NAIKKAN INI */
-        max-height: 25mm; 
-        display: block;
-        margin: 0 auto;
-    }
-</style>
-`;
         // FUNGSI CETAK SATUAN
         window.printSingleBarcode = function(no, nama) {
             let printWindow = window.open('', '_blank');
@@ -288,20 +274,23 @@
                             <svg id="b-print"></svg>
                             <div class="nama">${nama}</div>
                         </div>
-                        <div class="footer">Kantor Imigrasi Kelas I TPI Tanjung Perak</div>
+                    <div class="footer">
+                        Kantor Imigrasi Kelas I TPI Tanjung Perak
+                        <span class="petugas-info">Petugas: ${namaPetugasLogin}</span>
+                    </div>
                     </div>
                     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
                     <script>
                         JsBarcode("#b-print", "${no}", { 
                         format: "CODE128", 
-                        width: 1.1,      /* Rampingkan dikit lagi biar aman */
-                        height: 45,      /* Jangan terlalu tinggi (45 cukup) */
+                        width: 1.0,      // Rampingkan sedikit
+                        height: 35,      // Turunkan tinggi batang batang (dari 40 ke 35)
                         displayValue: true, 
-                        fontSize: 13,    /* KUNCI: Kecilkan sedikit biar gak kepotong bawahnya */
+                        fontSize: 12,    // Kecilkan angka biar nggak mepet bawah
                         fontOptions: "bold", 
                         font: "Arial",
                         margin: 0,
-                        textMargin: 3    /* Jarak batang ke angka jangan terlalu jauh */
+                        textMargin: 1    // Rapatkan angka ke batang
                     });
                         window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); };
                     <\/script>
@@ -311,54 +300,55 @@
         };
 
         // FUNGSI CETAK SEMUA (BULK)
-        // FUNGSI CETAK SEMUA (BULK) - SUDAH FIX POTONG
         $('#btn-cetak-semua').on('click', function() {
-            if (daftarBerkas.length === 0) return;
-            let printWindow = window.open('', '_blank');
-            let contentHtml = '';
-            
-            daftarBerkas.forEach((item, index) => {
-                contentHtml += `
-                    <div class="wrapper">
-                        <div class="header">
-                            <div class="logo"></div>
-                            <div class="title">Sistem Arsip Digital</div>
-                        </div>
-                        <div class="main">
-                            <svg id="bulk-${index}"></svg>
-                            <div class="nama">${item.nama}</div>
-                        </div>
-                        <div class="footer">Kantor Imigrasi Kelas I TPI Tanjung Perak</div>
-                    </div>`;
-            });
-
-            printWindow.document.write(`
-                <html><head>${cetakStyles}</head>
-                <body>
-                    ${contentHtml}
-                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
-                    <script>
-                        const data = ${JSON.stringify(daftarBerkas)};
-                        data.forEach((item, i) => {
-                            JsBarcode("#bulk-" + i, item.no, { 
-                                format: "CODE128", 
-                                width: 1.1,      /* SAMAKAN: Biar gak tumpah samping */
-                                height: 45,      /* SAMAKAN: Biar gak tumpah bawah */
-                                displayValue: true, 
-                                fontSize: 14,    /* SAMAKAN: Ukuran angka aman */
-                                fontOptions: "bold", 
-                                font: "Arial",
-                                margin: 0,
-                                textMargin: 2    /* SAMAKAN: Jarak angka ke batang */
-                            });
-                        });
-                        window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
+        if (daftarBerkas.length === 0) return;
+        let printWindow = window.open('', '_blank');
+        let contentHtml = '';
+        
+        daftarBerkas.forEach((item, index) => {
+            contentHtml += `
+                <div class="wrapper">
+                    <div class="header">
+                        <div class="logo"></div>
+                        <div class="title">Sistem Arsip Digital</div>
+                    </div>
+                    <div class="main">
+                        <svg id="bulk-${index}"></svg>
+                        <div class="nama">${item.nama}</div>
+                    </div>
+                    <div class="footer">
+                        Kantor Imigrasi Kelas I TPI Tanjung Perak
+                        <span class="petugas-info">Petugas: ${namaPetugasLogin}</span>
+                    </div>
+                </div>`;
         });
+
+        printWindow.document.write(`
+        <html><head>${cetakStyles}</head>
+        <body>
+            ${contentHtml}
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+            <script>
+                const data = ${JSON.stringify(daftarBerkas)};
+                data.forEach((item, i) => {
+                    JsBarcode("#bulk-" + i, item.no, { 
+                        format: "CODE128", 
+                        width: 1.0, 
+                        height: 35, 
+                        displayValue: true, 
+                        fontSize: 12, 
+                        fontOptions: "bold", 
+                        font: "Arial", 
+                        margin: 0, 
+                        textMargin: 1 
+                    });
+                });
+                window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); };
+            <\/script>
+        </body></html>
+    `);
+    printWindow.document.close();
+});
 
         // --- FUNGSI PENDUKUNG ---
         function resetSemuaInput() { inputBarcode.val('').focus(); $('#input_nama, #input_tempat_lahir, #input_tgl_lahir, #input_jenis_paspor').val(''); }
@@ -374,7 +364,6 @@
             $('#empty-state').toggleClass('d-none', daftarBerkas.length > 0);
         }
 
-        // LOGIKA SIMPAN DATABASE
         $('#btn-simpan-pengiriman').on('click', function() {
             if (daftarBerkas.length === 0) return;
             Swal.fire({ title: 'Kirim ke Arsip?', text: "Ajukan " + daftarBerkas.length + " berkas ini?", icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, Kirim!' }).then((result) => {

@@ -159,15 +159,40 @@ public function tambahPengiriman(Request $request)
     public function scanPermohonan(Request $request)
     {
         $nomor = trim($request->nomor_permohonan);
+        
+        // 1. Cari data permohonan berdasarkan nomor
         $permohonan = Permohonan::where('no_permohonan', $nomor)->first();
+
+        // 2. Jika nomor tidak ditemukan di database
         if (!$permohonan) {
-            return response()->json(['success' => false, 'message' => 'Barcode ' . $nomor . ' tidak terdaftar!'], 404);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal! Nomor permohonan ' . $nomor . ' tidak ditemukan dalam sistem.'
+            ], 404);
         }
+
+        // 3. Jika berkas statusnya sudah selesai (sudah masuk rak)
         if ($permohonan->status_berkas === 'DITERIMA OLEH ARSIP') {
-             return response()->json(['success' => false, 'message' => 'Berkas sudah masuk rak arsip.'], 422);
+             return response()->json([
+                'success' => false, 
+                'message' => 'Berkas ini sudah terverifikasi dan sudah masuk rak arsip.'
+            ], 422);
         }
-        $permohonan->update(['status_berkas' => 'DITERIMA', 'updated_at' => now()]);
-        return response()->json(['success' => true, 'data' => ['no_permohonan' => $permohonan->no_permohonan, 'nama' => $permohonan->nama]]);
+
+        // 4. Update status menjadi DITERIMA (Agar pindah ke tabel sebelah kanan di View)
+        // Kita pakai status 'DITERIMA' sementara, nanti pas klik 'Selesaikan' baru jadi 'DITERIMA OLEH ARSIP'
+        $permohonan->update([
+            'status_berkas' => 'DITERIMA', 
+            'updated_at' => now()
+        ]);
+
+        return response()->json([
+            'success' => true, 
+            'data' => [
+                'no_permohonan' => $permohonan->no_permohonan, 
+                'nama' => $permohonan->nama
+            ]
+        ]);
     }
 
     // 8. KONFIRMASI BULK (OTOMATIS CARI RAK)
