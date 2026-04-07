@@ -8,9 +8,14 @@
 
 <style>
     /* Styling Tabel Utama */
+    #tablePemusnahan {
+        width: 100% !important;
+        table-layout: auto;
+        border-collapse: collapse; 
+    }
     #tablePemusnahan th, #tablePemusnahan td {
-        white-space: nowrap; 
         vertical-align: middle !important;
+        word-wrap: break-word; /* Biar teks bisa turun ke bawah jika sempit */
     }
     .col-ba { width: 25%; text-align: left; padding-left: 20px !important; }
     .col-periode { width: 20%; text-align: left; }
@@ -61,10 +66,11 @@
     .app-pagination-list .page-item.disabled span { 
         background-color: #f8fafc; color: #cbd5e1; cursor: not-allowed !important; 
     }
+    
 </style>
 
-<div class="container-fluid px-4 py-4">
-    <div class="row g-4">
+<div class="container-fluid ps-1 pe-1 py-4">
+    <div class="row g-3">
         {{-- 1. BAGIAN INPUT: Hanya TIKIM --}}
         @if(strtoupper(Auth::user()->role) == 'TIKIM')
         <div class="col-lg-4">
@@ -83,18 +89,26 @@
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label small fw-bold">2. Dari Tanggal</label>
-                                <input type="date" name="filter_mulai" id="filter_mulai" class="form-control date-calc shadow-none" required>
+                                <input type="date" name="filter_mulai" id="filter_mulai" class="form-control date-calc shadow-none">
                             </div>
                             <div class="col-6">
                                 <label class="form-label small fw-bold">Sampai Tanggal</label>
-                                <input type="date" name="filter_selesai" id="filter_selesai" class="form-control date-calc shadow-none" required>
+                                <input type="date" name="filter_selesai" id="filter_selesai" class="form-control date-calc shadow-none">
                             </div>
                         </div>
                         
+                        {{-- KALKULASI OTOMATIS --}}
                         <div class="p-3 bg-light rounded-3 mb-3 text-center border">
-                            <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">3. Kalkulasi Dokumen:</small>
+                            <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">3a. Pengiriman Otomatis (By Date):</small>
                             <h3 class="fw-bold text-primary mb-0" id="label-jumlah">0</h3>
                             <small class="text-muted small">Berkas Fisik Terdeteksi</small>
+                        </div>
+
+                        {{-- INPUT MANUAL (PENGIRIMAN INPUTAN) --}}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">3. Jumlah Berkas Inputan Manual</label>
+                            <input type="number" name="nomor_manual_input" class="form-control shadow-none" placeholder="Contoh: 1500" min="0">
+                            <small class="text-muted" style="font-size: 11px;">*Masukkan angka jumlah berkas fisik tambahan.</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold">4. Upload Scan BA (PDF)</label>
@@ -111,7 +125,7 @@
         @endif
 
         {{-- 2. BAGIAN TABEL RIWAYAT --}}
-        <div class="{{ strtoupper(Auth::user()->role) == 'TIKIM' ? 'col-lg-8' : 'col-lg-12' }}">
+        <div class="{{ strtoupper(Auth::user()->role) == 'TIKIM' ? 'col-lg-8 flex-grow-20' : 'col-lg-12' }}">
             <div class="card shadow-sm border-0 rounded-3">
                 {{-- HEADER RIWAYAT: JUDUL (KIRI) & FILTER + SHOW (KANAN) --}}
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
@@ -119,7 +133,6 @@
             <h6 class="mb-0 fw-bold text-dark">
                 <i class="fas fa-history me-2 text-primary"></i>Riwayat Pemusnahan
             </h6>
-            
             {{-- Sisi Kanan: Wadah Filter & SHOW Berdampingan --}}
             <div class="d-flex align-items-center gap-2" id="areaShowPemusnahan">
                 {{-- Dropdown Filters --}}
@@ -165,104 +178,109 @@
             </a>
         </div>
         @endif
-
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" id="tablePemusnahan" style="font-size: 13px;">
-                            <thead class="bg-light text-muted uppercase">
-                                <tr>
-                                    <th class="col-ba">No. Berita Acara</th>
-                                    <th class="col-periode">Periode Berkas</th>
-                                    <th class="col-jumlah">Jumlah</th>
-                                    <th class="col-status">Status</th>
-                                    <th class="col-aksi">Aksi</th>
-                                </tr>
-                            </thead>
-                        @forelse($riwayat as $row)
-                        <tr>
-                            <td class="col-ba fw-bold text-primary">{{ $row->no_berita_acara }}</td>
-                            <td class="col-periode">
-                                <div class="d-flex align-items-center gap-1 small fw-bold">
-                                    <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_mulai)->format('d/m/Y') }}</span>
-                                    <span class="text-muted fw-normal">s/d</span>
-                                    <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_selesai)->format('d/m/Y') }}</span>
-                                </div>
-                            </td>
-                            <td class="col-jumlah">
-                                <span class="badge bg-secondary-subtle text-secondary px-3">{{ $row->jumlah_dokumen }} Berkas</span>
-                            </td>
-                            <td class="col-status text-center">
-                                @php 
-                                    $currentStatus =   strtoupper($row->status ?? 'DIAJUKAN'); 
-                                @endphp
+                        <thead class="bg-light text-muted uppercase">
+                    <tr>
+                        <th class="col-ba">No. Berita Acara</th>
+                        <th class="col-periode">Periode Berkas</th>
+                        <th class="text-center">Kalkulasi</th> 
+                        <th class="text-center">Jumlah</th>    
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($riwayat as $row)
+                    <tr>
+                        <td class="col-ba fw-bold text-primary">{{ $row->no_berita_acara }}</td>
+                        <td class="col-periode">
+                            <div class="d-flex align-items-center gap-1 small fw-bold">
+                                <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_mulai)->format('d/m/Y') }}</span>
+                                <span class="text-muted fw-normal">s/d</span>
+                                <span class="text-dark">{{ \Carbon\Carbon::parse($row->filter_selesai)->format('d/m/Y') }}</span>
+                            </div>
+                        </td>
 
-                                @if($currentStatus == 'DISETUJUI')
-                                    <span class="badge bg-success text-white px-3">DISETUJUI</span>
-                                @elseif($currentStatus == 'DITOLAK')
-                                    <span class="badge bg-danger text-white px-3">DITOLAK</span>
-                                @else
-                                    <span class="badge bg-warning text-dark px-3">DIAJUKAN</span>
-                                @endif
-                            </td>
-                            <td class="col-aksi">
-                                <div class="d-flex justify-content-center gap-2">
-                                    {{-- 1. Tombol Detail Mata --}}
-                                    <button type="button" class="btn btn-action btn-outline-primary shadow-sm" 
-                                            onclick="lihatDetailPemusnahan('{{ $row->id }}')" 
-                                            title="Lihat Detail Berkas">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                            
-                                    {{-- 2. Logika Upload / Lihat PDF --}}
-                                    @if($row->file_pdf)
-                                        <a href="{{ asset('uploads/pemusnahan/' . $row->file_pdf) }}" target="_blank" 
-                                           class="btn btn-action btn-info text-white shadow-sm" 
-                                           title="Surat Pemusnahan">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </a>
-                                    @else
-                                        {{-- TOOLTIP TAMBAHAN DI SINI --}}
-                                        <button type="button" class="btn btn-action btn-info text-white shadow-sm btn-upload-langsung" 
-                                                data-id="{{ $row->id }}" 
-                                                title="Upload Pemusnahan">
-                                            <i class="fas fa-file-upload"></i>
-                                        </button>
-                                    @endif
-                            
-                                    {{-- 3. Tombol Cetak/Download BA --}}
-                                    <a href="{{ route('pemusnahan.cetak', $row->id) }}" target="_blank" 
-                                       class="btn btn-action btn-success text-white shadow-sm" 
-                                       title="Cetak BA Pemusnahan">
-                                        <i class="fas fa-download"></i>
+                        {{-- 1. TAMPILKAN ANGKA KALKULASI (Dari kolom jumlah_dokumen) --}}
+                        <td class="text-center">
+                            <span class="badge bg-secondary-subtle text-secondary px-3">
+                                {{ $row->jumlah_dokumen ?? 0 }} Berkas
+                            </span>
+                        </td>
+
+                        {{-- 2. TAMPILKAN ANGKA JUMLAH MANUAL (Dari kolom baru jumlah_manual) --}}
+                        <td class="text-center">
+                            <span class="badge bg-info-subtle text-info px-3">
+                                {{ $row->jumlah_manual ?? 0 }} Berkas
+                            </span>
+                        </td>
+
+                        <td class="col-status text-center">
+                            @php 
+                                $currentStatus = strtoupper($row->status ?? 'DIAJUKAN'); 
+                            @endphp
+
+                            @if($currentStatus == 'DISETUJUI')
+                                <span class="badge bg-success text-white px-3">DISETUJUI</span>
+                            @elseif($currentStatus == 'DITOLAK')
+                                <span class="badge bg-danger text-white px-3">DITOLAK</span>
+                            @else
+                                <span class="badge bg-warning text-dark px-3">DIAJUKAN</span>
+                            @endif
+                        </td>
+                        <td class="col-aksi">
+                            <div class="d-flex justify-content-center gap-2">
+                                {{-- Tombol Detail --}}
+                                <button type="button" class="btn btn-action btn-outline-primary shadow-sm" 
+                                        onclick="lihatDetailPemusnahan('{{ $row->id }}')" 
+                                        title="Lihat Detail Berkas">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+
+                                {{-- Tombol PDF --}}
+                                @if($row->file_pdf)
+                                    <a href="{{ asset('uploads/pemusnahan/' . $row->file_pdf) }}" target="_blank" 
+                                    class="btn btn-action btn-info text-white shadow-sm" 
+                                    title="Surat Pemusnahan">
+                                        <i class="fas fa-file-pdf"></i>
                                     </a>
-                            
-                                    {{-- 4. Tombol Persetujuan Admin --}}
-                                    @if(strtoupper(Auth::user()->role) == 'ADMIN' && strtoupper($row->status ?? 'DIAJUKAN') == 'DIAJUKAN')
-                                        <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <button type="button" class="btn btn-success btn-sm btn-konfirmasi-setuju shadow-sm btn-action" 
-                                                    title="Setujui Pemusnahan">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                        </form>
-                            
-                                        <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm btn-action" 
-                                                    title="Tolak Pengajuan">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">Data riwayat tidak ditemukan</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
+                                @else
+                                    <button type="button" class="btn btn-action btn-info text-white shadow-sm btn-upload-langsung" 
+                                            data-id="{{ $row->id }}" 
+                                            title="Upload Pemusnahan">
+                                        <i class="fas fa-file-upload"></i>
+                                    </button>
+                                @endif                          
+                                
+                                {{-- Tombol Persetujuan Admin --}}
+                                @if(strtoupper(Auth::user()->role) == 'ADMIN' && strtoupper($row->status ?? 'DIAJUKAN') == 'DIAJUKAN')
+                                    <form action="{{ route('pemusnahan.approve', $row->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="button" class="btn btn-success btn-sm btn-konfirmasi-setuju shadow-sm btn-action" 
+                                                title="Setujui Pemusnahan">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ route('pemusnahan.reject', $row->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="button" class="btn btn-danger btn-sm btn-konfirmasi-tolak shadow-sm btn-action" 
+                                                title="Tolak Pengajuan">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">Data riwayat tidak ditemukan</td>
+                    </tr>
+                    @endforelse
+                </tbody>
                 </table>
             </div>
             {{-- PAGINATION FOOTER - Sudah diperbaiki variabelnya jadi $riwayat --}}
@@ -503,6 +521,57 @@ $(document).ready(function() {
         });
     });
 });
+let listManual = [];
 
+$(document).ready(function() {
+    // Jalankan kalkulasi tanggal seperti biasa
+    $('.date-calc').on('change', function() {
+        let m = $('#filter_mulai').val(), s = $('#filter_selesai').val();
+        if (m && s) {
+            $.get("{{ route('pemusnahan.hitung') }}", { mulai: m, selesai: s }, function(res) {
+                $('#label-jumlah').text(res.jumlah);
+                cekTombolSubmit();
+            });
+        }
+    });
+
+    // Handle Input Manual
+    $('#input-manual-barcode').on('keypress', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            let val = $(this).val().trim();
+            if (val !== "" && !listManual.includes(val)) {
+                listManual.push(val);
+                renderTags();
+                $(this).val('');
+                cekTombolSubmit();
+            }
+        }
+    });
+});
+
+function renderTags() {
+    let html = '';
+    listManual.forEach((no, index) => {
+        html += `<span class="badge bg-info text-white d-flex align-items-center gap-2">
+                    ${no} <i class="fas fa-times cursor-pointer" onclick="removeManual(${index})"></i>
+                 </span>`;
+    });
+    $('#manual-list-tags').html(html);
+    $('#hidden-nomor-manual').val(JSON.stringify(listManual));
+}
+
+function removeManual(index) {
+    listManual.splice(index, 1);
+    renderTags();
+    cekTombolSubmit();
+}
+
+function cekTombolSubmit() {
+    let jmlOtomatis = parseInt($('#label-jumlah').text());
+    let jmlManual = listManual.length;
+    // Tombol aktif jika ada data di salah satu jalur atau keduanya
+    $('#btn-submit').prop('disabled', (jmlOtomatis <= 0 && jmlManual <= 0));
+}
 </script>
 @endpush

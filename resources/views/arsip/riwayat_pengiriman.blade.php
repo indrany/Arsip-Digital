@@ -81,7 +81,7 @@
                             </td>
                             <td>
                                 <span class="badge bg-info-subtle text-info px-3 py-2 text-uppercase">
-                                    {{ $row->asal_unit }}
+                                {{ str_replace('INTELTUSKIM', 'INTALTUSKIM', $row->asal_unit) }}
                                 </span>
                             </td>
                             <td class="text-center">

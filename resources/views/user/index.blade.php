@@ -40,7 +40,7 @@
         <td>{{ $user->nama_lengkap }}</td>
         <td>
             <span class="badge bg-outline-primary text-primary border border-primary">
-                {{ $user->role }}
+                {{ $user->role_display}}
             </span>
         </td>
         <td>
@@ -98,11 +98,11 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Role (Unit Kerja)</label>
                                 <select name="role" class="form-select" required>
-                                    <option value="TIKIM" {{ $user->role == 'TIKIM' ? 'selected' : '' }}>TIKIM</option>
-                                    <option value="LANTASKIM" {{ $user->role == 'LANTASKIM' ? 'selected' : '' }}>LANTASKIM</option>
-                                    <option value="INTELDAKIM" {{ $user->role == 'INTELDAKIM' ? 'selected' : '' }}>INTELDAKIM</option>
-                                    <option value="INTELTUSKIM" {{ $user->role == 'INTELTUSKIM' ? 'selected' : '' }}>INTELTUSKIM</option>
-                                    <option value="ADMIN" {{ $user->role == 'ADMIN' ? 'selected' : '' }}>ADMIN</option>
+                                    <option value="TIKIM" {{ $user->role_display == 'TIKIM' ? 'selected' : '' }}>TIKIM</option>
+                                    <option value="LANTASKIM" {{ $user->role_display == 'LANTASKIM' ? 'selected' : '' }}>LANTASKIM</option>
+                                    <option value="INTELDAKIM" {{ $user->role_display == 'INTELDAKIM' ? 'selected' : '' }}>INTELDAKIM</option>
+                                    <option value="INTELTUSKIM" {{ $user->role_display == 'INTELTUSKIM' ? 'selected' : '' }}>INTALTUSKIM</option>
+                                    <option value="ADMIN" {{ $user->role_display == 'ADMIN' ? 'selected' : '' }}>ADMIN</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -181,7 +181,7 @@
                         <option value="TIKIM">TIKIM</option>
                         <option value="LANTASKIM">LANTASKIM</option>
                         <option value="INTELDAKIM">INTELDAKIM</option>
-                        <option value="INTELTUSKIM">INTELTUSKIM</option>
+                        <option value="INTELTUSKIM">INTALTUSKIM</option>
                         <option value="ADMIN">ADMIN</option>
                     </select>
                 </div>

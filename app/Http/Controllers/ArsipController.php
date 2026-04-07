@@ -479,18 +479,51 @@ public function rakIndex(Request $request) {
     }
 
     public function simpanPemusnahan(Request $request) {
-        $request->validate(['no_berita_acara' => 'required|unique:pemusnahan_arsip', 'filter_mulai' => 'required', 'filter_selesai' => 'required']);
-        $permohonans = Permohonan::whereBetween('tanggal_permohonan', [$request->filter_mulai, $request->filter_selesai])->where('status_berkas', 'DITERIMA OLEH ARSIP')->get();
-        if($permohonans->isEmpty()) return back()->with('error', 'Data kosong.');
+        $request->validate([
+            'no_berita_acara' => 'required|unique:pemusnahan_arsip',
+        ]);
+    
+        // 1. Jalur Kalkulasi Otomatis (Filter Tanggal) - Tetap cari ID buat sistem hapus berkas
+        $idsOtomatis = [];
+        if ($request->filled('filter_mulai') && $request->filled('filter_selesai')) {
+            $idsOtomatis = Permohonan::whereBetween('tanggal_permohonan', [$request->filter_mulai, $request->filter_selesai])
+                ->where('status_berkas', 'DITERIMA OLEH ARSIP')
+                ->pluck('id')->toArray();
+        }
+    
+        // 2. Jalur Inputan Manual (CUMA AMBIL ANGKA BEBAS)
+        // Kita ambil inputan user, kalau bukan angka kita jadikan 0
+        $jumlahManual = $request->filled('nomor_manual_input') ? (int) $request->nomor_manual_input : 0;
+    
+        // Pastikan ada data (entah dari filter atau dari angka manual)
+        if (count($idsOtomatis) <= 0 && $jumlahManual <= 0) {
+            return back()->with('error', 'Gagal: Isi filter tanggal atau masukkan jumlah manual.');
+        }
+    
+        // Proses upload PDF
         $fileName = null;
         if ($request->hasFile('file_pdf')) {
             $fileName = 'BA_' . time() . '.' . $request->file_pdf->extension();  
             $request->file_pdf->move(public_path('uploads/pemusnahan'), $fileName);
         }
-        PemusnahanArsip::create(['no_berita_acara' => $request->no_berita_acara, 'tgl_pemusnahan' => now(), 'filter_mulai' => $request->filter_mulai, 'filter_selesai' => $request->filter_selesai, 'jumlah_dokumen' => $permohonans->count(), 'file_pdf' => $fileName, 'status' => 'Diajukan', 'daftar_id_permohonan' => $permohonans->pluck('id')->toArray()]);
-        return back()->with('success', 'Pengajuan berhasil disimpan.');
+    
+        // 3. SIMPAN KE DATABASE
+        PemusnahanArsip::create([
+            'no_berita_acara'   => $request->no_berita_acara,
+            'tgl_pemusnahan'    => now(),
+            'filter_mulai'      => $request->filter_mulai,
+            'filter_selesai'    => $request->filter_selesai,
+            
+            'jumlah_dokumen'    => count($idsOtomatis), // Masuk ke kolom Kalkulasi
+            'jumlah_manual'     => $jumlahManual,       // Masuk ke kolom Jumlah (Angka bebas)
+            
+            'file_pdf'          => $fileName,
+            'status'            => 'Diajukan',
+            'daftar_id_permohonan' => $idsOtomatis // Cuma ID otomatis yang disimpan buat dihapus sistem
+        ]);
+    
+        return back()->with('success', 'Berhasil disimpan! Jumlah manual tercatat: ' . $jumlahManual);
     }
-
     public function uploadPDF(Request $request, $id) {
         // Validasi: Kita izinkan sampai 20MB karena file dari pusat biasanya lengkap/besar
         $request->validate([
@@ -520,68 +553,53 @@ public function rakIndex(Request $request) {
     }
     public function setujuiPemusnahan($id)
 {
-    // 1. Ambil data Berita Acara
-    $ba = \App\Models\PemusnahanArsip::findOrFail($id);
+    $ba = PemusnahanArsip::findOrFail($id);
     
-    // 2. Gunakan Transaction agar data konsisten (tidak ada update setengah-setengah)
+    // Ambil ID permohonan yang sudah didaftarkan saat simpan tadi
+    $ids = is_array($ba->daftar_id_permohonan) ? $ba->daftar_id_permohonan : json_decode($ba->daftar_id_permohonan, true);
+
+    if (empty($ids)) {
+        return redirect()->back()->with('error', 'Gagal: Data rincian berkas tidak ditemukan.');
+    }
+
     DB::beginTransaction();
-
     try {
-        // Gabungkan query pencarian menggunakan whereIn untuk status berkas
-        $berkas = \App\Models\Permohonan::whereBetween('tanggal_permohonan', [
-            \Carbon\Carbon::parse($ba->filter_mulai)->startOfDay(), 
-            \Carbon\Carbon::parse($ba->filter_selesai)->endOfDay()
-        ])
-        ->whereIn('status_berkas', ['DITERIMA OLEH ARSIP', 'DITERIMA']) 
-        ->get();
-
-        if ($berkas->isEmpty()) {
-            return redirect()->back()->with('error', 'Gagal: Tidak ada berkas yang ditemukan untuk periode ini.');
-        }
+        // Ambil data berkas asli berdasarkan ID yang tersimpan
+        $berkas = Permohonan::whereIn('id', $ids)->get();
 
         foreach ($berkas as $item) {
-            // 3. Update counter di Master Rak Loker
+            // Update counter di Master Rak Loker jika ada
             if ($item->rak_id) {
-                $rak = \App\Models\RakLoker::find($item->rak_id); 
-                
+                $rak = RakLoker::find($item->rak_id); 
                 if ($rak) {
                     $rak->decrement('terisi'); 
-                    
-                    // Gunakan data fresh untuk validasi status rak
-                    $rakBaru = $rak->fresh(); 
-                    if ($rakBaru->terisi < $rakBaru->kapasitas) {
-                        $rakBaru->update(['status' => 'Tersedia']);
+                    if ($rak->fresh()->terisi < $rak->kapasitas) {
+                        $rak->update(['status' => 'Tersedia']);
                     }
                 }
             }
         
-            // 4. Update status berkas menjadi DIMUSNAHKAN
-            // Data lokasi_arsip, rak_id, dan no_urut akan menjadi NULL
+            // Update status berkas menjadi DIMUSNAHKAN
             $item->update([
                 'status_berkas' => 'DIMUSNAHKAN',
-                'rak_id'        => null, // Menghilangkan relasi ke rak
-                'no_urut_di_rak' => null, // Mengosongkan nomor urut
+                'rak_id'        => null,
+                'no_urut_di_rak' => null,
                 'lokasi_arsip'  => 'SUDAH DIMUSNAHKAN'
             ]);
         }
 
-        // 5. Update status Berita Acara menjadi disetujui
+        // Update status Berita Acara
         $ba->update(['status' => 'Disetujui']);
 
         DB::commit();
-        return redirect()->back()->with('success', 'Berhasil: ' . $berkas->count() . ' berkas telah dimusnahkan dan rak telah dikosongkan.');
+        return redirect()->back()->with('success', 'Berhasil: ' . $berkas->count() . ' berkas telah dimusnahkan secara sistem.');
 
     } catch (\Exception $e) {
         DB::rollback();
-        return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Kesalahan: ' . $e->getMessage());
     }
 }
-    public function cetakPemusnahan($id) {
-        $ba = PemusnahanArsip::findOrFail($id);
-        $ids = is_array($ba->daftar_id_permohonan) ? $ba->daftar_id_permohonan : json_decode($ba->daftar_id_permohonan, true);
-        $permohonan = Permohonan::whereIn('id', $ids)->get();
-        return view('arsip.cetak_ba', compact('ba', 'permohonan'));
-    }
+
     public function reject($id)
 {
     try {

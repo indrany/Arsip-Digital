@@ -97,7 +97,7 @@
                                     </div>
                                     <div style="font-size: 11px; color: #6B7280; display: flex; align-items: center; gap: 4px;">
                                         <span style="width: 6px; height: 6px; background: #10B981; border-radius: 50%;"></span>
-                                        {{ $item->divisi_peminjam }}
+                                        {{ str_replace('INTELTUSKIM', 'INTALTUSKIM', $item->divisi_peminjam) }}
                                     </div>
                                 </div>
                             </div>
@@ -258,17 +258,17 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold small">Divisi Peminjam</label>
                     @if(in_array($roleUser, ['ADMIN', 'KANIM']))
-                        <select name="nama_peminjam" class="form-select" required>
-                            <option value="" selected disabled>-- Pilih Divisi --</option>
-                            <option value="LANTASKIM">LANTASKIM</option>
-                            <option value="TIKIM">TIKIM</option>
-                            <option value="INTELDAKIM">INTELDAKIM</option>
-                            <option value="INTELTUSKIM">INTELTUSKIM</option>
-                        </select>
-                    @else
-                        <input type="text" class="form-control bg-light" value="{{ auth()->user()->role }}" readonly>
-                        <input type="hidden" name="nama_peminjam" value="{{ auth()->user()->role }}">
-                    @endif
+                    <select name="nama_peminjam" class="form-select" required>
+                        <option value="" selected disabled>-- Pilih Divisi --</option>
+                        <option value="LANTASKIM">LANTASKIM</option>
+                        <option value="TIKIM">TIKIM</option>
+                        <option value="INTELDAKIM">INTELDAKIM</option>
+                        <option value="INTELTUSKIM">INTALTUSKIM</option>
+                    </select>
+                @else
+                    <input type="text" class="form-control bg-light" value="{{ auth()->user()->role_display }}" readonly>
+                    <input type="hidden" name="nama_peminjam" value="{{ auth()->user()->role }}">
+                @endif
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold small">Nama Peminjam (Personil)</label>
