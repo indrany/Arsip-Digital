@@ -251,7 +251,7 @@
                         </div>
                         <div class="col-sm-10">
                             <label class="small text-muted mb-1">Lokasi Arsip</label>
-                            <input type="text" id="det_lokasi" class="form-control form-control-sm bg-white fw-bold text-success border-success" readonly>
+                            <input type="text" id="det_lokasi" class="form-control form-control-sm bg-white" readonly>
                         </div>
                     </div>
                 </div>
@@ -443,9 +443,9 @@ function showDetail(item) {
 
     if (alurTerupdate === 'SELESAI') {
         alurInput.style.backgroundColor = '#d1e7dd'; 
-        alurInput.style.color = '#0f5132';           
-        alurInput.style.fontWeight = 'bold';
+        alurInput.style.color = '#344054';           
         alurInput.style.borderColor = '#badbcc';
+
     } else {
         alurInput.style.backgroundColor = '#ffffff';
         alurInput.style.color = '#212529';

@@ -18,7 +18,7 @@
                         <label class="form-label small fw-bold text-muted">Nomor Permohonan</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="fas fa-barcode"></i></span>
-                            <input type="text" id="input_no_permohonan" class="form-control form-control-lg fw-bold" placeholder="Scan atau Ketik Nomor..." autofocus autocomplete="off">
+                            <input type="text" id="input_no_permohonan" class="form-control form-control-lg fw-bold" placeholder="Ketik Nomor Permohonan..." autofocus autocomplete="off">
                         </div>
                         <div id="loading-spinner" class="mt-1 d-none">
                             <small class="text-primary"><i class="fas fa-spinner fa-spin me-1"></i> Mencari data...</small>

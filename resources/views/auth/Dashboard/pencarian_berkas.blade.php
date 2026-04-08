@@ -180,8 +180,8 @@ function showDetail(item) {
 
     if (alurTerupdate === 'SELESAI') {
         alurInput.style.backgroundColor = '#d1e7dd';
-        alurInput.style.color = '#0f5132';
-        alurInput.style.fontWeight = 'bold';
+        alurInput.style.color = '#344054';
+        
     } else {
         alurInput.style.backgroundColor = '#fff';
         alurInput.style.color = '#344054';

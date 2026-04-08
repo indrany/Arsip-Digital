@@ -355,10 +355,13 @@ public function tambahPengiriman(Request $request)
             return response()->json([
                 'success' => true, 
                 'data' => [
-                    'nama' => $dataPaspor->nama, 
-                    'tempat_lahir' => $dataPaspor->tempatlahir, 
+                    'nama'          => $dataPaspor->nama, 
+                    'tempat_lahir'  => $dataPaspor->tempatlahir, 
                     'tanggal_lahir' => $dataPaspor->tanggallahir, 
-                    'jenis_paspor' => $dataPaspor->jenispaspor
+                    'jenis_paspor'  => $dataPaspor->jenispaspor,
+                    'tanggal_terbit'    => ($dataPaspor->tglterbit_datetime && $dataPaspor->tglterbit_datetime != '0000-00-00 00:00:00') 
+                                       ? date('d-m-Y', strtotime($dataPaspor->tglterbit_datetime)) 
+                                       : '-' 
                 ]
             ]);
         }
@@ -430,6 +433,8 @@ public function store(Request $request) {
                         'tujuan_paspor'      => $asalData->tujuanpaspor, 
                         'no_paspor'          => $asalData->nopaspor, 
                         'tanggal_permohonan' => $tglMohon, 
+                        'tanggal_terbit'         => ($asalData->tglterbit_datetime && $asalData->tglterbit_datetime != '0000-00-00 00:00:00') 
+                                            ? $asalData->tglterbit_datetime: null,
                         'status_berkas'      => 'DIAJUKAN', 
                         'alur_terakhir'      => 'SELESAI (' . strtoupper($unitAsal) . ')',
                         'updated_at'         => $waktuSekarang

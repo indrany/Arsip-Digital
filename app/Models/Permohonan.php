@@ -18,7 +18,7 @@ class Permohonan extends Model
         'tgl_pengirim', 
         'asal_unit',
         'tanggal_permohonan', 
-        'tanggal_terbit',
+        'tanggal_terbit', 
         'nama', 
         'tempat_lahir',
         'tanggal_lahir',
