@@ -259,7 +259,7 @@
                     <div class="wrapper">
                         <div class="header">
                             <div class="logo"></div>
-                            <div class="title">Sistem Arsip Digital</div>
+                            <div class="title">Sistem Arsip Paspor Akuntabel</div>
                         </div>
                         <div class="main">
                             <svg id="b-print"></svg>
@@ -301,7 +301,7 @@
                 <div class="wrapper">
                     <div class="header">
                         <div class="logo"></div>
-                        <div class="title">Sistem Arsip Digital</div>
+                        <div class="title">Sistem Arsip Paspor Akuntabel</div>
                     </div>
                     <div class="main">
                         <svg id="bulk-${index}"></svg>

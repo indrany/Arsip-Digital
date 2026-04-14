@@ -10,7 +10,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 
-    <title>Sistem Arsip Imigrasi - Login</title>
+    <title>SISTEM ARSIP PASPOR AKUNTABEL - Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
             <img src="{{ asset('images/v1_150.png') }}" alt="Logo Kementerian Imigrasi dan Pemasyarakatan" class="system-logo">
 
             <h1 class="system-title">
-                SISTEM ARSIP DIGITAL <br>
+                SISTEM ARSIP PASPOR AKUNTABEL <br>
                 <span class="sub-title">KANTOR IMIGRASI KELAS I TPI TANJUNG PERAK</span>
             </h1>
         </div>

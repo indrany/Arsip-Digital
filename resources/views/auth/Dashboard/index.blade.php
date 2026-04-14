@@ -2,7 +2,7 @@
 
 @section('title', 'Dashboard')
 @section('page-title', 'Dashboard')
-@section('page-subtitle', 'Hi, ' . Auth::user()->name . '. Selamat datang di Sistem Arsip Digital!')
+@section('page-subtitle', 'Hi, ' . Auth::user()->name . '. Selamat datang di Sistem Arsip Paspor Akuntabel!')
 
 @section('content')
 
