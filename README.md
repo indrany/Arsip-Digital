@@ -114,8 +114,8 @@ Atur koneksi database pada berkas `.env`:
 ```env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=sapa_imigrasi
+DB_PORT=3308
+DB_DATABASE=db_arsip_digital
 DB_USERNAME=root
 DB_PASSWORD=
 ```
