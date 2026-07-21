@@ -1,59 +1,60 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SAPA - Sistem Arsip Paspor Akuntabel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**SAPA (Sistem Arsip Paspor Akuntabel)** adalah inovasi sistem manajemen kearsipan berbasis web yang dikembangkan untuk **Kantor Imigrasi Kelas I TPI Tanjung Perak**. Sistem ini mentransformasi pengelolaan berkas fisik paspor dari metode konvensional menjadi digital, terintegrasi, dan terstruktur.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📌 Latar Belakang & Masalah
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Setiap harinya Kantor Imigrasi Kelas I TPI Tanjung Perak mengelola ribuan dokumen negara berupa berkas permohonan paspor. Manajemen arsip konvensional menimbulkan beberapa kendala:
+1. **Kesulitan Lokasi Penyimpanan:** Belum ada pemetaan ketersediaan kapasitas rak secara *real-time*.
+2. **Risiko Ketidakteraturan Data:** Potensi selisih antara jumlah berkas yang diterima dengan yang tersimpan di rak.
+3. **Lamanya Waktu Pencarian (*Retrieval Time*):** Proses pencarian kembali berkas fisik memakan waktu lama karena tidak adanya koordinat digital.
+4. **Validasi Pemusnahan Rumit:** Kesulitan sinkronisasi antara berkas fisik dan data retensi arsip.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**SAPA** hadir sebagai solusi digitalisasi kearsipan yang dilengkapi dengan fitur **Otomasi Penempatan Berkas (*Auto-Slotting*)** dan **Pemindaian Barcode**.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## ✨ Fitur Utama
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- 📊 **Dashboard Monitoring:** Menampilkan statistik total data pemohon, berkas dipinjam, peringatan kapasitas rak, serta grafik aktivitas bulanan.
+- 👥 **Manajemen User & Hak Akses (RBAC):** Pembagian kewenangan berdasarkan unit kerja (`ADMIN`, `TIKIM`, `LANTASKIM`, `INTELDAKIM`, `INTALTUSKIM`).
+- 🗄️ **Master Rak Loker & Auto-Slotting:** Pengelolaan kapasitas lemari/rak secara digital. Sistem secara otomatis menentukan koordinat lokasi berkas (*Lemari / Rak / No. Urut*).
+- 📦 **Pengiriman & Penerimaan Berkas (Batching & Barcode Scan):** Fitur pengiriman batch dari unit kerja ke seksi Arsip (TIKIM), cetak barcode, serta verifikasi pemindaian fisik.
+- 📑 **Cetak Surat Pengantar & Berita Acara:** Otomasi pembuatan dokumen resmi pengiriman, peminjaman, dan pengembalian arsip.
+- 🔍 **Pencarian Berkas & Detail Pemohon:** Pencarian cepat berdasarkan nomor permohonan atau nama, lengkap dengan penyaringan rentang tanggal.
+- 🔄 **Manajemen Peminjaman Berkas:** Modul pelacakan sirkulasi peminjaman berkas antar divisi lengkap dengan notifikasi ketersediaan berkas.
+- 🗑️ **Pemusnahan Arsip Berkontrol:** Prosedur pengajuan pemusnahan berkas retensi oleh TIKIM dan verifikasi/persetujuan oleh ADMIN, lengkap dengan pengunggahan pindaian Berita Acara (PDF).
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 👥 Hak Akses / Role Management
 
-### Premium Partners
+| Role | Dashboard | Master Rak | Pengiriman Berkas | Penerimaan Berkas | Pencarian Berkas | Pinjam Berkas | Pemusnahan Arsip | Manajemen User |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **ADMIN** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Approval) | ✅ |
+| **TIKIM** | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ (Pengajuan) | ❌ |
+| **LANTASKIM** | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **INTELDAKIM** | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| **INTALTUSKIM** | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ |
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## 🏗️ Arsitektur & Teknologi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **Framework:** Laravel 10.x
+- **Bahasa Pemrograman:** PHP 8.1+
+- **Database:** MySQL / MariaDB
+- **Web Server:** Nginx / Apache (XAMPP / Ubuntu Server)
+- **Frontend:** Blade Templating, HTML5, CSS3, JavaScript
+- **Metodologi Pengembangan:** Waterfall (*Analysis, Design, Coding, Testing, Implementation*)
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🛠️ Panduan Instalasi
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+1. **Clone Repositori**
+   ```bash
+   git clone [https://github.com/username/sapa-imigrasi.git](https://github.com/username/sapa-imigrasi.git)
+   cd sapa-imigrasi
