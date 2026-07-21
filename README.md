@@ -95,34 +95,49 @@ Pembagian kewenangan dan fitur berdasarkan unit kerja internal:
 ## 🛠️ Instalasi & Penggunaan
 
 1. **Clone Repositori**
-   ```bash
-   git clone [https://github.com/indrany/Arsip-Digital.git](https://github.com/indrany/Arsip-Digital.git)
-   cd Arsip-Digital
+```bash
+git clone https://github.com/indrany/Arsip-Digital.git
+cd Arsip-Digital
+```
+
 2. **Install Dependensi Composer**
-    Bash
-    composer install
+```bash
+composer install
+```
+
 3. **Konfigurasi Lingkungan (.env)**
-    Salin berkas .env.example menjadi .env:
-    Bash
-    cp .env.example .env
-    
-    Atur koneksi database pada berkas .env:
-    Cuplikan kode
-    DB_CONNECTION=mysql
-    DB_HOST=127.0.0.1
-    DB_PORT=3306
-    DB_DATABASE=sapa_imigrasi
-    DB_USERNAME=root
-    DB_PASSWORD=
+Salin berkas `.env.example` menjadi `.env`:
+```bash
+cp .env.example .env
+```
+Atur koneksi database pada berkas `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sapa_imigrasi
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
 4. **Generate Application Key**
-    Bash
-    php artisan key:generate
+```bash
+php artisan key:generate
+```
+
 5. **Jalankan Migrasi Database & Seeder**
-    Bash
-    php artisan migrate --seed
+```bash
+php artisan migrate --seed
+```
+
 6. **Jalankan Server Lokal**
-    Bash
-    php artisan serve
-    Akses aplikasi melalui peramban di http://localhost:8000.
-📜 Lisensi
-Proyek ini dikembangkan untuk lingkungan internal Kantor Imigrasi Kelas I TPI Tanjung Perak. Hak cipta dilindungi undang-undang.
+```bash
+php artisan serve
+```
+Akses aplikasi melalui peramban di `http://localhost:8000`.
+
+---
+
+## 📜 Lisensi
+
+Proyek ini dikembangkan untuk lingkungan internal **Kantor Imigrasi Kelas I TPI Tanjung Perak**. Hak cipta dilindungi undang-undang.
